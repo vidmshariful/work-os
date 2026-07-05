@@ -82,9 +82,11 @@ export async function addPayment(
   if (!Number.isFinite(amount) || amount < 0) return { error: "Enter a valid amount." };
 
   const invoiceUrl = String(formData.get("invoice_url") ?? "").trim();
+  const projectId = String(formData.get("project_id") ?? "").trim();
   const supabase = await createClient();
   const { error } = await supabase.from("client_payments").insert({
     client_id: clientId,
+    project_id: projectId || null,
     label,
     amount,
     due_date: String(formData.get("due_date") ?? "") || null,

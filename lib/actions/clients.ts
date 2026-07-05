@@ -20,7 +20,8 @@ export interface ClientFormState {
 }
 
 const STAGES: ClientStage[] = ["onboard", "active", "blocked", "blacklist", "done"];
-const TIMINGS: KickoffTiming[] = ["immediate", "on_intake", "manual"];
+// on_intake is legacy: intake now lives on each project.
+const TIMINGS: KickoffTiming[] = ["immediate", "manual"];
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -123,12 +124,21 @@ export async function createClientRecord(
     return { error: "Enter a valid contact email." };
   }
 
-  const kickoffTiming = String(formData.get("kickoff_timing") ?? "on_intake");
+  const kickoffTiming = String(formData.get("kickoff_timing") ?? "immediate");
   if (!TIMINGS.includes(kickoffTiming as KickoffTiming)) {
     return { error: "Pick when the kickoff project should be created." };
   }
   const templateRaw = String(formData.get("kickoff_template_id") ?? "").trim();
   const templateId = templateRaw && UUID_RE.test(templateRaw) ? templateRaw : null;
+
+  const kickoffPriceRaw = String(formData.get("kickoff_price") ?? "").trim();
+  let kickoffPrice: number | null = null;
+  if (kickoffPriceRaw) {
+    const n = Number(kickoffPriceRaw);
+    if (!Number.isFinite(n) || n < 0) return { error: "Enter a valid kickoff price." };
+    kickoffPrice = n;
+  }
+  const invoiceTerms = String(formData.get("invoice_terms") ?? "").trim();
 
   const plan = parsePaymentPlan(String(formData.get("payment_plan") ?? ""));
   if (!Array.isArray(plan)) return { error: plan.error };
@@ -155,7 +165,6 @@ export async function createClientRecord(
       highlevel_url: cleanUrl(String(formData.get("highlevel_url") ?? "")),
       kickoff_template_id: templateId,
       kickoff_timing: kickoffTiming as KickoffTiming,
-      intake_form_url: cleanUrl(String(formData.get("intake_form_url") ?? "")),
       stage: "onboard",
     })
     .select("id")
@@ -173,10 +182,44 @@ export async function createClientRecord(
       is_primary: true,
     });
   }
+
+  // The kickoff project exists now when timing is immediate: attach the
+  // intake form, the price, and the invoice terms to it, and point the
+  // payment plan at it.
+  let kickoffProjectId: string | null = null;
+  if (kickoffTiming === "immediate") {
+    const { data: kickoff } = await admin
+      .from("projects")
+      .select("id")
+      .eq("client_id", inserted.id)
+      .order("created_at")
+      .limit(1)
+      .maybeSingle();
+    kickoffProjectId = kickoff?.id ?? null;
+    if (kickoffProjectId) {
+      const intakeFormUrl = cleanUrl(String(formData.get("intake_form_url") ?? ""));
+      if (intakeFormUrl) {
+        await admin
+          .from("project_intakes")
+          .update({ form_url: intakeFormUrl })
+          .eq("project_id", kickoffProjectId);
+      }
+      if (kickoffPrice !== null || invoiceTerms) {
+        await admin.from("project_commercials").upsert({
+          project_id: kickoffProjectId,
+          price: kickoffPrice,
+          invoice_terms: invoiceTerms || null,
+          updated_by: ctx.userId,
+        });
+      }
+    }
+  }
+
   if (plan.length > 0) {
     await admin.from("client_payments").insert(
       plan.map((p) => ({
         client_id: inserted.id,
+        project_id: kickoffProjectId,
         label: p.label,
         amount: p.amount,
         due_date: p.due_date,
@@ -224,7 +267,6 @@ export async function updateClient(
     owner_id: ownerId,
     website: cleanUrl(String(formData.get("website") ?? "")),
     highlevel_url: cleanUrl(String(formData.get("highlevel_url") ?? "")),
-    intake_form_url: cleanUrl(String(formData.get("intake_form_url") ?? "")),
   };
 
   // Origin is the most sensitive field: executives only.
@@ -280,57 +322,7 @@ export async function updateClientStage(
   return { error: null };
 }
 
-// ---- intake ----
-
-export async function markIntakeSent(
-  ws: string,
-  clientId: string,
-  formUrl: string
-): Promise<{ error: string | null }> {
-  const ctx = await getWorkspaceContext(ws);
-  if (!canWriteClients(ctx)) return { error: "You do not have access to update intake." };
-
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("clients")
-    .update({ intake_status: "sent", intake_form_url: cleanUrl(formUrl) })
-    .eq("id", clientId)
-    .eq("workspace_id", ctx.workspace.id);
-  if (error) return { error: "Could not update the intake state." };
-
-  revalidatePath(`/${ws}/clients/${clientId}`);
-  return { error: null };
-}
-
-// Marking intake received is the moment work can start: when kickoff timing
-// is on_intake, the database scaffolds the project from here.
-export async function markIntakeReceived(
-  ws: string,
-  clientId: string,
-  responseUrl: string
-): Promise<{ error: string | null }> {
-  const ctx = await getWorkspaceContext(ws);
-  if (!canWriteClients(ctx)) return { error: "You do not have access to update intake." };
-
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("clients")
-    .update({
-      intake_status: "received",
-      intake_response_url: cleanUrl(responseUrl),
-    })
-    .eq("id", clientId)
-    .eq("workspace_id", ctx.workspace.id);
-  if (error) {
-    return { error: "Could not update the intake state." };
-  }
-
-  revalidatePath(`/${ws}/clients/${clientId}`);
-  revalidatePath(`/${ws}/projects`);
-  return { error: null };
-}
-
-// Manual kickoff, for clients set to manual timing (or a stuck on_intake).
+// Manual kickoff, for clients set to manual timing.
 export async function scaffoldKickoffNow(
   ws: string,
   clientId: string

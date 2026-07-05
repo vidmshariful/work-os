@@ -23,12 +23,23 @@ import { clientLabel, isConfidential, isUnmasked } from "@/lib/wall";
 import { ProjectStatusSelect } from "@/components/features/projects/status-select";
 import { DeliverableToggle } from "@/components/features/projects/deliverable-toggle";
 import { ProjectFiles } from "@/components/features/projects/project-files";
+import {
+  ProjectIntakePanel,
+  IntakeStatusTag,
+} from "@/components/features/clients/project-intake-panel";
+import { CommercialsPanel } from "@/components/features/clients/commercials-card";
 import { listProjectFiles } from "@/lib/actions/projects";
 import type {
   ProjectWithOwner,
   TaskWithAssignee,
 } from "@/components/features/projects/types";
-import type { Deliverable, ProjectPhase, VClient } from "@/lib/types";
+import type {
+  Deliverable,
+  ProjectCommercials,
+  ProjectIntake,
+  ProjectPhase,
+  VClient,
+} from "@/lib/types";
 
 export const metadata: Metadata = { title: "Project" };
 
@@ -56,6 +67,8 @@ export default async function ProjectDetailPage({
     { data: deliverableRows },
     clientRes,
     files,
+    intakeRes,
+    commercialsRes,
   ] = await Promise.all([
     supabase
       .from("project_phases")
@@ -77,12 +90,21 @@ export default async function ProjectDetailPage({
       ? supabase.from("v_clients").select("*").eq("id", project.client_id).maybeSingle()
       : Promise.resolve({ data: null }),
     listProjectFiles(ws, id),
+    // Both are RLS-gated: intake to above-wall members, commercials to
+    // executives and the assigned manager. Everyone else gets null.
+    supabase.from("project_intakes").select("*").eq("project_id", id).maybeSingle(),
+    supabase.from("project_commercials").select("*").eq("project_id", id).maybeSingle(),
   ]);
 
   const phases = (phaseRows ?? []) as ProjectPhase[];
   const tasks = (taskRows ?? []) as unknown as TaskWithAssignee[];
   const deliverables = (deliverableRows ?? []) as Deliverable[];
   const client = (clientRes.data ?? null) as VClient | null;
+  const intake = (intakeRes.data ?? null) as ProjectIntake | null;
+  const commercials = (commercialsRes.data ?? null) as ProjectCommercials | null;
+  const canEditCommercials =
+    ctx.membership.archetype === "executive" ||
+    (project.owner_id === ctx.userId && ctx.aboveWall);
 
   const done = tasks.filter((t) => t.status === "done").length;
   const fraction = tasks.length > 0 ? done / tasks.length : 0;
@@ -283,6 +305,32 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="flex flex-col gap-4">
+          {intake ? (
+            <RightRailPanel
+              title="Intake"
+              action={<IntakeStatusTag status={intake.status} />}
+            >
+              <ProjectIntakePanel
+                ws={ws}
+                projectId={id}
+                clientId={project.client_id}
+                intake={intake}
+              />
+            </RightRailPanel>
+          ) : null}
+
+          {commercials || canEditCommercials ? (
+            <RightRailPanel title="Commercials">
+              <CommercialsPanel
+                ws={ws}
+                projectId={id}
+                clientId={project.client_id}
+                commercials={commercials}
+                canEdit={canEditCommercials}
+              />
+            </RightRailPanel>
+          ) : null}
+
           <RightRailPanel title="Assigned people">
             {assignees.length === 0 ? (
               <p className="py-2 text-center text-[12.5px] text-text-3">

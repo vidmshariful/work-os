@@ -68,15 +68,23 @@ function useResetOnSuccess(state: WorkroomState, close?: () => void) {
 
 // ---- payments ----
 
+export interface PaymentProjectOption {
+  id: string;
+  code: string;
+}
+
 export function PaymentsCard({
   ws,
   clientId,
   payments,
+  projects = [],
 }: {
   ws: string;
   clientId: string;
   payments: ClientPayment[];
+  projects?: PaymentProjectOption[];
 }) {
+  const projectCodeById = new Map(projects.map((p) => [p.id, p.code]));
   const [adding, setAdding] = useState(false);
   const [state, formAction, pending] = useActionState(addPayment, initialState);
   const formRef = useResetOnSuccess(state, () => setAdding(false));
@@ -113,7 +121,14 @@ export function PaymentsCard({
               )}
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium text-text-1">{p.label}</p>
+              <p className="flex items-center gap-1.5 truncate text-[13px] font-medium text-text-1">
+                {p.label}
+                {p.project_id && projectCodeById.get(p.project_id) ? (
+                  <span className="font-mono text-[10.5px] font-medium text-text-3 tabular">
+                    {projectCodeById.get(p.project_id)}
+                  </span>
+                ) : null}
+              </p>
               <p className="text-[11.5px] text-text-3">
                 {p.paid_at
                   ? `Paid ${fmtTimeAgo(p.paid_at)}`
@@ -168,6 +183,16 @@ export function PaymentsCard({
             <input name="due_date" type="date" className={inputClass} />
           </div>
           <input name="invoice_url" placeholder="Invoice link, optional" className={inputClass} />
+          {projects.length > 0 ? (
+            <select name="project_id" className={inputClass} defaultValue="" aria-label="For project">
+              <option value="">Not tied to a project</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.code}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <div className="flex justify-end gap-1.5">
             <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
               Cancel

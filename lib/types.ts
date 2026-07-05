@@ -99,11 +99,31 @@ export interface VClient {
   kickoff_template_id: string | null;
   kickoff_timing: KickoffTiming | null;
   kickoff_done: boolean | null;
-  intake_status: IntakeStatus | null;
-  intake_form_url: string | null;
-  intake_sent_at: string | null;
-  intake_received_at: string | null;
-  intake_response_url: string | null;
+}
+
+// Per-project intake: one client runs many projects, each engagement
+// collects its own intake. Above-wall only.
+export interface ProjectIntake {
+  project_id: string;
+  status: IntakeStatus;
+  form_url: string | null;
+  sent_at: string | null;
+  received_at: string | null;
+  response_url: string | null;
+  response_note: string | null;
+  updated_by: string | null;
+  created_at: string;
+}
+
+// Per-project pricing and invoice terms. Readable only by executives and
+// the project's assigned manager; RLS returns zero rows to everyone else.
+export interface ProjectCommercials {
+  project_id: string;
+  price: number | null;
+  invoice_terms: string | null;
+  notes: string | null;
+  updated_by: string | null;
+  updated_at: string;
 }
 
 // ---- the client workroom (above-wall only tables) ----
@@ -122,6 +142,7 @@ export interface ClientContact {
 export interface ClientPayment {
   id: string;
   client_id: string;
+  project_id: string | null;
   label: string;
   amount: number;
   due_date: string | null;

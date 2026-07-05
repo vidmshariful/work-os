@@ -97,20 +97,15 @@ export function EditClientDialog({
               </select>
             </Field>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Intake form link" htmlFor="ec_intake">
-              <input id="ec_intake" name="intake_form_url" defaultValue={client.intake_form_url ?? ""} className={inputClass} />
+          {canEditOrigin ? (
+            <Field label="Origin" htmlFor="ec_origin" hint="Executives only.">
+              <select id="ec_origin" name="origin" className={inputClass} defaultValue={client.origin ?? "direct"}>
+                <option value="direct">Direct</option>
+                <option value="ghl_video">GHL Video</option>
+                <option value="ghl_animation">GHL Animation</option>
+              </select>
             </Field>
-            {canEditOrigin ? (
-              <Field label="Origin" htmlFor="ec_origin" hint="Executives only.">
-                <select id="ec_origin" name="origin" className={inputClass} defaultValue={client.origin ?? "direct"}>
-                  <option value="direct">Direct</option>
-                  <option value="ghl_video">GHL Video</option>
-                  <option value="ghl_animation">GHL Animation</option>
-                </select>
-              </Field>
-            ) : null}
-          </div>
+          ) : null}
           {state.error ? (
             <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
               {state.error}

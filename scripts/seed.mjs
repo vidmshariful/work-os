@@ -134,8 +134,8 @@ try {
   for (const [code, name, contact, email, origin, value, stage] of clientRows) {
     const r = await db.query(
       `insert into clients (workspace_id, code, commercial_name, origin, contract_value, stage, owner_id,
-                            kickoff_timing, kickoff_done, intake_status, website)
-       values ($1,$2,$3,$4,$5,$6,$7,'immediate',true,'received',$8) returning id`,
+                            kickoff_timing, kickoff_done, website)
+       values ($1,$2,$3,$4,$5,$6,$7,'immediate',true,$8) returning id`,
       [ws, code, name, origin, value, stage, ids.sadia, `https://${name.toLowerCase().replace(/[^a-z]+/g, "")}.com`]
     );
     clientIds.push(r.rows[0].id);
@@ -144,7 +144,8 @@ try {
       [r.rows[0].id, contact, email]
     );
   }
-  // A split payment plan on the confidential client: deposit paid, balance due.
+  // A split payment plan on the confidential client: deposit paid, balance
+  // due. Linked to the kickoff project after projects are seeded below.
   await db.query(
     `insert into client_payments (client_id, label, amount, due_date, paid_at, created_by) values
      ($1, 'Deposit 50%', 6000, $2, now() - interval '30 days', $3),
@@ -175,6 +176,22 @@ try {
   const p1 = await proj("PRJ-1001", 0, "Product explainer, 60 seconds", "explainer_video", "in_progress", dateIn(18), dateIn(-38));
   const p2 = await proj("PRJ-1002", 1, "Brand refresh kit", "brand_design", "review", dateIn(8), dateIn(-30));
   const p3 = await proj("PRJ-1003", 2, "Onboarding video series", "explainer_video", "backlog", null, null);
+
+  // Intake rows exist from the projects trigger; mark the running ones
+  // received and price each engagement (visible to exec + owner only).
+  await db.query(
+    `update project_intakes set status = 'received', received_at = now() - interval '30 days'
+     where project_id in ($1, $2)`,
+    [p1, p2]
+  );
+  await db.query(
+    `insert into project_commercials (project_id, price, invoice_terms, updated_by) values
+     ($1, 12000, '50% upfront, 50% before final delivery', $4),
+     ($2, 8500, '100% upfront', $4),
+     ($3, 6000, '100% upfront', $4)
+     on conflict (project_id) do nothing`,
+    [p1, p2, p3, ids.farhan]
+  );
 
   const phase = async (pid, name, order) =>
     (

@@ -35,8 +35,7 @@ const rakib = await signIn("rakib@vidiosa.com");
       c.origin === null &&
       c.contract_value === null &&
       c.website === null &&
-      c.highlevel_url === null &&
-      c.intake_status === null
+      c.highlevel_url === null
   );
   const hasCodes = (data ?? []).every((c) => c.code && c.stage);
   check("below wall: every commercial column is null", masked);
@@ -93,6 +92,7 @@ const WORKROOM_TABLES = [
   "client_activity",
   "client_todos",
   "client_notes",
+  "project_intakes",
 ];
 for (const table of WORKROOM_TABLES) {
   const { data, error } = await rakib.from(table).select("*");
@@ -112,6 +112,39 @@ for (const table of WORKROOM_TABLES) {
     const { error: e } = await nadia.from(table).select("*").limit(1);
     check(`above wall: ${table} readable`, !e, e?.message);
   }
+}
+
+// 8. Project commercials: pricing and invoice terms are readable ONLY by
+// executives and the project's assigned manager. The below-wall production
+// team and even above-wall non-owners get zero rows.
+{
+  const { data, error } = await rakib.from("project_commercials").select("*");
+  check("below wall: project_commercials is empty", !error && (data ?? []).length === 0, error?.message);
+
+  const { data: execRows, error: execErr } = await nadia.from("project_commercials").select("*");
+  check(
+    "executive: project commercials readable",
+    !execErr && (execRows ?? []).length >= 1,
+    execErr?.message ?? `${execRows?.length} rows`
+  );
+
+  const farhan = await signIn("farhan@vidiosa.com");
+  const { data: ownerRows } = await farhan.from("project_commercials").select("*");
+  check(
+    "assigned manager: sees own projects' commercials",
+    (ownerRows ?? []).length >= 1,
+    `${ownerRows?.length} rows`
+  );
+  await farhan.auth.signOut();
+
+  const sadia = await signIn("sadia@vidiosa.com");
+  const { data: revRows, error: revErr } = await sadia.from("project_commercials").select("*");
+  check(
+    "above-wall non-owner: project_commercials is empty",
+    !revErr && (revRows ?? []).length === 0,
+    revErr?.message ?? `${revRows?.length} rows`
+  );
+  await sadia.auth.signOut();
 }
 
 await rakib.auth.signOut();

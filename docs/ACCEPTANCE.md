@@ -88,6 +88,16 @@ The client section rebuilt around the studio's real flow: paid → onboard → i
 - **The wall, extended:** contacts, payments, documents, activity, to-dos, and notes are above-wall only via RLS; `v_clients` was rebuilt with the new masked columns. The wall test grew from 9 to 21 assertions and passes. Below the wall the client page remains a code, a stage, and its projects; verified in the browser as the animator: no names, no money, no intake, no pipeline view.
 - Hardening found during the build: function `EXECUTE` grants revoked from PUBLIC on notify/log/scaffold functions (migration 0011).
 
+## Clients refined: per-project intake, commercials, tabbed workroom ✅ (2026-07-05)
+
+Rework from studio feedback: one client runs many projects, so intake and money move to the project level.
+
+- **Intake per project.** Every client project carries its own intake (not sent / sent / received) with the form link and a submission area: response link plus a pasted summary the team can read where the work happens. Managed from the client's Projects tab and mirrored on the project detail rail. Receiving intake logs to the client activity and notifies the project owner that work can start. Verified live: edited the PRJ-1001 submission from the Projects tab.
+- **Project commercials.** Price and invoice terms per project in `project_commercials`, gated by RLS to executives and the project's assigned manager. Verified through the API: the executive reads all rows, the assigned manager reads his own, the above-wall closer reads zero, and below-wall production reads zero. The project detail page renders no trace of the panel for anyone else.
+- **Payments link to projects.** Payment rows carry an optional project, shown as a code chip; the Money tab summarizes account value, paid, and outstanding, with a pricing rail for permitted viewers.
+- **Tabbed workroom.** The client profile reorganized into Activity, Projects, Money, and Details tabs with counts; loading skeletons added for the clients routes. Kickoff timing simplified to now-or-later since intake now gates work at the project level; the new-client form takes kickoff price and invoice terms and attaches the intake form to the scaffolded project.
+- Wall test now 27 assertions, all green. Migration `0012`, plus the intake data migration from clients onto each kickoff project.
+
 ## Final state
 
 - `npx tsc --noEmit` clean, `npm run build` clean (24 routes), `npm run wall-test` all pass.

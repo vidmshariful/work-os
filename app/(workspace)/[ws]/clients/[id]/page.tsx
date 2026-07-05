@@ -1,13 +1,23 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FolderKanban, Plus, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { Card, CardBody, CardHeader } from "@/components/primitives/card";
-import { ClientStageChip, ConfidentialChip } from "@/components/primitives/tag";
+import {
+  ClientStageChip,
+  ConfidentialChip,
+  ProjectStatusChip,
+} from "@/components/primitives/tag";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { Breadcrumbs, CodeLabel } from "@/components/primitives/misc";
 import { RightRailPanel } from "@/components/primitives/right-rail";
+import { EmptyState } from "@/components/primitives/empty-state";
+import { StatCard } from "@/components/primitives/stat-card";
+import { Button } from "@/components/ui/button";
 import { clientLabel, isConfidential, isUnmasked } from "@/lib/wall";
+import { fmtMoney } from "@/lib/format";
 import {
   ClientIdentityCard,
   type ClientHealth,
@@ -18,7 +28,13 @@ import {
 } from "@/components/features/clients/client-projects-card";
 import { EditClientDialog } from "@/components/features/clients/edit-client-dialog";
 import { ActivityThread, type ThreadPerson } from "@/components/features/clients/activity-thread";
-import { IntakeCard, StageSelect } from "@/components/features/clients/intake-card";
+import { StageSelect } from "@/components/features/clients/stage-select";
+import { ClientTabs } from "@/components/features/clients/client-tabs";
+import {
+  ProjectIntakePanel,
+  IntakeStatusTag,
+} from "@/components/features/clients/project-intake-panel";
+import { CommercialsPanel } from "@/components/features/clients/commercials-card";
 import {
   ContactsCard,
   DocumentsCard,
@@ -34,17 +50,24 @@ import type {
   ClientNote,
   ClientPayment,
   ClientTodo,
+  ProjectCommercials,
+  ProjectIntake,
   VClient,
 } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Client" };
 
+const TAB_KEYS = ["activity", "projects", "money", "details"] as const;
+
 export default async function ClientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ ws: string; id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { ws, id } = await params;
+  const sp = await searchParams;
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
@@ -58,11 +81,10 @@ export default async function ClientDetailPage({
   const client = clientRow as VClient;
   const unmasked = isUnmasked(client);
 
-  // Work data, both sides of the wall.
   const [{ data: projectRows }, { data: taskRows }, ownerMap] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, code, title, status")
+      .select("id, code, title, status, owner_id")
       .eq("client_id", id)
       .order("created_at", { ascending: false }),
     supabase
@@ -71,7 +93,7 @@ export default async function ClientDetailPage({
       .eq("project.client_id", id),
     getOwnerProfiles(client.owner_id ? [client.owner_id] : []),
   ]);
-  const projects = (projectRows ?? []) as ClientProjectRow[];
+  const projects = (projectRows ?? []) as (ClientProjectRow & { owner_id: string | null })[];
   const owner = client.owner_id ? ownerMap[client.owner_id] ?? null : null;
 
   // Below the wall the page is a code, a stage, and the work. Done.
@@ -106,6 +128,7 @@ export default async function ClientDetailPage({
   }
 
   // The workroom, above the wall.
+  const projectIds = projects.map((p) => p.id);
   const [
     { data: contacts },
     { data: payments },
@@ -113,6 +136,8 @@ export default async function ClientDetailPage({
     { data: activity },
     { data: todos },
     { data: notes },
+    { data: intakeRows },
+    { data: commercialRows },
     { data: memberRows },
     owners,
   ] = await Promise.all([
@@ -122,6 +147,14 @@ export default async function ClientDetailPage({
     supabase.from("client_activity").select("*").eq("client_id", id).order("created_at").limit(80),
     supabase.from("client_todos").select("*").eq("client_id", id).order("is_done").order("created_at", { ascending: false }),
     supabase.from("client_notes").select("*").eq("client_id", id).order("created_at", { ascending: false }),
+    projectIds.length > 0
+      ? supabase.from("project_intakes").select("*").in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    // RLS trims this to what the viewer may see: executives get all, the
+    // assigned manager their own projects, everyone else nothing.
+    projectIds.length > 0
+      ? supabase.from("project_commercials").select("*").in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
     supabase
       .from("memberships")
       .select("profile_id, profile:profiles!profile_id(id, full_name, avatar_url)")
@@ -131,11 +164,18 @@ export default async function ClientDetailPage({
     getOwnerOptions(ctx.workspace.id),
   ]);
 
-  const people: ThreadPerson[] = ((memberRows ?? []) as unknown as {
-    profile: ThreadPerson;
-  }[])
+  const people: ThreadPerson[] = ((memberRows ?? []) as unknown as { profile: ThreadPerson }[])
     .map((m) => m.profile)
     .sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const intakeByProject = new Map(
+    ((intakeRows ?? []) as ProjectIntake[]).map((i) => [i.project_id, i])
+  );
+  const commercialsByProject = new Map(
+    ((commercialRows ?? []) as ProjectCommercials[]).map((c) => [c.project_id, c])
+  );
+  const paymentRows = (payments ?? []) as ClientPayment[];
+  const todoRows = (todos ?? []) as ClientTodo[];
+  const isExec = ctx.membership.archetype === "executive";
 
   // Account health, computed from the work itself.
   const tasks = (taskRows ?? []) as unknown as {
@@ -157,6 +197,14 @@ export default async function ClientDetailPage({
         ? tasks.reduce((s, t) => s + t.revision_count, 0) / done.length
         : null,
   };
+
+  const active = TAB_KEYS.includes(sp.tab as (typeof TAB_KEYS)[number])
+    ? (sp.tab as string)
+    : "activity";
+  const openTodos = todoRows.filter((t) => !t.is_done).length;
+  const unpaid = paymentRows.filter((p) => !p.paid_at);
+  const paid = paymentRows.filter((p) => p.paid_at).reduce((s, p) => s + Number(p.amount), 0);
+  const outstanding = unpaid.reduce((s, p) => s + Number(p.amount), 0);
 
   return (
     <div className="flex flex-col gap-5">
@@ -191,17 +239,28 @@ export default async function ClientDetailPage({
               ws={ws}
               client={client}
               owners={owners}
-              canEditOrigin={ctx.membership.archetype === "executive"}
+              canEditOrigin={isExec}
             />
           </div>
         ) : null}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="flex flex-col gap-4">
+      <ClientTabs
+        ws={ws}
+        clientId={id}
+        active={active}
+        tabs={[
+          { key: "activity", label: "Activity" },
+          { key: "projects", label: "Projects", count: projects.length },
+          { key: "money", label: "Money", count: unpaid.length },
+          { key: "details", label: "Details" },
+        ]}
+      />
+
+      {active === "activity" ? (
+        <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
           <Card>
-            <CardHeader title="Activity" />
-            <CardBody>
+            <CardBody className="pt-5">
               <ActivityThread
                 ws={ws}
                 clientId={id}
@@ -210,70 +269,210 @@ export default async function ClientDetailPage({
               />
             </CardBody>
           </Card>
-
-          <Card>
-            <CardHeader title="To-dos" />
-            <CardBody>
-              <TodosCard
+          <div className="flex flex-col gap-4">
+            <RightRailPanel title={openTodos > 0 ? `To-dos, ${openTodos} open` : "To-dos"}>
+              <TodosCard ws={ws} clientId={id} todos={todoRows} people={people} />
+            </RightRailPanel>
+            <RightRailPanel title="Notes">
+              <NotesCard
                 ws={ws}
                 clientId={id}
-                todos={(todos ?? []) as ClientTodo[]}
+                notes={(notes ?? []) as ClientNote[]}
                 people={people}
+                userId={ctx.userId}
               />
-            </CardBody>
-          </Card>
-
-          <ClientProjectsCard
-            projects={projects}
-            ws={ws}
-            canCreateProjects={
-              ctx.capabilities.canCreateProjects && client.stage !== "blacklist"
-            }
-          />
+            </RightRailPanel>
+          </div>
         </div>
+      ) : null}
 
+      {active === "projects" ? (
         <div className="flex flex-col gap-4">
-          <RightRailPanel title="Intake">
-            <IntakeCard ws={ws} client={client} />
-          </RightRailPanel>
-
-          <RightRailPanel title="Payments">
-            <PaymentsCard
-              ws={ws}
-              clientId={id}
-              payments={(payments ?? []) as ClientPayment[]}
-            />
-          </RightRailPanel>
-
-          <ClientIdentityCard client={client} health={health} />
-
-          <RightRailPanel title="Contacts">
-            <ContactsCard
-              ws={ws}
-              clientId={id}
-              contacts={(contacts ?? []) as ClientContact[]}
-            />
-          </RightRailPanel>
-
-          <RightRailPanel title="Documents">
-            <DocumentsCard
-              ws={ws}
-              clientId={id}
-              documents={(documents ?? []) as ClientDocument[]}
-            />
-          </RightRailPanel>
-
-          <RightRailPanel title="Notes">
-            <NotesCard
-              ws={ws}
-              clientId={id}
-              notes={(notes ?? []) as ClientNote[]}
-              people={people}
-              userId={ctx.userId}
-            />
-          </RightRailPanel>
+          {projects.length === 0 ? (
+            <Card>
+              <EmptyState
+                icon={<FolderKanban />}
+                title="No projects yet. New work for this client starts here."
+                action={
+                  ctx.capabilities.canCreateProjects && client.stage !== "blacklist" ? (
+                    <Button asChild>
+                      <Link href={`/${ws}/projects/new`}>New project</Link>
+                    </Button>
+                  ) : undefined
+                }
+              />
+            </Card>
+          ) : (
+            <>
+              <div className="flex justify-end">
+                {ctx.capabilities.canCreateProjects && client.stage !== "blacklist" ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/${ws}/projects/new`}>
+                      <Plus />
+                      New project
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
+              {projects.map((p) => {
+                const intake = intakeByProject.get(p.id);
+                const commercials = commercialsByProject.get(p.id) ?? null;
+                const canEditCommercials = isExec || p.owner_id === ctx.userId;
+                return (
+                  <Card key={p.id}>
+                    <CardHeader
+                      title={
+                        <span className="flex flex-wrap items-center gap-2.5">
+                          <Link
+                            href={`/${ws}/projects/${p.id}`}
+                            className="hover:text-brand"
+                          >
+                            {p.title}
+                          </Link>
+                          <CodeLabel code={p.code} />
+                          <ProjectStatusChip status={p.status} />
+                          {intake ? <IntakeStatusTag status={intake.status} /> : null}
+                        </span>
+                      }
+                      action={
+                        <Link
+                          href={`/${ws}/projects/${p.id}`}
+                          className="text-[12.5px] font-medium text-brand hover:underline"
+                        >
+                          Open project
+                        </Link>
+                      }
+                    />
+                    <CardBody>
+                      <div
+                        className={`grid gap-5 ${commercials || canEditCommercials ? "md:grid-cols-[1fr_240px]" : ""}`}
+                      >
+                        {intake ? (
+                          <div>
+                            <p className="group-label mb-2">Intake</p>
+                            <ProjectIntakePanel
+                              ws={ws}
+                              projectId={p.id}
+                              clientId={id}
+                              intake={intake}
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-[12.5px] text-text-3">
+                            Internal project, no intake.
+                          </p>
+                        )}
+                        {commercials || canEditCommercials ? (
+                          <div className="md:border-l md:border-border md:pl-5">
+                            <p className="group-label mb-2">Commercials</p>
+                            <CommercialsPanel
+                              ws={ws}
+                              projectId={p.id}
+                              clientId={id}
+                              commercials={commercials}
+                              canEdit={canEditCommercials}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    </CardBody>
+                  </Card>
+                );
+              })}
+            </>
+          )}
         </div>
-      </div>
+      ) : null}
+
+      {active === "money" ? (
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <StatCard
+              icon={<Wallet />}
+              value={client.contract_value !== null ? fmtMoney(client.contract_value) : "—"}
+              label="Account value"
+              tone="violet"
+            />
+            <StatCard icon={<Wallet />} value={fmtMoney(paid)} label="Paid" tone="green" />
+            <StatCard
+              icon={<Wallet />}
+              value={fmtMoney(outstanding)}
+              label="Outstanding"
+              tone={outstanding > 0 ? "amber" : "green"}
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+            <Card>
+              <CardHeader title="Payments" />
+              <CardBody>
+                <PaymentsCard
+                  ws={ws}
+                  clientId={id}
+                  payments={paymentRows}
+                  projects={projects.map((p) => ({ id: p.id, code: p.code }))}
+                />
+              </CardBody>
+            </Card>
+            {commercialsByProject.size > 0 ? (
+              <RightRailPanel title="Project pricing">
+                <div className="flex flex-col gap-2">
+                  {projects
+                    .filter((p) => commercialsByProject.has(p.id))
+                    .map((p) => {
+                      const c = commercialsByProject.get(p.id)!;
+                      return (
+                        <div key={p.id} className="flex items-center justify-between gap-2">
+                          <CodeLabel code={p.code} />
+                          <span className="text-right">
+                            <span className="block font-mono text-[13px] font-medium text-text-1 tabular">
+                              {c.price != null ? fmtMoney(Number(c.price)) : "—"}
+                            </span>
+                            {c.invoice_terms ? (
+                              <span className="block text-[11px] text-text-3">
+                                {c.invoice_terms}
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  <p className="mt-1 text-[11px] text-text-3">
+                    Only executives and assigned managers see pricing.
+                  </p>
+                </div>
+              </RightRailPanel>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {active === "details" ? (
+        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <div className="flex flex-col gap-4">
+            <Card>
+              <CardHeader title="Contacts" />
+              <CardBody>
+                <ContactsCard
+                  ws={ws}
+                  clientId={id}
+                  contacts={(contacts ?? []) as ClientContact[]}
+                />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardHeader title="Documents" />
+              <CardBody>
+                <DocumentsCard
+                  ws={ws}
+                  clientId={id}
+                  documents={(documents ?? []) as ClientDocument[]}
+                />
+              </CardBody>
+            </Card>
+          </div>
+          <ClientIdentityCard client={client} health={health} />
+        </div>
+      ) : null}
     </div>
   );
 }

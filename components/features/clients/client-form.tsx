@@ -60,7 +60,7 @@ export function NewClientForm({
   );
   const defaultTemplate = templates.find((t) => t.is_default) ?? templates[0];
   const [templateId, setTemplateId] = useState(defaultTemplate?.id ?? "");
-  const [timing, setTiming] = useState("on_intake");
+  const [timing, setTiming] = useState("immediate");
   const [plan, setPlan] = useState<PlanRow[]>([
     { label: "Full payment", amount: "", due_date: "" },
   ]);
@@ -237,13 +237,41 @@ export function NewClientForm({
             value={timing}
             onChange={(e) => setTiming(e.target.value)}
           >
-            <option value="on_intake">When intake is received</option>
             <option value="immediate">Right away</option>
             <option value="manual">Manually, later</option>
           </select>
         </Field>
       </div>
-      <Field label="Intake form link" htmlFor="intake_form_url" hint="Sent to the client after payment. Receiving it starts the work.">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          label="Project price"
+          htmlFor="kickoff_price"
+          hint="Visible to executives and the assigned manager only."
+        >
+          <input
+            id="kickoff_price"
+            name="kickoff_price"
+            type="number"
+            min="0"
+            step="50"
+            placeholder="9500"
+            className={`${inputClass} font-mono tabular`}
+          />
+        </Field>
+        <Field label="Invoice terms" htmlFor="invoice_terms">
+          <input
+            id="invoice_terms"
+            name="invoice_terms"
+            placeholder="50% upfront, 50% on delivery"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+      <Field
+        label="Intake form link"
+        htmlFor="intake_form_url"
+        hint="Attached to the kickoff project. The team marks it sent and received there."
+      >
         <input id="intake_form_url" name="intake_form_url" placeholder="forms.gle/..." className={inputClass} />
       </Field>
 
@@ -253,10 +281,8 @@ export function NewClientForm({
         {template
           ? `, and ${
               timing === "immediate"
-                ? "a kickoff project is scaffolded right away"
-                : timing === "on_intake"
-                  ? "the kickoff project is scaffolded the moment intake is received"
-                  : "the kickoff project waits for you to start it"
+                ? "a kickoff project is scaffolded right away with its own intake tracker"
+                : "the kickoff project waits for you to start it"
             } from ${template.name}: ${template.phases} phases, ${template.tasks} tasks, ${template.deliverables} deliverables, owned by ${ownerName}`
           : ""}
         . The team is notified with codes only.
