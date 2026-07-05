@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ListRow } from "@/components/primitives/list-row";
-import { ClientStatusChip, ConfidentialChip } from "@/components/primitives/tag";
+import { ClientStageChip, ConfidentialChip } from "@/components/primitives/tag";
 import { CodeLabel } from "@/components/primitives/misc";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { clientLabel, isConfidential, isUnmasked } from "@/lib/wall";
@@ -15,10 +15,12 @@ export function ClientRow({
   client,
   owner,
   ws,
+  outstanding,
 }: {
   client: VClient;
   owner: OwnerProfile | null;
   ws: string;
+  outstanding?: number | null;
 }) {
   const unmasked = isUnmasked(client);
 
@@ -46,14 +48,11 @@ export function ClientRow({
     return (
       <ListRow
         title={
-          <CodeLabel
-            code={client.code}
-            className="text-[13.5px] text-text-1"
-          />
+          <CodeLabel code={client.code} className="text-[13.5px] text-text-1" />
         }
         meta={
           <>
-            <ClientStatusChip status={client.status} />
+            <ClientStageChip stage={client.stage} />
             {ownerCell}
           </>
         }
@@ -74,7 +73,15 @@ export function ClientRow({
       meta={
         <>
           {ownerCell}
-          <ClientStatusChip status={client.status} />
+          {outstanding && outstanding > 0 ? (
+            <span
+              className="hidden font-mono text-[12px] font-medium text-wall tabular lg:inline"
+              title="Outstanding payments"
+            >
+              {fmtMoney(outstanding)} due
+            </span>
+          ) : null}
+          <ClientStageChip stage={client.stage} />
           <span className="w-24 text-right font-mono text-[12.5px] font-medium text-text-1 tabular">
             {client.contract_value !== null ? fmtMoney(client.contract_value) : ""}
           </span>

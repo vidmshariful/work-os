@@ -1,6 +1,7 @@
+import { ExternalLink } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/primitives/card";
 import { ORIGIN_LABELS } from "@/lib/wall";
-import { fmtDateFull, fmtMoney } from "@/lib/format";
+import { fmtDateFull, fmtMoney, fmtPercent } from "@/lib/format";
 import type { VClient } from "@/lib/types";
 
 function IdentityRow({
@@ -11,7 +12,7 @@ function IdentityRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-border py-2.5 last:border-b-0 last:pb-0 first:pt-0">
+    <div className="flex items-start justify-between gap-3 border-b border-border py-2.5 first:pt-0 last:border-b-0 last:pb-0">
       <span className="shrink-0 text-[12.5px] text-text-2">{label}</span>
       <span className="min-w-0 text-right text-[13px] font-medium text-text-1">
         {children}
@@ -20,32 +21,29 @@ function IdentityRow({
   );
 }
 
-// Commercial identity, above the wall only. The caller must never render
-// this below the wall: down there this data does not exist.
-export function ClientIdentityCard({ client }: { client: VClient }) {
+export interface ClientHealth {
+  delivered: number;
+  onTimeRate: number | null;
+  revisionRate: number | null;
+}
+
+// Commercial identity and computed account health, above the wall only.
+// Below the wall this card does not render at all.
+export function ClientIdentityCard({
+  client,
+  health,
+}: {
+  client: VClient;
+  health: ClientHealth;
+}) {
   return (
     <Card className="self-start">
-      <CardHeader title="Identity" />
+      <CardHeader title="Account" />
       <CardBody>
-        <IdentityRow label="Contact name">
-          {client.contact_name ?? <span className="font-normal text-text-3">Not set</span>}
-        </IdentityRow>
-        <IdentityRow label="Contact email">
-          {client.contact_email ? (
-            <a
-              href={`mailto:${client.contact_email}`}
-              className="break-all text-brand hover:underline"
-            >
-              {client.contact_email}
-            </a>
-          ) : (
-            <span className="font-normal text-text-3">Not set</span>
-          )}
-        </IdentityRow>
         <IdentityRow label="Origin">
           {client.origin ? ORIGIN_LABELS[client.origin] ?? client.origin : "Direct"}
         </IdentityRow>
-        <IdentityRow label="Contract value">
+        <IdentityRow label="Total value">
           <span className="font-mono tabular">
             {client.contract_value !== null ? (
               fmtMoney(client.contract_value)
@@ -54,8 +52,53 @@ export function ClientIdentityCard({ client }: { client: VClient }) {
             )}
           </span>
         </IdentityRow>
-        <IdentityRow label="Created">
+        <IdentityRow label="Website">
+          {client.website ? (
+            <a
+              href={client.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 break-all text-brand hover:underline"
+            >
+              {client.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              <ExternalLink className="size-3 shrink-0" />
+            </a>
+          ) : (
+            <span className="font-normal text-text-3">Not set</span>
+          )}
+        </IdentityRow>
+        <IdentityRow label="HighLevel">
+          {client.highlevel_url ? (
+            <a
+              href={client.highlevel_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-brand hover:underline"
+            >
+              Open record
+              <ExternalLink className="size-3 shrink-0" />
+            </a>
+          ) : (
+            <span className="font-normal text-text-3">Not linked</span>
+          )}
+        </IdentityRow>
+        <IdentityRow label="Client since">
           <span className="font-mono tabular">{fmtDateFull(client.created_at)}</span>
+        </IdentityRow>
+        <IdentityRow label="Delivered">
+          <span className="font-mono tabular">
+            {health.delivered} project{health.delivered === 1 ? "" : "s"}
+          </span>
+        </IdentityRow>
+        <IdentityRow label="On-time rate">
+          <span className="font-mono tabular">
+            {health.onTimeRate !== null ? fmtPercent(health.onTimeRate) : "—"}
+          </span>
+        </IdentityRow>
+        <IdentityRow label="Revisions per task">
+          <span className="font-mono tabular">
+            {health.revisionRate !== null ? health.revisionRate.toFixed(1) : "—"}
+          </span>
         </IdentityRow>
       </CardBody>
     </Card>

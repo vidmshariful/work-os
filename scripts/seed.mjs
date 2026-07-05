@@ -128,17 +128,34 @@ try {
   const clientRows = [
     ["CLT-1001", "Meridian Fitness", "Alex Moreno", "alex@meridianfitness.com", "ghl_video", 12000, "active"],
     ["CLT-1002", "Northbeam Robotics", "Priya Shah", "priya@northbeam.io", "direct", 8500, "active"],
-    ["CLT-1003", "Bluepine Dental", "Dan Whitfield", "dan@bluepinedental.com", "ghl_animation", 6000, "paused"],
+    ["CLT-1003", "Bluepine Dental", "Dan Whitfield", "dan@bluepinedental.com", "ghl_animation", 6000, "blocked"],
   ];
   const clientIds = [];
-  for (const [code, name, contact, email, origin, value, status] of clientRows) {
+  for (const [code, name, contact, email, origin, value, stage] of clientRows) {
     const r = await db.query(
-      `insert into clients (workspace_id, code, commercial_name, contact_name, contact_email, origin, contract_value, status, owner_id)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
-      [ws, code, name, contact, email, origin, value, status, ids.sadia]
+      `insert into clients (workspace_id, code, commercial_name, origin, contract_value, stage, owner_id,
+                            kickoff_timing, kickoff_done, intake_status, website)
+       values ($1,$2,$3,$4,$5,$6,$7,'immediate',true,'received',$8) returning id`,
+      [ws, code, name, origin, value, stage, ids.sadia, `https://${name.toLowerCase().replace(/[^a-z]+/g, "")}.com`]
     );
     clientIds.push(r.rows[0].id);
+    await db.query(
+      `insert into client_contacts (client_id, name, email, is_primary) values ($1,$2,$3,true)`,
+      [r.rows[0].id, contact, email]
+    );
   }
+  // A split payment plan on the confidential client: deposit paid, balance due.
+  await db.query(
+    `insert into client_payments (client_id, label, amount, due_date, paid_at, created_by) values
+     ($1, 'Deposit 50%', 6000, $2, now() - interval '30 days', $3),
+     ($1, 'Balance 50%', 6000, $4, null, $3)`,
+    [clientIds[0], dateIn(-32), ids.sadia, dateIn(20)]
+  );
+  await db.query(
+    `insert into client_notes (client_id, author_id, body) values
+     ($1, $2, 'Decision maker is Alex. Prefers Loom updates over calls, US Eastern hours.')`,
+    [clientIds[0], ids.sadia]
+  );
   await db.query("alter table clients enable trigger t1_clients_handoff");
   await db.query(
     `insert into workspace_counters (workspace_id, kind, value) values ($1, 'client', 1003), ($1, 'project', 1003)`,

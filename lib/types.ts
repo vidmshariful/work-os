@@ -27,7 +27,13 @@ export type Archetype =
 
 export type WallSide = "above" | "below";
 export type BrandOrigin = "direct" | "ghl_video" | "ghl_animation";
-export type ClientStatus = "active" | "paused" | "completed" | "archived";
+// The relationship pipeline. Onboard: paid, being set up. Active: work
+// running. Blocked: on hold. Blacklist: never again. Done: delivered, can
+// return to Active on a reorder.
+export type ClientStage = "onboard" | "active" | "blocked" | "blacklist" | "done";
+export type KickoffTiming = "immediate" | "on_intake" | "manual";
+export type IntakeStatus = "not_sent" | "sent" | "received";
+export type ContractStatus = "none" | "draft" | "sent" | "signed";
 export type ProjectStatus =
   | "backlog"
   | "in_progress"
@@ -79,7 +85,8 @@ export interface VClient {
   id: string;
   workspace_id: string;
   code: string;
-  status: ClientStatus;
+  stage: ClientStage;
+  stage_changed_at: string;
   owner_id: string | null;
   created_at: string;
   commercial_name: string | null;
@@ -87,6 +94,83 @@ export interface VClient {
   contact_email: string | null;
   origin: BrandOrigin | null;
   contract_value: number | null;
+  website: string | null;
+  highlevel_url: string | null;
+  kickoff_template_id: string | null;
+  kickoff_timing: KickoffTiming | null;
+  kickoff_done: boolean | null;
+  intake_status: IntakeStatus | null;
+  intake_form_url: string | null;
+  intake_sent_at: string | null;
+  intake_received_at: string | null;
+  intake_response_url: string | null;
+}
+
+// ---- the client workroom (above-wall only tables) ----
+
+export interface ClientContact {
+  id: string;
+  client_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  role_label: string | null;
+  is_primary: boolean;
+  created_at: string;
+}
+
+export interface ClientPayment {
+  id: string;
+  client_id: string;
+  label: string;
+  amount: number;
+  due_date: string | null;
+  invoice_url: string | null;
+  paid_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  title: string;
+  doc_type: string;
+  contract_status: ContractStatus;
+  storage_path: string | null;
+  external_url: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ClientActivity {
+  id: string;
+  client_id: string;
+  kind: "message" | "system";
+  author_id: string | null;
+  body: string;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ClientTodo {
+  id: string;
+  client_id: string;
+  title: string;
+  assignee_id: string | null;
+  due_date: string | null;
+  is_done: boolean;
+  done_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ClientNote {
+  id: string;
+  client_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
 }
 
 export interface Project {

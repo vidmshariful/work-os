@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import type {
   TaskStatus,
   ProjectStatus,
-  ClientStatus,
+  ClientStage,
   LeaveStatus,
 } from "@/lib/types";
 
@@ -71,11 +71,12 @@ const PROJECT_STATUS: Record<ProjectStatus, { tone: TagTone; label: string }> = 
   archived: { tone: "gray", label: "Archived" },
 };
 
-const CLIENT_STATUS: Record<ClientStatus, { tone: TagTone; label: string }> = {
+export const CLIENT_STAGES: Record<ClientStage, { tone: TagTone; label: string }> = {
+  onboard: { tone: "blue", label: "Onboard" },
   active: { tone: "green", label: "Active" },
-  paused: { tone: "amber", label: "Paused" },
-  completed: { tone: "blue", label: "Completed" },
-  archived: { tone: "gray", label: "Archived" },
+  blocked: { tone: "amber", label: "Blocked" },
+  blacklist: { tone: "rose", label: "Black list" },
+  done: { tone: "gray", label: "Done" },
 };
 
 const LEAVE_STATUS: Record<LeaveStatus, { tone: TagTone; label: string }> = {
@@ -95,8 +96,8 @@ export function ProjectStatusChip({ status }: { status: ProjectStatus }) {
   return <Tag tone={s.tone}>{s.label}</Tag>;
 }
 
-export function ClientStatusChip({ status }: { status: ClientStatus }) {
-  const s = CLIENT_STATUS[status];
+export function ClientStageChip({ stage }: { stage: ClientStage }) {
+  const s = CLIENT_STAGES[stage];
   return <Tag tone={s.tone}>{s.label}</Tag>;
 }
 

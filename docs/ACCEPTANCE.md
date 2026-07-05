@@ -75,6 +75,19 @@ Wall acceptance test (`npm run wall-test`, runs through PostgREST with real user
 1. `next_code()` ambiguity (migration 0009), caught by the live handoff test.
 2. PostgREST embeds from `memberships` to `profiles` require the `!profile_id` FK hint because `reports_to` also references profiles. Applied across team, admin, performance, projects, tasks, and search queries.
 
+## Clients complete (v1.1, first section) ✅ (2026-07-05)
+
+The client section rebuilt around the studio's real flow: paid → onboard → intake → work.
+
+- **Pipeline:** `stage` replaces the old status (Onboard, Active, Blocked, Black list, Done). List view groups by stage with search and stage/origin/owner filters; the pipeline board (above wall only) supports drag and drop between stages with days-in-stage and outstanding balances on cards. Verified by dragging Bluepine from Blocked to Active in the browser; the move persisted and was logged to the client's activity.
+- **Payments:** scheduled payments per client (split plans supported), invoice links, mark-paid, paid/due/overdue states, outstanding totals on the list, board, and profile.
+- **Documents:** contracts (draft/sent/signed), proposals, uploads and external links, signed URLs server-side.
+- **Intake drives work:** clients carry intake state (not sent/sent/received) and a kickoff timing (immediately / when intake is received / manually). **Live test:** created CLT-1005 with a 50/50 plan and on-intake timing → zero projects existed → marked intake sent, then received → PRJ-1005 scaffolded automatically with 5 phases, team notified, every step logged: "Intake form received. Work can start."
+- **Workroom (above wall only):** activity thread mixing team messages and system events, @mentions with notifications (verified: mention on CLT-1001 notified the closer with a code-only title), client to-dos with assignees and due dates, pinned notes, multiple contacts with a primary flag, account facts with computed health (delivered, on-time rate, revision rate).
+- **Automation:** a project moving to in progress activates an Onboard or Done client (verified live); blacklisted clients refuse all new work at the database level (verified: insert rejected).
+- **The wall, extended:** contacts, payments, documents, activity, to-dos, and notes are above-wall only via RLS; `v_clients` was rebuilt with the new masked columns. The wall test grew from 9 to 21 assertions and passes. Below the wall the client page remains a code, a stage, and its projects; verified in the browser as the animator: no names, no money, no intake, no pipeline view.
+- Hardening found during the build: function `EXECUTE` grants revoked from PUBLIC on notify/log/scaffold functions (migration 0011).
+
 ## Final state
 
 - `npx tsc --noEmit` clean, `npm run build` clean (24 routes), `npm run wall-test` all pass.

@@ -1,15 +1,14 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { toast } from "sonner";
+import { useActionState, useMemo, useState } from "react";
+import { Plus, X } from "lucide-react";
 import { Field } from "@/components/primitives/field";
 import { Button } from "@/components/ui/button";
+import { fmtMoney } from "@/lib/format";
 import {
   createClientRecord,
-  updateClient,
   type ClientFormState,
 } from "@/lib/actions/clients";
-import type { VClient } from "@/lib/types";
 import type { OwnerOption } from "./queries";
 
 const initialState: ClientFormState = { error: null };
@@ -23,110 +22,108 @@ const ORIGIN_OPTIONS = [
   { value: "ghl_animation", label: "GHL Animation" },
 ];
 
-// Create and edit form for client records. Rendered only above the wall or
-// for revenue members; the server action re-checks regardless.
-export function ClientForm({
+export interface KickoffTemplateOption {
+  id: string;
+  name: string;
+  phases: number;
+  tasks: number;
+  deliverables: number;
+  is_default: boolean;
+}
+
+interface PlanRow {
+  label: string;
+  amount: string;
+  due_date: string;
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <div className="group-label border-b border-border pb-1.5">{children}</div>;
+}
+
+// New client intake. Three sections ending in a live handoff preview, so
+// the automation is visible before it runs.
+export function NewClientForm({
   ws,
   owners,
-  client,
-  canEditOrigin,
+  templates,
+  ownerName,
 }: {
   ws: string;
   owners: OwnerOption[];
-  client?: VClient;
-  canEditOrigin: boolean;
+  templates: KickoffTemplateOption[];
+  ownerName: string;
 }) {
-  const isEdit = Boolean(client);
   const [state, formAction, pending] = useActionState(
-    isEdit ? updateClient : createClientRecord,
+    createClientRecord,
     initialState
   );
+  const defaultTemplate = templates.find((t) => t.is_default) ?? templates[0];
+  const [templateId, setTemplateId] = useState(defaultTemplate?.id ?? "");
+  const [timing, setTiming] = useState("on_intake");
+  const [plan, setPlan] = useState<PlanRow[]>([
+    { label: "Full payment", amount: "", due_date: "" },
+  ]);
 
-  useEffect(() => {
-    if (state.success) toast.success("Client saved.");
-  }, [state]);
+  const template = templates.find((t) => t.id === templateId);
+  const planTotal = useMemo(
+    () => plan.reduce((sum, row) => sum + (Number(row.amount) || 0), 0),
+    [plan]
+  );
+
+  const setRow = (i: number, patch: Partial<PlanRow>) =>
+    setPlan((rows) => rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+
+  const splitPlan = () =>
+    setPlan([
+      { label: "Deposit 50%", amount: "", due_date: "" },
+      { label: "Balance 50%", amount: "", due_date: "" },
+    ]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="ws" value={ws} />
-      {client ? <input type="hidden" name="id" value={client.id} /> : null}
+      <input type="hidden" name="payment_plan" value={JSON.stringify(plan)} />
 
+      <SectionLabel>Who they are</SectionLabel>
       <Field label="Commercial name" htmlFor="commercial_name">
-        <input
-          id="commercial_name"
-          name="commercial_name"
-          required
-          defaultValue={client?.commercial_name ?? ""}
-          placeholder="Acme Fitness"
-          className={inputClass}
-        />
+        <input id="commercial_name" name="commercial_name" required placeholder="Acme Fitness" className={inputClass} />
       </Field>
-
       <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Website" htmlFor="website">
+          <input id="website" name="website" placeholder="acme.com" className={inputClass} />
+        </Field>
+        <Field
+          label="Origin"
+          htmlFor="origin"
+          hint="Origin is above-wall data. Below the wall it does not exist."
+        >
+          <select id="origin" name="origin" className={inputClass} defaultValue="direct">
+            {ORIGIN_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Contact name" htmlFor="contact_name">
-          <input
-            id="contact_name"
-            name="contact_name"
-            defaultValue={client?.contact_name ?? ""}
-            placeholder="Jamie Rivera"
-            className={inputClass}
-          />
+          <input id="contact_name" name="contact_name" placeholder="Jamie Rivera" className={inputClass} />
         </Field>
         <Field label="Contact email" htmlFor="contact_email">
-          <input
-            id="contact_email"
-            name="contact_email"
-            type="email"
-            defaultValue={client?.contact_email ?? ""}
-            placeholder="jamie@acme.com"
-            className={inputClass}
-          />
+          <input id="contact_email" name="contact_email" type="email" placeholder="jamie@acme.com" className={inputClass} />
+        </Field>
+        <Field label="Contact phone" htmlFor="contact_phone">
+          <input id="contact_phone" name="contact_phone" placeholder="+1 555 0100" className={inputClass} />
         </Field>
       </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        {!isEdit || canEditOrigin ? (
-          <Field
-            label="Origin"
-            htmlFor="origin"
-            hint="Origin is above-wall data. Below the wall it does not exist."
-          >
-            <select
-              id="origin"
-              name="origin"
-              className={inputClass}
-              defaultValue={client?.origin ?? "direct"}
-            >
-              {ORIGIN_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-        ) : null}
-        <Field label="Contract value" htmlFor="contract_value">
-          <input
-            id="contract_value"
-            name="contract_value"
-            type="number"
-            min="0"
-            step="100"
-            defaultValue={client?.contract_value ?? ""}
-            placeholder="12000"
-            className={`${inputClass} font-mono tabular`}
-          />
+        <Field label="HighLevel record" htmlFor="highlevel_url" hint="Sales history stays in HighLevel.">
+          <input id="highlevel_url" name="highlevel_url" placeholder="app.gohighlevel.com/..." className={inputClass} />
         </Field>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Owner" htmlFor="owner_id">
-          <select
-            id="owner_id"
-            name="owner_id"
-            className={inputClass}
-            defaultValue={client?.owner_id ?? "none"}
-          >
+          <select id="owner_id" name="owner_id" className={inputClass} defaultValue="none">
             <option value="none">Unassigned</option>
             {owners.map((o) => (
               <option key={o.id} value={o.id}>
@@ -135,19 +132,134 @@ export function ClientForm({
             ))}
           </select>
         </Field>
-        <Field label="Status" htmlFor="status">
-          <select
-            id="status"
-            name="status"
-            className={inputClass}
-            defaultValue={client?.status ?? "active"}
+      </div>
+
+      <SectionLabel>The deal</SectionLabel>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Total value" htmlFor="contract_value">
+          <input
+            id="contract_value"
+            name="contract_value"
+            type="number"
+            min="0"
+            step="100"
+            placeholder="9500"
+            className={`${inputClass} font-mono tabular`}
+          />
+        </Field>
+        <div className="flex items-end pb-0.5">
+          <Button type="button" variant="outline" size="sm" onClick={splitPlan}>
+            Split 50/50
+          </Button>
+        </div>
+      </div>
+      <Field
+        label="Payment plan"
+        hint={
+          planTotal > 0
+            ? `Scheduled: ${fmtMoney(planTotal)}. Paid rows get checked off on the client page.`
+            : "Track what was invoiced and what is still due."
+        }
+      >
+        <div className="flex flex-col gap-2">
+          {plan.map((row, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                aria-label={`Payment ${i + 1} label`}
+                value={row.label}
+                onChange={(e) => setRow(i, { label: e.target.value })}
+                placeholder="Deposit 50%"
+                className={inputClass}
+              />
+              <input
+                aria-label={`Payment ${i + 1} amount`}
+                value={row.amount}
+                onChange={(e) => setRow(i, { amount: e.target.value })}
+                type="number"
+                min="0"
+                step="50"
+                placeholder="4750"
+                className={`${inputClass} max-w-[120px] font-mono tabular`}
+              />
+              <input
+                aria-label={`Payment ${i + 1} due date`}
+                value={row.due_date}
+                onChange={(e) => setRow(i, { due_date: e.target.value })}
+                type="date"
+                className={`${inputClass} max-w-[150px]`}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Remove payment"
+                onClick={() => setPlan((rows) => rows.filter((_, idx) => idx !== i))}
+              >
+                <X />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="self-start"
+            onClick={() => setPlan((rows) => [...rows, { label: "", amount: "", due_date: "" }])}
           >
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="completed">Completed</option>
-            <option value="archived">Archived</option>
+            <Plus />
+            Add payment
+          </Button>
+        </div>
+      </Field>
+
+      <SectionLabel>What we sold</SectionLabel>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Kickoff template" htmlFor="kickoff_template_id">
+          <select
+            id="kickoff_template_id"
+            name="kickoff_template_id"
+            className={inputClass}
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+          >
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
           </select>
         </Field>
+        <Field label="Create the kickoff project" htmlFor="kickoff_timing">
+          <select
+            id="kickoff_timing"
+            name="kickoff_timing"
+            className={inputClass}
+            value={timing}
+            onChange={(e) => setTiming(e.target.value)}
+          >
+            <option value="on_intake">When intake is received</option>
+            <option value="immediate">Right away</option>
+            <option value="manual">Manually, later</option>
+          </select>
+        </Field>
+      </div>
+      <Field label="Intake form link" htmlFor="intake_form_url" hint="Sent to the client after payment. Receiving it starts the work.">
+        <input id="intake_form_url" name="intake_form_url" placeholder="forms.gle/..." className={inputClass} />
+      </Field>
+
+      <div className="rounded-[10px] bg-brand-soft/60 px-4 py-3 text-[12.5px] leading-relaxed text-text-1">
+        <span className="font-semibold">What happens on create:</span>{" "}
+        the client lands in Onboard
+        {template
+          ? `, and ${
+              timing === "immediate"
+                ? "a kickoff project is scaffolded right away"
+                : timing === "on_intake"
+                  ? "the kickoff project is scaffolded the moment intake is received"
+                  : "the kickoff project waits for you to start it"
+            } from ${template.name}: ${template.phases} phases, ${template.tasks} tasks, ${template.deliverables} deliverables, owned by ${ownerName}`
+          : ""}
+        . The team is notified with codes only.
       </div>
 
       {state.error ? (
@@ -156,16 +268,9 @@ export function ClientForm({
         </p>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
-        {!isEdit ? (
-          <p className="text-[12px] text-text-3">
-            Creating a client scaffolds its first project automatically.
-          </p>
-        ) : (
-          <span />
-        )}
+      <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving" : isEdit ? "Save changes" : "Create client"}
+          {pending ? "Creating" : "Create client"}
         </Button>
       </div>
     </form>

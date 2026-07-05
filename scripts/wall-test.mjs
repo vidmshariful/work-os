@@ -22,7 +22,7 @@ async function signIn(email) {
   return client;
 }
 
-// 1. Below-wall animator: codes and status yes, commercial identity null.
+// 1. Below-wall animator: codes and stage yes, commercial identity null.
 const rakib = await signIn("rakib@vidiosa.com");
 {
   const { data, error } = await rakib.from("v_clients").select("*");
@@ -33,11 +33,14 @@ const rakib = await signIn("rakib@vidiosa.com");
       c.contact_name === null &&
       c.contact_email === null &&
       c.origin === null &&
-      c.contract_value === null
+      c.contract_value === null &&
+      c.website === null &&
+      c.highlevel_url === null &&
+      c.intake_status === null
   );
-  const hasCodes = (data ?? []).every((c) => c.code && c.status);
+  const hasCodes = (data ?? []).every((c) => c.code && c.stage);
   check("below wall: every commercial column is null", masked);
-  check("below wall: code and status present on every row", hasCodes);
+  check("below wall: code and stage present on every row", hasCodes);
 }
 
 // 2. Above-wall Operations Manager: real values including origin.
@@ -79,6 +82,36 @@ const nadia = await signIn("nadia@vidiosa.com");
 {
   const { data, error } = await rakib.from("projects").select("code,title,status");
   check("below wall: projects readable by code and title", !error && (data?.length ?? 0) >= 3, error?.message);
+}
+
+// 6. The client workroom does not exist below the wall. Every table returns
+// zero rows, silently, exactly like an empty world.
+const WORKROOM_TABLES = [
+  "client_contacts",
+  "client_payments",
+  "client_documents",
+  "client_activity",
+  "client_todos",
+  "client_notes",
+];
+for (const table of WORKROOM_TABLES) {
+  const { data, error } = await rakib.from(table).select("*");
+  check(
+    `below wall: ${table} is empty`,
+    !error && (data ?? []).length === 0,
+    error?.message ?? `${data?.length} rows`
+  );
+}
+
+// 7. Above the wall the workroom is real: the migrated primary contacts
+// exist and every table reads without error.
+{
+  const { data, error } = await nadia.from("client_contacts").select("*");
+  check("above wall: client contacts readable", !error && (data?.length ?? 0) >= 3, error?.message ?? `${data?.length} rows`);
+  for (const table of WORKROOM_TABLES.filter((t) => t !== "client_contacts")) {
+    const { error: e } = await nadia.from(table).select("*").limit(1);
+    check(`above wall: ${table} readable`, !e, e?.message);
+  }
 }
 
 await rakib.auth.signOut();
