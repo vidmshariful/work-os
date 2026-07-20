@@ -17,6 +17,12 @@ export interface ClientOption {
   label: string;
 }
 
+export interface DeptOption {
+  id: string;
+  name: string;
+  lists: { id: string; name: string }[];
+}
+
 const initialState: ProjectFormState = { error: null };
 
 const inputClass =
@@ -29,13 +35,19 @@ export function NewProjectForm({
   templates,
   clients,
   members,
+  departments,
   defaultOwnerId,
+  defaultDepartmentId,
+  defaultListId,
 }: {
   ws: string;
   templates: TemplateOption[];
   clients: ClientOption[];
   members: MemberOption[];
+  departments: DeptOption[];
   defaultOwnerId: string;
+  defaultDepartmentId?: string;
+  defaultListId?: string;
 }) {
   const [state, formAction, pending] = useActionState(
     createProject,
@@ -43,6 +55,11 @@ export function NewProjectForm({
   );
   const [title, setTitle] = useState("");
   const [type, setType] = useState("");
+  const [dept, setDept] = useState(
+    defaultDepartmentId ?? departments[0]?.id ?? ""
+  );
+  const [list, setList] = useState(defaultListId ?? "");
+  const lists = departments.find((d) => d.id === dept)?.lists ?? [];
   // The last values a template prefilled, so a manual edit is never
   // overwritten by switching templates.
   const prefills = useRef({ title: "", type: "" });
@@ -100,6 +117,45 @@ export function NewProjectForm({
           onChange={(e) => setTitle(e.target.value)}
         />
       </Field>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Department" htmlFor="department_id" hint="Which space this work lives in.">
+          <select
+            id="department_id"
+            name="department_id"
+            className={inputClass}
+            value={dept}
+            onChange={(e) => {
+              setDept(e.target.value);
+              setList("");
+            }}
+          >
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="List" htmlFor="list_id" hint="Optional bucket inside the department.">
+          <select
+            id="list_id"
+            name="list_id"
+            className={inputClass}
+            value={list}
+            onChange={(e) => setList(e.target.value)}
+            disabled={lists.length === 0}
+          >
+            <option value="">No list</option>
+            {lists.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Client" htmlFor="client_id">

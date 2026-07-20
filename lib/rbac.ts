@@ -4,9 +4,12 @@ import type { Archetype, WallSide } from "@/lib/types";
 
 export type NavKey =
   | "home"
+  | "tasks"
+  | "todos"
+  | "departments"
   | "clients"
   | "projects"
-  | "tasks"
+  | "database"
   | "team"
   | "hr"
   | "performance"
@@ -20,7 +23,10 @@ export interface NavGroup {
 }
 
 const ALL_GROUPS: NavGroup[] = [
-  { label: "Work", items: ["home", "clients", "projects", "tasks"] },
+  // My Zone is the personal layer every member gets: their overview, their
+  // assigned work, and their private checklist.
+  { label: "My Zone", items: ["home", "tasks", "todos"] },
+  { label: "Work", items: ["departments", "clients", "projects", "database"] },
   { label: "People", items: ["team", "hr"] },
   // Growth and Skills is Phase 9. Hidden in v1.
   { label: "Insight", items: ["performance", "calendar"] },
@@ -30,9 +36,12 @@ const ALL_GROUPS: NavGroup[] = [
 const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
   executive: [
     "home",
+    "tasks",
+    "todos",
+    "departments",
     "clients",
     "projects",
-    "tasks",
+    "database",
     "team",
     "hr",
     "performance",
@@ -41,9 +50,12 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
   ],
   domain_manager: [
     "home",
+    "tasks",
+    "todos",
+    "departments",
     "clients",
     "projects",
-    "tasks",
+    "database",
     "team",
     "hr",
     "performance",
@@ -51,9 +63,12 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
   ],
   team_lead: [
     "home",
+    "tasks",
+    "todos",
+    "departments",
     "clients",
     "projects",
-    "tasks",
+    "database",
     "team",
     "hr",
     "performance",
@@ -61,15 +76,30 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
   ],
   contributor: [
     "home",
+    "tasks",
+    "todos",
+    "departments",
     "clients",
     "projects",
-    "tasks",
+    "database",
     "team",
     "hr",
     "performance",
     "calendar",
   ],
-  revenue: ["home", "clients", "projects", "team", "hr", "performance", "calendar"],
+  revenue: [
+    "home",
+    "tasks",
+    "todos",
+    "departments",
+    "clients",
+    "projects",
+    "database",
+    "team",
+    "hr",
+    "performance",
+    "calendar",
+  ],
 };
 
 export function navGroupsFor(archetype: Archetype): NavGroup[] {

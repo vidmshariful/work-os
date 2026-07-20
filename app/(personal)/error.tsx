@@ -1,0 +1,33 @@
+"use client";
+
+import { useEffect } from "react";
+import { TriangleAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// Error boundary for the personal layer routes, with a retry.
+export default function PersonalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full bg-danger-soft text-danger">
+        <TriangleAlert className="size-6" strokeWidth={1.5} />
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold text-text-1">Something went wrong</h2>
+        <p className="mt-1 text-sm text-text-2">
+          This page hit an error. You can try loading it again.
+        </p>
+      </div>
+      <Button onClick={reset}>Try again</Button>
+    </div>
+  );
+}

@@ -21,7 +21,7 @@ import { EmptyState } from "@/components/primitives/empty-state";
 import { fmtDate, fmtTimeAgo } from "@/lib/format";
 import type { Announcement, Notification, TaskStatus } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Home" };
+export const metadata: Metadata = { title: "Dashboard" };
 
 interface HomeTask {
   id: string;

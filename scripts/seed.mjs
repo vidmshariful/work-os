@@ -6,7 +6,13 @@ import { createClient } from "@supabase/supabase-js";
 import { connect, loadEnv } from "./db.mjs";
 
 const env = loadEnv();
-const SEED_PASSWORD = process.env.SEED_PASSWORD || "Vidiosa#2026";
+// No credential lives in this repo. Set SEED_PASSWORD in .env.local (git
+// ignored) or pass it in the environment.
+const SEED_PASSWORD = process.env.SEED_PASSWORD || env.SEED_PASSWORD;
+if (!SEED_PASSWORD) {
+  console.error("[seed] Set SEED_PASSWORD in .env.local before seeding.");
+  process.exit(1);
+}
 
 const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -86,6 +92,28 @@ try {
       [ids[p.key], ws, p.role, p.archetype, p.reportsTo ? ids[p.reportsTo] : null, p.wall]
     );
   }
+
+  console.log("[seed] departments");
+  await db.query(
+    `insert into departments (workspace_id, name, slug, accent_color, sort_order, is_default) values
+     ($1,'Production','production','#7C5CFC',0,true),
+     ($1,'Marketing','marketing','#16A34A',1,false),
+     ($1,'Sales','sales','#3B6FF6',2,false),
+     ($1,'Administration','administration','#8A94A3',3,false)`,
+    [ws]
+  );
+  await db.query(
+    `insert into department_members (department_id, profile_id)
+     select d.id, m.profile_id from memberships m
+     join departments d on d.workspace_id = m.workspace_id
+     where m.workspace_id = $1 and m.is_active and (
+       (d.slug='production' and m.role in ('animator','animation_lead','designer','design_lead','creative_lead','editor','editing_lead')) or
+       (d.slug='marketing' and m.role in ('marketer','marketing_manager')) or
+       (d.slug='sales' and m.role in ('closer','appointment_setter')) or
+       (d.slug='administration' and m.role in ('ops_manager','ceo','cfo'))
+     ) on conflict do nothing`,
+    [ws]
+  );
 
   console.log("[seed] templates");
   const explainerStructure = {
@@ -321,6 +349,15 @@ try {
      ($1, 'Welcome to Work OS', 'This replaces ClickUp and Retable from today. Your tasks, projects, leave, and performance all live here.', $2),
      ($1, 'July delivery push', 'Three deliveries land this month. Check your My Tasks list every morning.', $3)`,
     [ws, ids.shariful, ids.nadia]
+  );
+
+  // File every project (seeded and handoff-scaffolded) into the default
+  // department so scoped visibility works from the first load.
+  await db.query(
+    `update projects set department_id = (
+       select id from departments where workspace_id = $1 and is_default limit 1
+     ) where workspace_id = $1 and department_id is null`,
+    [ws]
   );
 
   await db.query("commit");

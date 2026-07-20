@@ -7,6 +7,7 @@ import { Field } from "@/components/primitives/field";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { ROLE_LABELS } from "@/components/shell/sidebar";
 import { Tag } from "@/components/primitives/tag";
+import { ChangePasswordForm } from "@/components/features/account/change-password-form";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -58,6 +59,13 @@ export default async function AccountPage() {
               </button>
             </div>
           </form>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="Password" />
+        <CardBody>
+          <ChangePasswordForm />
         </CardBody>
       </Card>
 

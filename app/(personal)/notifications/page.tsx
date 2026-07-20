@@ -3,10 +3,9 @@ import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/data/context";
 import { Card } from "@/components/primitives/card";
-import { Tag } from "@/components/primitives/tag";
 import { EmptyState } from "@/components/primitives/empty-state";
-import { fmtTimeAgo } from "@/lib/format";
-import { markAllNotificationsRead, markNotificationRead } from "@/lib/actions/notifications";
+import { markAllNotificationsRead } from "@/lib/actions/notifications";
+import { NotificationHubList } from "@/components/features/notifications/hub-list";
 import type { Notification } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Notifications" };
@@ -26,7 +25,12 @@ export default async function NotificationsHub() {
     .limit(100);
 
   const notifications = (data ?? []) as Notification[];
-  const wsById = new Map(session.memberships.map((m) => [m.workspace.id, m.workspace]));
+  const workspaces = Object.fromEntries(
+    session.memberships.map((m) => [
+      m.workspace.id,
+      { name: m.workspace.name, slug: m.workspace.slug },
+    ])
+  );
   const unread = notifications.filter((n) => !n.is_read).length;
 
   return (
@@ -56,37 +60,7 @@ export default async function NotificationsHub() {
         {notifications.length === 0 ? (
           <EmptyState icon={<Bell />} title="Notifications will appear here as work moves." />
         ) : (
-          notifications.map((n) => {
-            const ws = wsById.get(n.workspace_id);
-            return (
-              <div
-                key={n.id}
-                className="flex items-start gap-3 border-b border-border px-5 py-3.5 last:border-b-0"
-              >
-                <span className={`mt-2 size-1.5 shrink-0 rounded-full ${n.is_read ? "bg-transparent" : "bg-brand"}`} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text-1">{n.title}</p>
-                  {n.body ? <p className="mt-0.5 text-[12.5px] text-text-2">{n.body}</p> : null}
-                  <p className="mt-1 text-[11.5px] text-text-3">{fmtTimeAgo(n.created_at)}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {ws ? <Tag tone="blue">{ws.name}</Tag> : null}
-                  {!n.is_read ? (
-                    <form
-                      action={async () => {
-                        "use server";
-                        await markNotificationRead(n.id);
-                      }}
-                    >
-                      <button className="rounded-[8px] px-2 py-1 text-[12px] font-medium text-brand hover:bg-brand-soft">
-                        Mark read
-                      </button>
-                    </form>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })
+          <NotificationHubList notifications={notifications} workspaces={workspaces} />
         )}
       </Card>
     </div>

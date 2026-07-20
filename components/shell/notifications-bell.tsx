@@ -11,15 +11,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { fmtTimeAgo } from "@/lib/format";
-import { markAllNotificationsRead } from "@/lib/actions/notifications";
+import { notificationHref } from "@/lib/notifications";
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/actions/notifications";
 
 export function NotificationsBell({
   userId,
   workspaceId,
+  slug,
   initialCount,
 }: {
   userId: string;
   workspaceId: string;
+  slug: string;
   initialCount: number;
 }) {
   const [count, setCount] = useState(initialCount);
@@ -65,6 +71,16 @@ export function NotificationsBell({
     setItems((data ?? []) as Notification[]);
   }
 
+  // Clicking an item marks it read straight away, then the link navigates.
+  function onItemClick(n: Notification) {
+    if (n.is_read) return;
+    setCount((c) => Math.max(0, c - 1));
+    setItems((prev) =>
+      prev?.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)) ?? null
+    );
+    void markNotificationRead(n.id);
+  }
+
   return (
     <DropdownMenu onOpenChange={(open) => open && loadLatest()}>
       <DropdownMenuTrigger asChild>
@@ -73,7 +89,11 @@ export function NotificationsBell({
           className="relative flex size-9 items-center justify-center rounded-[9px] text-text-2 outline-none transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:ring-2 focus-visible:ring-brand/40"
         >
           <Bell className="size-[18px] stroke-[1.5]" />
-          {count > 0 ? (
+          {count > 3 ? (
+            <span className="absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white tabular ring-2 ring-surface">
+              {count > 9 ? "9+" : count}
+            </span>
+          ) : count > 0 ? (
             <span className="absolute right-2 top-2 size-2 rounded-full bg-danger ring-2 ring-surface" />
           ) : null}
         </button>
@@ -102,23 +122,39 @@ export function NotificationsBell({
               You are all caught up.
             </p>
           ) : (
-            items.map((n) => (
-              <div
-                key={n.id}
-                className="flex gap-2.5 border-b border-border px-4 py-3 last:border-b-0"
-              >
-                <span
-                  className={`mt-1.5 size-1.5 shrink-0 rounded-full ${n.is_read ? "bg-transparent" : "bg-brand"}`}
-                />
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-text-1">{n.title}</p>
-                  {n.body ? (
-                    <p className="mt-0.5 line-clamp-2 text-[12.5px] text-text-2">{n.body}</p>
-                  ) : null}
-                  <p className="mt-0.5 text-[11.5px] text-text-3">{fmtTimeAgo(n.created_at)}</p>
+            items.map((n) => {
+              const href = notificationHref(slug, n.entity_type, n.entity_id);
+              const content = (
+                <>
+                  <span
+                    className={`mt-1.5 size-1.5 shrink-0 rounded-full ${n.is_read ? "bg-transparent" : "bg-brand"}`}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-text-1">{n.title}</p>
+                    {n.body ? (
+                      <p className="mt-0.5 line-clamp-2 text-[12.5px] text-text-2">{n.body}</p>
+                    ) : null}
+                    <p className="mt-0.5 text-[11.5px] text-text-3">{fmtTimeAgo(n.created_at)}</p>
+                  </div>
+                </>
+              );
+              const base =
+                "flex gap-2.5 border-b border-border px-4 py-3 last:border-b-0";
+              return href ? (
+                <Link
+                  key={n.id}
+                  href={href}
+                  onClick={() => onItemClick(n)}
+                  className={`${base} transition-colors hover:bg-surface-2`}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div key={n.id} className={base}>
+                  {content}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         <div className="border-t border-border px-4 py-2">

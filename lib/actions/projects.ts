@@ -42,8 +42,22 @@ export async function createProject(
   const ownerId = String(formData.get("owner_id") ?? "");
   const startDate = String(formData.get("start_date") ?? "");
   const dueDate = String(formData.get("due_date") ?? "");
+  const listId = String(formData.get("list_id") ?? "");
+  let departmentId = String(formData.get("department_id") ?? "");
 
   const supabase = await createClient();
+
+  // Every project belongs to a department. When the caller does not pick one,
+  // file it into the workspace's default department; an executive can move it.
+  if (!departmentId) {
+    const { data: def } = await supabase
+      .from("departments")
+      .select("id")
+      .eq("workspace_id", ctx.workspace.id)
+      .eq("is_default", true)
+      .maybeSingle();
+    departmentId = def?.id ?? "";
+  }
 
   // Load the template first so a bad choice fails before the code is burned.
   let template: ProjectTemplate | null = null;
@@ -71,6 +85,8 @@ export async function createProject(
     .insert({
       workspace_id: ctx.workspace.id,
       client_id: clientId || null,
+      department_id: departmentId || null,
+      list_id: listId || null,
       code: code as string,
       title,
       type: type || null,
@@ -139,6 +155,59 @@ export async function createProject(
   redirect(`/${ws}/projects/${project.id}`);
 }
 
+// ---- sub-projects ----
+// A sub-project inherits its parent's space, list, and client, but has its own
+// owner and tasks. One level deep, enforced by a database trigger too.
+
+export async function createSubProject(
+  ws: string,
+  parentId: string,
+  title: string,
+  ownerId: string
+): Promise<ProjectFormState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canCreateProjects) {
+    return { error: "Only managers can add sub-projects." };
+  }
+  const clean = title.trim();
+  if (!clean) return { error: "Give the sub-project a title." };
+
+  const supabase = await createClient();
+  const { data: parent } = await supabase
+    .from("projects")
+    .select("id, workspace_id, department_id, list_id, client_id, parent_project_id")
+    .eq("id", parentId)
+    .maybeSingle();
+  if (!parent || parent.workspace_id !== ctx.workspace.id) {
+    return { error: "Parent project not found." };
+  }
+  if (parent.parent_project_id) {
+    return { error: "Sub-projects are one level deep." };
+  }
+
+  const { data: code, error: codeError } = await supabase.rpc("next_code", {
+    ws: ctx.workspace.id,
+    kind: "project",
+  });
+  if (codeError || !code) return { error: "Could not generate a code. Try again." };
+
+  const { error } = await supabase.from("projects").insert({
+    workspace_id: ctx.workspace.id,
+    department_id: parent.department_id,
+    list_id: parent.list_id,
+    client_id: parent.client_id,
+    parent_project_id: parentId,
+    code: code as string,
+    title: clean,
+    status: "backlog",
+    owner_id: ownerId || ctx.userId,
+  });
+  if (error) return { error: "Could not create the sub-project. Try again." };
+
+  revalidatePath(`/${ws}/projects/${parentId}`);
+  return { error: null };
+}
+
 // ---- status and archive ----
 
 export async function updateProjectStatus(
@@ -191,6 +260,119 @@ export async function archiveProject(
   if (error) return { error: "Could not archive the project. Try again." };
 
   revalidatePath(`/${ws}/projects`);
+  revalidatePath(`/${ws}/projects/${projectId}`);
+  return { error: null };
+}
+
+// Bring an archived project back into the active list. Managers only, and it
+// lands in backlog since the prior status is not tracked.
+export async function restoreProject(
+  ws: string,
+  projectId: string
+): Promise<{ error: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canCreateProjects) {
+    return { error: "Only managers can restore projects." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({ status: "backlog" })
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .eq("status", "archived");
+  if (error) return { error: "Could not restore the project. Try again." };
+
+  revalidatePath(`/${ws}/projects`);
+  revalidatePath(`/${ws}/projects/${projectId}`);
+  return { error: null };
+}
+
+// ---- header edits and brief ----
+// Managers and the project owner may edit. RLS enforces the same, so these
+// checks only produce a friendly message before Postgres would refuse.
+
+async function assertCanEditProject(
+  ws: string,
+  projectId: string
+): Promise<{ error: string } | null> {
+  const ctx = await getWorkspaceContext(ws);
+  const supabase = await createClient();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, owner_id")
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!project) return { error: "Project not found." };
+  const isOwner = project.owner_id === ctx.userId;
+  if (!ctx.capabilities.canCreateProjects && !isOwner) {
+    return { error: "Only managers or the project owner can edit this project." };
+  }
+  return null;
+}
+
+export interface ProjectPatch {
+  title?: string;
+  type?: string | null;
+  start_date?: string | null;
+  due_date?: string | null;
+  owner_id?: string | null;
+  department_id?: string | null;
+  list_id?: string | null;
+}
+
+export async function updateProject(
+  ws: string,
+  projectId: string,
+  patch: ProjectPatch
+): Promise<ProjectFormState> {
+  const denied = await assertCanEditProject(ws, projectId);
+  if (denied) return denied;
+
+  const clean: Record<string, unknown> = {};
+  if (patch.title !== undefined) {
+    const title = patch.title.trim();
+    if (!title) return { error: "The title cannot be empty." };
+    clean.title = title;
+  }
+  if (patch.type !== undefined) clean.type = patch.type?.trim() || null;
+  if (patch.start_date !== undefined) clean.start_date = patch.start_date || null;
+  if (patch.due_date !== undefined) clean.due_date = patch.due_date || null;
+  if (patch.owner_id !== undefined) clean.owner_id = patch.owner_id || null;
+  if (patch.department_id !== undefined) {
+    clean.department_id = patch.department_id || null;
+    // Moving departments clears the list, which belongs to the old one.
+    clean.list_id = null;
+  }
+  if (patch.list_id !== undefined) clean.list_id = patch.list_id || null;
+  if (Object.keys(clean).length === 0) return { error: null };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("projects").update(clean).eq("id", projectId);
+  if (error) return { error: "Could not save the project. Try again." };
+
+  revalidatePath(`/${ws}/projects`);
+  revalidatePath(`/${ws}/projects/${projectId}`);
+  return { error: null };
+}
+
+export async function setProjectBrief(
+  ws: string,
+  projectId: string,
+  brief: string
+): Promise<ProjectFormState> {
+  const denied = await assertCanEditProject(ws, projectId);
+  if (denied) return denied;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({ brief: brief.trim() || null })
+    .eq("id", projectId);
+  if (error) return { error: "Could not save the brief. Try again." };
+
   revalidatePath(`/${ws}/projects/${projectId}`);
   return { error: null };
 }

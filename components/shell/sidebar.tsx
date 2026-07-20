@@ -1,11 +1,12 @@
-import Link from "next/link";
 import {
   Briefcase,
+  Building2,
   CalendarDays,
   ChartLine,
-  CircleHelp,
+  Database,
   FolderKanban,
-  House,
+  LayoutDashboard,
+  ListTodo,
   Plane,
   Settings2,
   SquareCheckBig,
@@ -14,16 +15,19 @@ import {
 import type { NavGroup, NavKey } from "@/lib/rbac";
 import type { Profile, Workspace } from "@/lib/types";
 import { NavLink } from "./nav-link";
-import { PersonAvatar } from "@/components/primitives/avatar";
+import { DepartmentTree, type DeptTreeItem } from "./department-tree";
 
 const NAV_META: Record<
   NavKey,
   { label: string; path: string; icon: React.ReactNode; exact?: boolean }
 > = {
-  home: { label: "Home", path: "home", icon: <House /> },
+  home: { label: "Dashboard", path: "home", icon: <LayoutDashboard /> },
   clients: { label: "Clients", path: "clients", icon: <Briefcase /> },
   projects: { label: "Projects", path: "projects", icon: <FolderKanban /> },
+  database: { label: "Database", path: "database", icon: <Database /> },
   tasks: { label: "My Tasks", path: "tasks", icon: <SquareCheckBig /> },
+  todos: { label: "My To-dos", path: "todos", icon: <ListTodo /> },
+  departments: { label: "Spaces", path: "departments", icon: <Building2 /> },
   team: { label: "Team", path: "team", icon: <Users /> },
   hr: { label: "HR and Leave", path: "hr", icon: <Plane /> },
   performance: { label: "Performance", path: "performance", icon: <ChartLine /> },
@@ -34,17 +38,19 @@ const NAV_META: Record<
 
 export function Sidebar({
   workspace,
-  profile,
-  roleLabel,
   navGroups,
   myTaskCount,
+  departments,
 }: {
   workspace: Workspace;
   profile: Profile;
   roleLabel: string;
   navGroups: NavGroup[];
   myTaskCount: number;
+  departments: DeptTreeItem[];
 }) {
+  // Settings moves to the bottom, pinned; it stays executive-only.
+  const canSeeSettings = navGroups.some((g) => g.items.includes("admin"));
   return (
     <nav className="flex h-full w-[228px] shrink-0 flex-col border-r border-border bg-surface">
       <div className="px-4 pb-2 pt-4">
@@ -52,47 +58,48 @@ export function Sidebar({
         <div className="text-[12px] text-text-3">Workspace</div>
       </div>
       <div className="flex-1 overflow-y-auto px-2.5 py-2">
-        {navGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            <div className="group-label px-2.5 pb-1.5">{group.label}</div>
-            <div className="flex flex-col gap-0.5">
-              {group.items.map((key) => {
-                const meta = NAV_META[key];
-                return (
-                  <NavLink
-                    key={key}
-                    href={`/${workspace.slug}/${meta.path}`}
-                    label={meta.label}
-                    icon={meta.icon}
-                    badge={key === "tasks" ? myTaskCount : undefined}
-                  />
-                );
-              })}
+        {navGroups.map((group) => {
+          const items = group.items.filter((k) => k !== "admin");
+          if (items.length === 0) return null;
+          return (
+            <div key={group.label} className="mb-4">
+              <div className="group-label px-2.5 pb-1.5">{group.label}</div>
+              <div className="flex flex-col gap-0.5">
+                {items.map((key) => {
+                  if (key === "departments") {
+                    return (
+                      <DepartmentTree
+                        key={key}
+                        ws={workspace.slug}
+                        departments={departments}
+                      />
+                    );
+                  }
+                  const meta = NAV_META[key];
+                  return (
+                    <NavLink
+                      key={key}
+                      href={`/${workspace.slug}/${meta.path}`}
+                      label={meta.label}
+                      icon={meta.icon}
+                      badge={key === "tasks" ? myTaskCount : undefined}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      <div className="border-t border-border px-2.5 py-2.5">
-        <Link
-          href="/account"
-          className="flex items-center gap-2.5 rounded-[9px] px-2 py-1.5 transition-colors hover:bg-surface-2"
-        >
-          <PersonAvatar name={profile.full_name} src={profile.avatar_url} size={30} />
-          <span className="min-w-0">
-            <span className="block truncate text-[13px] font-medium text-text-1">
-              {profile.full_name}
-            </span>
-            <span className="block truncate text-[11.5px] text-text-3">{roleLabel}</span>
-          </span>
-        </Link>
-        <a
-          href="mailto:ops@vidiosa.com?subject=Work OS help"
-          className="mt-0.5 flex items-center gap-2.5 rounded-[9px] px-2.5 py-[7px] text-sm font-medium text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
-        >
-          <CircleHelp className="size-[18px] stroke-[1.5]" />
-          Help
-        </a>
-      </div>
+      {canSeeSettings ? (
+        <div className="border-t border-border px-2.5 py-2.5">
+          <NavLink
+            href={`/${workspace.slug}/admin`}
+            label="Settings"
+            icon={<Settings2 />}
+          />
+        </div>
+      ) : null}
     </nav>
   );
 }

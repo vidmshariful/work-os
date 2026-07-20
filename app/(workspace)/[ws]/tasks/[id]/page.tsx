@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GitBranch, History, MessageSquare } from "lucide-react";
+import { GitBranch, History, ListTree, MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { Card, CardBody, CardHeader } from "@/components/primitives/card";
@@ -18,9 +18,21 @@ import {
   AssigneeSelect,
   CommentForm,
   DependencyManager,
+  DeleteTaskButton,
+  EditableDescription,
+  EditableTitle,
+  PhaseSelect,
   RemoveDependencyButton,
   RevisionForm,
 } from "@/components/features/tasks/detail-forms";
+import {
+  ActivityPanel,
+  type ActivityItem,
+} from "@/components/features/activity/activity-panel";
+import {
+  SubtasksCard,
+  type SubtaskRow,
+} from "@/components/features/tasks/subtasks";
 import type { Task, TaskStatus } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Task" };
@@ -62,6 +74,10 @@ export default async function TaskDetailPage({
     { data: depRows },
     { data: projectTasks },
     { data: memberRows },
+    { data: phaseRows },
+    { data: activityRows },
+    { data: subtaskRows },
+    parentRes,
   ] = await Promise.all([
     supabase
       .from("task_comments")
@@ -88,6 +104,26 @@ export default async function TaskDetailPage({
       .select("profile:profiles!profile_id!inner(id, full_name)")
       .eq("workspace_id", ctx.workspace.id)
       .eq("is_active", true),
+    supabase
+      .from("project_phases")
+      .select("id, name")
+      .eq("project_id", task.project.id)
+      .order("sort_order"),
+    supabase
+      .from("activity_log")
+      .select("id, verb, detail, created_at, actor:profiles!actor_id(full_name, avatar_url)")
+      .eq("entity_type", "task")
+      .eq("entity_id", id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("tasks")
+      .select("id, title, status")
+      .eq("parent_task_id", id)
+      .order("created_at"),
+    task.parent_task_id
+      ? supabase.from("tasks").select("id, title").eq("id", task.parent_task_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const deps = ((depRows ?? []) as unknown as {
@@ -100,6 +136,11 @@ export default async function TaskDetailPage({
   const members = ((memberRows ?? []) as unknown as { profile: { id: string; full_name: string } }[])
     .map((m) => m.profile)
     .sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const phases = (phaseRows ?? []) as { id: string; name: string }[];
+  const activity = (activityRows ?? []) as unknown as ActivityItem[];
+  const subtasks = (subtaskRows ?? []) as unknown as SubtaskRow[];
+  const parentTask = (parentRes?.data ?? null) as { id: string; title: string } | null;
+  const isSubtask = task.parent_task_id !== null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -121,13 +162,25 @@ export default async function TaskDetailPage({
               <span className="text-[12.5px] text-text-3">{task.phase.name}</span>
             ) : null}
           </div>
-          <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight text-text-1">
-            {task.title}
-          </h1>
+          {isSubtask && parentTask ? (
+            <Link
+              href={`/${ws}/tasks/${parentTask.id}`}
+              className="mt-1 flex items-center gap-1.5 text-[12.5px] text-text-2 hover:text-brand"
+            >
+              <ListTree className="size-3.5" strokeWidth={1.5} />
+              Part of {parentTask.title}
+            </Link>
+          ) : null}
+          <EditableTitle ws={ws} taskId={id} title={task.title} canEdit={canManage} />
         </div>
-        {isMine || canManage ? (
-          <TaskStatusSelect ws={ws} taskId={id} status={task.status} />
-        ) : null}
+        <div className="flex items-center gap-2">
+          {isMine || canManage ? (
+            <TaskStatusSelect ws={ws} taskId={id} status={task.status} />
+          ) : null}
+          {canManage ? (
+            <DeleteTaskButton ws={ws} taskId={id} projectId={task.project.id} />
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
@@ -135,15 +188,42 @@ export default async function TaskDetailPage({
           <Card>
             <CardHeader title="Description" />
             <CardBody>
-              {task.description ? (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-1">
-                  {task.description}
-                </p>
-              ) : (
-                <p className="text-[13px] text-text-3">No description.</p>
-              )}
+              <EditableDescription
+                ws={ws}
+                taskId={id}
+                description={task.description}
+                canEdit={canManage || isMine}
+              />
             </CardBody>
           </Card>
+
+          {!isSubtask && (subtasks.length > 0 || canManage) ? (
+            <Card>
+              <CardHeader
+                title={
+                  <span className="flex items-center gap-2">
+                    <ListTree className="size-4 text-text-3" strokeWidth={1.5} />
+                    Subtasks
+                    {subtasks.length > 0 ? (
+                      <span className="font-mono text-[12px] font-medium text-text-3 tabular">
+                        {subtasks.filter((s) => s.status === "done").length}/
+                        {subtasks.length}
+                      </span>
+                    ) : null}
+                  </span>
+                }
+              />
+              <CardBody>
+                <SubtasksCard
+                  ws={ws}
+                  parentId={id}
+                  subtasks={subtasks}
+                  parentStatus={task.status}
+                  canManage={canManage}
+                />
+              </CardBody>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader
@@ -265,6 +345,19 @@ export default async function TaskDetailPage({
                   <span className="text-text-3">Unassigned</span>
                 )}
               </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-text-2">Phase</span>
+                {canManage && phases.length > 0 ? (
+                  <PhaseSelect
+                    ws={ws}
+                    taskId={id}
+                    phaseId={task.phase_id}
+                    phases={phases}
+                  />
+                ) : (
+                  <span className="text-text-1">{task.phase?.name ?? "No phase"}</span>
+                )}
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-2">Due</span>
                 {task.due_date ? (
@@ -339,6 +432,16 @@ export default async function TaskDetailPage({
                   existing={deps.map((d) => d.depends_on_task_id)}
                 />
               ) : null}
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h4 className="flex items-center gap-2 text-[13px] font-semibold text-text-1">
+              <History className="size-4 text-text-3" strokeWidth={1.5} />
+              Activity
+            </h4>
+            <div className="mt-3">
+              <ActivityPanel items={activity} />
             </div>
           </Card>
         </div>

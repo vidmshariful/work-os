@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, ListChecks, Plus, SquareCheckBig } from "lucide-react";
+import { CalendarDays, Layers, ListChecks, Plus, SquareCheckBig } from "lucide-react";
+import { SubProjectAdd } from "@/components/features/projects/sub-projects";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
-import { Card, CardHeader } from "@/components/primitives/card";
+import { Card, CardBody, CardHeader } from "@/components/primitives/card";
 import { ListRow } from "@/components/primitives/list-row";
 import {
   ProjectStatusChip,
@@ -23,6 +24,14 @@ import { clientLabel, isConfidential, isUnmasked } from "@/lib/wall";
 import { ProjectStatusSelect } from "@/components/features/projects/status-select";
 import { DeliverableToggle } from "@/components/features/projects/deliverable-toggle";
 import { ProjectFiles } from "@/components/features/projects/project-files";
+import {
+  EditProjectDialog,
+  ProjectBrief,
+} from "@/components/features/projects/project-edit";
+import {
+  ActivityPanel,
+  type ActivityItem,
+} from "@/components/features/activity/activity-panel";
 import {
   ProjectIntakePanel,
   IntakeStatusTag,
@@ -69,6 +78,12 @@ export default async function ProjectDetailPage({
     files,
     intakeRes,
     commercialsRes,
+    { data: memberRows },
+    { data: activityRows },
+    { data: deptRows },
+    { data: listRows },
+    { data: subProjectRows },
+    parentRes,
   ] = await Promise.all([
     supabase
       .from("project_phases")
@@ -94,6 +109,34 @@ export default async function ProjectDetailPage({
     // executives and the assigned manager. Everyone else gets null.
     supabase.from("project_intakes").select("*").eq("project_id", id).maybeSingle(),
     supabase.from("project_commercials").select("*").eq("project_id", id).maybeSingle(),
+    supabase
+      .from("memberships")
+      .select("profile:profiles!profile_id!inner(id, full_name)")
+      .eq("workspace_id", ctx.workspace.id)
+      .eq("is_active", true),
+    supabase
+      .from("activity_log")
+      .select("id, verb, detail, created_at, actor:profiles!actor_id(full_name, avatar_url)")
+      .eq("entity_type", "project")
+      .eq("entity_id", id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("departments")
+      .select("id, name")
+      .eq("workspace_id", ctx.workspace.id)
+      .order("sort_order"),
+    supabase.from("project_lists").select("id, name, department_id").order("sort_order"),
+    // The family: for a parent, its sub-projects; for a sub-project, its
+    // siblings (so any video shows the rest of its series).
+    supabase
+      .from("projects")
+      .select("*, owner:profiles(id, full_name, avatar_url)")
+      .eq("parent_project_id", project.parent_project_id ?? id)
+      .order("created_at"),
+    project.parent_project_id
+      ? supabase.from("projects").select("id, code, title").eq("id", project.parent_project_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const phases = (phaseRows ?? []) as ProjectPhase[];
@@ -117,7 +160,34 @@ export default async function ProjectDetailPage({
   );
   const canManage =
     ctx.capabilities.canCreateProjects || project.owner_id === ctx.userId;
+  const members = ((memberRows ?? []) as unknown as {
+    profile: { id: string; full_name: string };
+  }[])
+    .map((m) => m.profile)
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const activity = (activityRows ?? []) as unknown as ActivityItem[];
+  const deptLists = (listRows ?? []) as {
+    id: string;
+    name: string;
+    department_id: string;
+  }[];
+  const departments = ((deptRows ?? []) as { id: string; name: string }[]).map(
+    (d) => ({
+      id: d.id,
+      name: d.name,
+      lists: deptLists
+        .filter((l) => l.department_id === d.id)
+        .map((l) => ({ id: l.id, name: l.name })),
+    })
+  );
   const remaining = daysUntil(project.due_date);
+  const subProjects = (subProjectRows ?? []) as unknown as ProjectWithOwner[];
+  const parentProject = (parentRes?.data ?? null) as {
+    id: string;
+    code: string;
+    title: string;
+  } | null;
+  const isSub = project.parent_project_id !== null;
 
   const taskGroups: { key: string; name: string; tasks: TaskWithAssignee[] }[] =
     phases.map((p) => ({
@@ -148,6 +218,15 @@ export default async function ProjectDetailPage({
               <ConfidentialChip />
             ) : null}
           </div>
+          {parentProject ? (
+            <Link
+              href={`/${ws}/projects/${parentProject.id}`}
+              className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-text-2 hover:text-brand"
+            >
+              <Layers className="size-3.5" strokeWidth={1.5} />
+              Part of {parentProject.title}
+            </Link>
+          ) : null}
           <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight text-text-1">
             {project.title}
           </h1>
@@ -174,6 +253,14 @@ export default async function ProjectDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {canManage ? (
+            <EditProjectDialog
+              ws={ws}
+              project={project}
+              members={members}
+              departments={departments}
+            />
+          ) : null}
           {ctx.capabilities.canAssignTasks ? (
             <Button variant="outline" asChild>
               <Link href={`/${ws}/tasks/new?project=${id}`}>
@@ -190,6 +277,102 @@ export default async function ProjectDetailPage({
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-4">
+          {canManage || project.brief ? (
+            <Card>
+              <CardHeader title="Brief" />
+              <CardBody>
+                <ProjectBrief
+                  ws={ws}
+                  projectId={id}
+                  brief={project.brief}
+                  canEdit={canManage}
+                />
+              </CardBody>
+            </Card>
+          ) : null}
+
+          {subProjects.length > 0 || (!isSub && canManage) ? (
+            <Card>
+              <CardHeader
+                title={
+                  <span className="flex items-center gap-2">
+                    <Layers className="size-4 text-text-3" strokeWidth={1.5} />
+                    Sub-projects
+                    {subProjects.length > 0 ? (
+                      <span className="font-mono text-[12px] font-medium text-text-3 tabular">
+                        {subProjects.length}
+                      </span>
+                    ) : null}
+                  </span>
+                }
+                action={
+                  canManage && !isSub ? (
+                    <SubProjectAdd ws={ws} parentId={id} members={members} />
+                  ) : undefined
+                }
+              />
+              {subProjects.length === 0 ? (
+                <p className="px-5 pb-4 text-[12.5px] text-text-3">
+                  No sub-projects yet. Add one for each piece of a bulk order.
+                </p>
+              ) : (
+                subProjects.map((sp) => {
+                  const current = sp.id === id;
+                  return (
+                    <ListRow
+                      key={sp.id}
+                      className={current ? "bg-accent-soft/50" : undefined}
+                      title={
+                        current ? (
+                          <span className="font-semibold text-text-1">{sp.title}</span>
+                        ) : (
+                          <Link href={`/${ws}/projects/${sp.id}`} className="hover:underline">
+                            {sp.title}
+                          </Link>
+                        )
+                      }
+                      subtitle={
+                        <span className="flex items-center gap-2">
+                          <CodeLabel code={sp.code} />
+                          {current ? (
+                            <span className="font-medium text-brand">This project</span>
+                          ) : null}
+                        </span>
+                      }
+                      meta={
+                        <>
+                          {sp.owner ? (
+                            <PersonAvatar
+                              name={sp.owner.full_name}
+                              src={sp.owner.avatar_url}
+                              size={22}
+                            />
+                          ) : null}
+                          {sp.due_date ? (
+                            <span className="font-mono text-[12px] text-text-2 tabular">
+                              {fmtDate(sp.due_date)}
+                            </span>
+                          ) : null}
+                          <ProjectStatusChip status={sp.status} />
+                        </>
+                      }
+                      trailing={
+                        current ? null : (
+                          <Link
+                            href={`/${ws}/projects/${sp.id}`}
+                            className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+                          >
+                            Open
+                          </Link>
+                        )
+                      }
+                    />
+                  );
+                })
+              )}
+            </Card>
+          ) : null}
+
           <Card className="p-5">
             <div className="flex items-center justify-between text-[12.5px] font-medium text-text-2">
               <span>
@@ -388,6 +571,10 @@ export default async function ProjectDetailPage({
                 </div>
               ) : null}
             </div>
+          </RightRailPanel>
+
+          <RightRailPanel title="Activity">
+            <ActivityPanel items={activity} />
           </RightRailPanel>
 
           <RightRailPanel title="Files">

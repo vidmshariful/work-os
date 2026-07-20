@@ -11,7 +11,13 @@ export function loadEnv() {
   const raw = readFileSync(path.join(root, ".env.local"), "utf8");
   for (const line of raw.split("\n")) {
     const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (m) env[m[1]] = m[2].trim();
+    if (!m) continue;
+    let value = m[2].trim();
+    // Accept quoted values too. Anything containing "#" must be quoted for
+    // Next.js (real dotenv treats it as a comment), so both forms show up.
+    const quoted = value.match(/^(['"])([\s\S]*)\1$/);
+    if (quoted) value = quoted[2];
+    env[m[1]] = value;
   }
   return env;
 }

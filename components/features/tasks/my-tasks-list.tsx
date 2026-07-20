@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SquareCheckBig } from "lucide-react";
+import { CornerDownRight, SquareCheckBig } from "lucide-react";
 import { Card } from "@/components/primitives/card";
 import { ListRow } from "@/components/primitives/list-row";
 import { TaskStatusChip } from "@/components/primitives/tag";
@@ -23,6 +23,8 @@ export interface MyTask {
   due_date: string | null;
   revision_count: number;
   completed_at: string | null;
+  parent_task_id: string | null;
+  parent: { title: string } | null;
   project: { code: string };
 }
 
@@ -109,14 +111,29 @@ export function MyTasksList({
               <ListRow
                 key={t.id}
                 title={
-                  <Link
-                    href={`/${ws}/tasks/${t.id}`}
-                    className="hover:underline"
-                  >
-                    {t.title}
-                  </Link>
+                  <span className="flex items-center gap-1.5">
+                    {t.parent_task_id ? (
+                      <CornerDownRight
+                        className="size-3.5 shrink-0 text-text-3"
+                        strokeWidth={1.5}
+                      />
+                    ) : null}
+                    <Link
+                      href={`/${ws}/tasks/${t.id}`}
+                      className="hover:underline"
+                    >
+                      {t.title}
+                    </Link>
+                  </span>
                 }
-                subtitle={<CodeLabel code={t.project.code} />}
+                subtitle={
+                  <span className="flex items-center gap-2">
+                    <CodeLabel code={t.project.code} />
+                    {t.parent ? (
+                      <span className="text-text-3">in {t.parent.title}</span>
+                    ) : null}
+                  </span>
+                }
                 meta={
                   <>
                     <RevisionHint count={t.revision_count} />

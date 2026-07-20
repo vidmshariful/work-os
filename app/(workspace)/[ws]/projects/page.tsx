@@ -45,8 +45,10 @@ export default async function ProjectsPage({
     .select("*, owner:profiles(id, full_name, avatar_url)")
     .eq("workspace_id", ctx.workspace.id)
     .order("created_at", { ascending: false });
+  // Archived projects stay out of the default view. They appear only when
+  // explicitly filtered to Archived, where the Restore action lives.
   if (status) query = query.eq("status", status);
-  else if (view === "board") query = query.neq("status", "archived");
+  else query = query.neq("status", "archived");
   if (owner) query = query.eq("owner_id", owner);
 
   const [{ data: projectRows }, { data: taskRows }, { data: memberRows }] =

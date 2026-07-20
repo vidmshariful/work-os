@@ -165,6 +165,95 @@ export async function updateTask(
   return { error: null };
 }
 
+// ---- description (assignee or lead) ----
+// No capability gate here on purpose. RLS lets a person update their own
+// task, and the guard trigger limits a contributor to status and
+// description. Leads and up pass both. So this one write serves everyone
+// who is legitimately allowed to edit the description.
+
+export async function setTaskDescription(
+  ws: string,
+  taskId: string,
+  description: string
+): Promise<TaskActionState> {
+  await getWorkspaceContext(ws);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({ description: description.trim() || null })
+    .eq("id", taskId);
+
+  if (error) {
+    return { error: "The description could not be saved." };
+  }
+
+  revalidateTaskPaths(ws, taskId);
+  return { error: null };
+}
+
+// ---- subtasks (leads and up) ----
+// A subtask inherits its parent's project and starts in todo. The one-level
+// cap is enforced by a database trigger; we also check here for a clean error.
+
+export async function createSubtask(
+  ws: string,
+  parentTaskId: string,
+  title: string
+): Promise<TaskActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can add subtasks." };
+  }
+  const clean = title.trim();
+  if (!clean) return { error: "Give the subtask a title." };
+
+  const supabase = await createClient();
+  const { data: parent } = await supabase
+    .from("tasks")
+    .select("id, project_id, parent_task_id")
+    .eq("id", parentTaskId)
+    .maybeSingle();
+  if (!parent) return { error: "Parent task not found." };
+  if (parent.parent_task_id) {
+    return { error: "Subtasks are one level deep." };
+  }
+
+  const { error } = await supabase.from("tasks").insert({
+    project_id: parent.project_id,
+    parent_task_id: parentTaskId,
+    title: clean,
+    status: "todo",
+  });
+  if (error) {
+    return { error: "The subtask could not be added." };
+  }
+
+  revalidateTaskPaths(ws, parentTaskId);
+  return { error: null };
+}
+
+// ---- delete (leads and up) ----
+
+export async function deleteTask(
+  ws: string,
+  taskId: string
+): Promise<TaskActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can delete tasks." };
+  }
+
+  const supabase = await createClient();
+  // Dependencies, comments, and revisions cascade at the database level.
+  const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  if (error) {
+    return { error: "The task could not be deleted." };
+  }
+
+  revalidateTaskPaths(ws, taskId);
+  return { error: null };
+}
+
 // ---- comments ----
 
 export async function addComment(

@@ -116,7 +116,7 @@ async function MyTasksContent({
   const { data } = await supabase
     .from("tasks")
     .select(
-      "id, title, status, due_date, revision_count, completed_at, project:projects!inner(workspace_id, code)"
+      "id, title, status, due_date, revision_count, completed_at, parent_task_id, parent:tasks!parent_task_id(title), project:projects!inner(workspace_id, code)"
     )
     .eq("assignee_id", userId)
     .eq("project.workspace_id", workspaceId)

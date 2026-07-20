@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
+import type { DeptTreeItem } from "./department-tree";
 import type { NavGroup } from "@/lib/rbac";
 import type { Profile, Workspace } from "@/lib/types";
 
@@ -16,12 +17,14 @@ export function MobileNav({
   roleLabel,
   navGroups,
   myTaskCount,
+  departments,
 }: {
   workspace: Workspace;
   profile: Profile;
   roleLabel: string;
   navGroups: NavGroup[];
   myTaskCount: number;
+  departments: DeptTreeItem[];
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -48,6 +51,7 @@ export function MobileNav({
           roleLabel={roleLabel}
           navGroups={navGroups}
           myTaskCount={myTaskCount}
+          departments={departments}
         />
       </SheetContent>
     </Sheet>

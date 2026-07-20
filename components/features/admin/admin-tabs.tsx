@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "people", label: "People" },
+  { key: "departments", label: "Spaces" },
   { key: "templates", label: "Templates" },
   { key: "integrations", label: "Integrations" },
   { key: "workspace", label: "Workspace" },

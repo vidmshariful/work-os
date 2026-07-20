@@ -5,7 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "./db.mjs";
 
 const env = loadEnv();
-const PASSWORD = process.argv[2] || process.env.SEED_PASSWORD || "Vidiosa#2026";
+// No credential lives in this repo. Pass the seed password as an argument, or
+// set SEED_PASSWORD in .env.local (git ignored).
+const PASSWORD = process.argv[2] || process.env.SEED_PASSWORD || env.SEED_PASSWORD;
+if (!PASSWORD) {
+  console.error("Set SEED_PASSWORD in .env.local, or pass it: node scripts/wall-test.mjs <password>");
+  process.exit(1);
+}
 
 const results = [];
 function check(name, pass, detail = "") {
@@ -145,6 +151,37 @@ for (const table of WORKROOM_TABLES) {
     revErr?.message ?? `${revRows?.length} rows`
   );
   await sadia.auth.signOut();
+}
+
+// 8. Department scoping: departments and projects respect membership.
+{
+  const { data: rakibDepts } = await rakib.from("departments").select("slug");
+  const rakibSlugs = (rakibDepts ?? []).map((d) => d.slug);
+  check(
+    "below wall: animator sees only their departments",
+    rakibSlugs.length > 0 && rakibSlugs.every((s) => s === "production"),
+    rakibSlugs.join(", ") || "none"
+  );
+
+  const { data: nadiaDepts } = await nadia.from("departments").select("slug");
+  check(
+    "above wall: executive sees all departments",
+    (nadiaDepts ?? []).length >= 4,
+    `${nadiaDepts?.length} departments`
+  );
+
+  const visible = new Set(rakibSlugs);
+  const { data: rakibProjects } = await rakib
+    .from("projects")
+    .select("id, department:departments(slug)");
+  const scoped = (rakibProjects ?? []).every(
+    (p) => !p.department || visible.has(p.department.slug)
+  );
+  check(
+    "below wall: animator's projects stay within their departments",
+    scoped,
+    `${rakibProjects?.length} projects`
+  );
 }
 
 await rakib.auth.signOut();

@@ -1,11 +1,30 @@
 import type { Metadata } from "next";
-import { LoginForm } from "./login-form";
+import { LoginForm, type DemoAccount } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
+// Read at request time so the switcher reflects the running environment and
+// never bakes credentials into a prerendered page.
+export const dynamic = "force-dynamic";
+
+// Names and roles only. The shared password comes from DEMO_PASSWORD in
+// .env.local, which is git-ignored, so no credential lives in the repo.
+const SEED_ACCOUNTS: DemoAccount[] = [
+  { email: "shariful@vidiosa.com", name: "Shariful Islam", role: "CEO", wall: "above" },
+  { email: "nadia@vidiosa.com", name: "Nadia Rahman", role: "Operations Manager", wall: "above" },
+  { email: "farhan@vidiosa.com", name: "Farhan Ahmed", role: "Creative Lead", wall: "above" },
+  { email: "sadia@vidiosa.com", name: "Sadia Karim", role: "Sales Closer", wall: "above" },
+  { email: "tania@vidiosa.com", name: "Tania Akter", role: "Animation Lead", wall: "below" },
+  { email: "rakib@vidiosa.com", name: "Rakib Hasan", role: "Animator", wall: "below" },
+  { email: "mim@vidiosa.com", name: "Mim Chowdhury", role: "Designer", wall: "below" },
+];
+
 export default function LoginPage() {
+  const demoPassword = process.env.DEMO_PASSWORD;
+  const showDemo = process.env.DEMO_LOGINS === "1" && Boolean(demoPassword);
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-canvas px-4">
+    <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
@@ -20,7 +39,10 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-        <LoginForm />
+        <LoginForm
+          demoAccounts={showDemo ? SEED_ACCOUNTS : undefined}
+          demoPassword={showDemo ? demoPassword : undefined}
+        />
       </div>
     </main>
   );

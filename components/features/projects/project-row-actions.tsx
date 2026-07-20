@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
-import { MoreHorizontal, ExternalLink, Archive } from "lucide-react";
+import { MoreHorizontal, ExternalLink, Archive, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { archiveProject } from "@/lib/actions/projects";
+import { archiveProject, restoreProject } from "@/lib/actions/projects";
 
 // Trailing actions on a project list row: an Open link that reveals on
 // hover, plus an overflow menu. Archive shows only for managers.
@@ -33,6 +33,14 @@ export function ProjectRowActions({
       const res = await archiveProject(ws, projectId);
       if (res.error) toast.error(res.error);
       else toast.success("Project archived.");
+    });
+  };
+
+  const onRestore = () => {
+    startTransition(async () => {
+      const res = await restoreProject(ws, projectId);
+      if (res.error) toast.error(res.error);
+      else toast.success("Project restored to backlog.");
     });
   };
 
@@ -66,6 +74,12 @@ export function ProjectRowActions({
             <DropdownMenuItem onSelect={onArchive} disabled={pending}>
               <Archive className="size-4" strokeWidth={1.5} />
               Archive
+            </DropdownMenuItem>
+          ) : null}
+          {canArchive && isArchived ? (
+            <DropdownMenuItem onSelect={onRestore} disabled={pending}>
+              <RotateCcw className="size-4" strokeWidth={1.5} />
+              Restore
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>

@@ -198,13 +198,36 @@ export interface Project {
   id: string;
   workspace_id: string;
   client_id: string | null;
+  department_id: string | null;
+  list_id: string | null;
+  parent_project_id: string | null;
   code: string;
   title: string;
   type: string | null;
+  brief: string | null;
   status: ProjectStatus;
   owner_id: string | null;
   start_date: string | null;
   due_date: string | null;
+  created_at: string;
+}
+
+export interface Department {
+  id: string;
+  workspace_id: string;
+  name: string;
+  slug: string;
+  accent_color: string;
+  sort_order: number;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface ProjectList {
+  id: string;
+  department_id: string;
+  name: string;
+  sort_order: number;
   created_at: string;
 }
 
@@ -230,6 +253,7 @@ export interface Task {
   id: string;
   project_id: string;
   phase_id: string | null;
+  parent_task_id: string | null;
   title: string;
   description: string | null;
   assignee_id: string | null;
@@ -315,6 +339,144 @@ export interface Notification {
   entity_type: string | null;
   entity_id: string | null;
   is_read: boolean;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  workspace_id: string;
+  actor_id: string | null;
+  entity_type: string;
+  entity_id: string;
+  verb: string;
+  detail: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface PersonalTodo {
+  id: string;
+  profile_id: string;
+  workspace_id: string;
+  stage_id: string | null;
+  title: string;
+  notes: string | null;
+  priority: number;
+  is_done: boolean;
+  due_date: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface TodoStage {
+  id: string;
+  profile_id: string;
+  workspace_id: string;
+  name: string;
+  color: string;
+  sort_order: number;
+  is_default: boolean;
+  is_done: boolean;
+  created_at: string;
+}
+
+export interface TodoLabel {
+  id: string;
+  profile_id: string;
+  workspace_id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
+// ---- Database (Airtable-style tables) ----
+
+export type DbScope = "personal" | "company";
+export type DbFieldType =
+  | "text"
+  | "long_text"
+  | "number"
+  | "date"
+  | "checkbox"
+  | "select"
+  | "multi_select"
+  | "url"
+  | "email"
+  | "phone"
+  | "person";
+
+export interface DbTable {
+  id: string;
+  workspace_id: string;
+  owner_id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  scope: DbScope;
+  contributed: boolean;
+  created_at: string;
+}
+
+export interface DbFieldOptions {
+  choices?: { label: string; color: string }[];
+}
+
+export interface DbField {
+  id: string;
+  table_id: string;
+  name: string;
+  type: DbFieldType;
+  options: DbFieldOptions;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface DbRow {
+  id: string;
+  table_id: string;
+  values: Record<string, unknown>;
+  sort_order: number;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface DbShare {
+  table_id: string;
+  profile_id: string;
+  can_edit: boolean;
+}
+
+export type DocKind = "page" | "file" | "link";
+
+export interface Doc {
+  id: string;
+  workspace_id: string;
+  owner_id: string;
+  title: string;
+  kind: DocKind;
+  content: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  file_type: string | null;
+  url: string | null;
+  color: string;
+  scope: DbScope;
+  contributed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocShare {
+  doc_id: string;
+  profile_id: string;
+  can_edit: boolean;
+}
+
+export interface TodoChecklistItem {
+  id: string;
+  todo_id: string;
+  title: string;
+  is_done: boolean;
+  sort_order: number;
   created_at: string;
 }
 
