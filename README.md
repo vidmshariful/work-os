@@ -44,6 +44,51 @@ Every key in `.env.example` is required except `DEMO_LOGINS` / `DEMO_PASSWORD`,
 which are optional and only power the demo-account switcher on `/login`. Leave
 them unset in production.
 
+On a machine that is joining an existing setup, stop after `npm run dev`. The
+database already exists and is already seeded, so `npm run migrate` and
+`npm run seed` are not part of first-time setup.
+
+`SUPABASE_DB_PASSWORD` contains a `#`, so it must stay quoted. Unquoted, dotenv
+reads the `#` as the start of a comment and the value parses as empty, which
+surfaces later as a confusing connection failure. The same applies to
+`DEMO_PASSWORD` and `SEED_PASSWORD`.
+
+## Working together
+
+One person works at a time and hands over through `main`. There is no branching
+and no review step, so the whole protocol is two habits.
+
+**Before you start, always:**
+
+```bash
+git pull
+npm install     # only if the other person added a package
+```
+
+**When you finish, hand over:**
+
+```bash
+git add -A
+git commit -m "what you did"
+git push
+```
+
+Then tell the other person it is theirs.
+
+Pulling first is the habit that matters. Editing the same file from two
+different starting points is what produces a merge conflict, and pulling before
+you touch anything makes that impossible.
+
+Both machines point at the same Supabase project, on purpose: same data, same
+state, no drift between the two of you. It also means testing is not sandboxed.
+A client created while trying something out is a real row.
+
+Two guards are already in place. `npm run seed` refuses to run when a workspace
+exists, and `npm run migrate` records what it has applied so nothing runs twice.
+The uncovered case is a migration that drops or alters a column. Say so before
+applying one, and take a backup from the Supabase dashboard first. Most mistakes
+are recoverable. A dropped column is not.
+
 ## Commands
 
 | Command | What it does |
