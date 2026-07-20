@@ -1,8 +1,20 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Membership, Profile, Workspace } from "@/lib/types";
+import type {
+  Membership,
+  Profile,
+  Workspace,
+  WorkspaceFeature,
+  WorkspaceSettings,
+} from "@/lib/types";
 import { capabilitiesFor, navGroupsFor, type Capabilities, type NavGroup } from "@/lib/rbac";
+import {
+  enabledKeysFor,
+  featureAllows,
+  getWorkspaceFeatures,
+  getWorkspaceSettings,
+} from "@/lib/data/workspace-settings";
 
 export interface SessionContext {
   userId: string;
@@ -44,6 +56,12 @@ export interface WorkspaceContext extends SessionContext {
   capabilities: Capabilities;
   navGroups: NavGroup[];
   aboveWall: boolean;
+  // The workspace-level settings and feature switchboard, resolved once here
+  // so no screen queries them itself.
+  settings: WorkspaceSettings;
+  features: WorkspaceFeature[];
+  // True when this feature is on for this member's archetype.
+  hasFeature: (featureKey: string) => boolean;
 }
 
 // Resolves the active workspace by slug and confirms membership. A slug the
@@ -53,13 +71,23 @@ export const getWorkspaceContext = cache(
     const session = await getSession();
     const hit = session.memberships.find((m) => m.workspace?.slug === slug);
     if (!hit) redirect("/dashboard");
+
+    const [settings, features] = await Promise.all([
+      getWorkspaceSettings(hit.workspace.id),
+      getWorkspaceFeatures(hit.workspace.id),
+    ]);
+
     return {
       ...session,
       workspace: hit.workspace,
       membership: hit,
       capabilities: capabilitiesFor(hit.archetype, hit.wall_side),
-      navGroups: navGroupsFor(hit.archetype),
+      navGroups: navGroupsFor(hit.archetype, enabledKeysFor(features, hit.archetype)),
       aboveWall: hit.wall_side === "above",
+      settings,
+      features,
+      hasFeature: (featureKey: string) =>
+        featureAllows(features, featureKey, hit.archetype),
     };
   }
 );

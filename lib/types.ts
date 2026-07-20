@@ -67,6 +67,32 @@ export interface Workspace {
   created_at: string;
 }
 
+// Workspace-level settings, one row per workspace. Read by every member,
+// written by executives only. Settings live here once and every screen reads
+// them from here, so an admin change is true for everyone on their next read.
+// accent_color stays on workspaces: one fact, one home.
+export interface WorkspaceSettings {
+  workspace_id: string;
+  display_name: string | null;
+  timezone: string;
+  week_start_day: number;
+  locale: string;
+  logo_url: string | null;
+  settings: Record<string, unknown>;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface WorkspaceFeature {
+  id: string;
+  workspace_id: string;
+  feature_key: string;
+  enabled: boolean;
+  min_archetype: Archetype | null;
+  updated_by: string | null;
+  updated_at: string;
+}
+
 export interface Membership {
   id: string;
   profile_id: string;
@@ -220,6 +246,7 @@ export interface Department {
   accent_color: string;
   sort_order: number;
   is_default: boolean;
+  lead_id: string | null;
   created_at: string;
 }
 
@@ -228,6 +255,7 @@ export interface ProjectList {
   department_id: string;
   name: string;
   sort_order: number;
+  owner_id: string | null;
   created_at: string;
 }
 

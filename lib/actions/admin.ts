@@ -7,7 +7,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getWorkspaceContext } from "@/lib/data/context";
+import { isToggleable } from "@/lib/data/workspace-settings";
 import type { Archetype, RoleType, WallSide } from "@/lib/types";
 import {
   ACCENT_PRESETS,
@@ -212,5 +214,223 @@ export async function updateWorkspace(
 
   // The name and accent show in the shell, so refresh the whole layout.
   revalidatePath(`/${ws}`, "layout");
+  return { ok: true };
+}
+
+// ---- Admin Control Center: settings, features, ownership ----
+
+export interface WorkspaceSettingsPatch {
+  display_name?: string;
+  timezone?: string;
+  week_start_day?: number;
+  locale?: string;
+  logo_url?: string;
+}
+
+// Validated against the runtime's own timezone database rather than a list we
+// would have to maintain.
+function isValidTimezone(tz: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateWorkspaceSettings(
+  ws: string,
+  patch: WorkspaceSettingsPatch
+): Promise<ActionResult> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canSeeAdmin) {
+    return { ok: false, error: "Only executives can change workspace settings." };
+  }
+
+  // Whitelist the writable columns, validating each one.
+  const update: Record<string, unknown> = {};
+
+  if (patch.display_name !== undefined) {
+    const name = patch.display_name.trim();
+    if (!name) return { ok: false, error: "Give the workspace a display name." };
+    if (name.length > 60) {
+      return { ok: false, error: "Keep the display name under 60 characters." };
+    }
+    update.display_name = name;
+  }
+  if (patch.timezone !== undefined) {
+    const tz = patch.timezone.trim();
+    if (!isValidTimezone(tz)) {
+      return { ok: false, error: "That is not a timezone we recognize." };
+    }
+    update.timezone = tz;
+  }
+  if (patch.week_start_day !== undefined) {
+    const day = Number(patch.week_start_day);
+    if (!Number.isInteger(day) || day < 0 || day > 6) {
+      return { ok: false, error: "Pick a day of the week." };
+    }
+    update.week_start_day = day;
+  }
+  if (patch.locale !== undefined) {
+    const locale = patch.locale.trim();
+    if (!locale) return { ok: false, error: "Pick a locale." };
+    update.locale = locale;
+  }
+  if (patch.logo_url !== undefined) {
+    const url = patch.logo_url.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      return { ok: false, error: "A logo URL must start with http or https." };
+    }
+    update.logo_url = url || null;
+  }
+
+  if (Object.keys(update).length === 0) return { ok: true };
+  update.updated_by = ctx.userId;
+  update.updated_at = new Date().toISOString();
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workspace_settings")
+    .update(update)
+    .eq("workspace_id", ctx.workspace.id);
+  if (error) {
+    return { ok: false, error: "Could not save the settings. Try again." };
+  }
+
+  // Settings reach the shell, so refresh the layout for every route below it.
+  revalidatePath(`/${ws}`, "layout");
+  return { ok: true };
+}
+
+export async function toggleFeature(
+  ws: string,
+  featureKey: string,
+  input: { enabled?: boolean; min_archetype?: Archetype | null }
+): Promise<ActionResult> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canSeeAdmin) {
+    return { ok: false, error: "Only executives can change features." };
+  }
+  // home, tasks, and admin are structural. Refusing them here is the second
+  // gate; the read path ignores them regardless, so Settings can never be
+  // switched off from under the person holding the switch.
+  if (!isToggleable(featureKey)) {
+    return { ok: false, error: "That part of the app cannot be turned off." };
+  }
+
+  const row: Record<string, unknown> = {
+    workspace_id: ctx.workspace.id,
+    feature_key: featureKey,
+    updated_by: ctx.userId,
+    updated_at: new Date().toISOString(),
+  };
+  if (input.enabled !== undefined) row.enabled = input.enabled;
+  if (input.min_archetype !== undefined) row.min_archetype = input.min_archetype;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workspace_features")
+    .upsert(row, { onConflict: "workspace_id,feature_key" });
+  if (error) {
+    return { ok: false, error: "Could not save the change. Try again." };
+  }
+
+  // Navigation is built from these, so the whole shell refreshes.
+  revalidatePath(`/${ws}`, "layout");
+  return { ok: true };
+}
+
+export type OwnableEntity = "space" | "list" | "project" | "client";
+
+export async function reassignOwner(
+  ws: string,
+  entity: OwnableEntity,
+  entityId: string,
+  ownerId: string | null
+): Promise<ActionResult> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canSeeAdmin) {
+    return { ok: false, error: "Only executives can reassign ownership." };
+  }
+
+  // An owner must be an active member of this workspace.
+  if (ownerId) {
+    const supabase = await createClient();
+    const { data: member } = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("workspace_id", ctx.workspace.id)
+      .eq("profile_id", ownerId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!member) {
+      return { ok: false, error: "That person is not an active member here." };
+    }
+  }
+
+  if (entity === "client") {
+    // Clients are above the wall. The base table is revoked from the app role,
+    // so this write goes through the admin client, exactly as lib/actions/
+    // clients.ts does, and only after an explicit above-wall check.
+    if (!ctx.aboveWall) {
+      return { ok: false, error: "Only executives can reassign ownership." };
+    }
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("clients")
+      .update({ owner_id: ownerId })
+      .eq("id", entityId)
+      .eq("workspace_id", ctx.workspace.id);
+    if (error) {
+      return { ok: false, error: "Could not reassign the owner. Try again." };
+    }
+    revalidatePath(`/${ws}/admin/ownership`);
+    revalidatePath(`/${ws}/clients`);
+    return { ok: true };
+  }
+
+  const supabase = await createClient();
+  let error;
+
+  if (entity === "space") {
+    ({ error } = await supabase
+      .from("departments")
+      .update({ lead_id: ownerId })
+      .eq("id", entityId)
+      .eq("workspace_id", ctx.workspace.id));
+  } else if (entity === "list") {
+    // Lists hang off a department rather than the workspace, so scope the
+    // write through the spaces of this workspace.
+    const { data: space } = await supabase
+      .from("project_lists")
+      .select("department_id, department:departments(workspace_id)")
+      .eq("id", entityId)
+      .maybeSingle();
+    const owningWorkspace = (
+      space?.department as { workspace_id: string } | null | undefined
+    )?.workspace_id;
+    if (!space || owningWorkspace !== ctx.workspace.id) {
+      return { ok: false, error: "That list no longer exists." };
+    }
+    ({ error } = await supabase
+      .from("project_lists")
+      .update({ owner_id: ownerId })
+      .eq("id", entityId));
+  } else {
+    ({ error } = await supabase
+      .from("projects")
+      .update({ owner_id: ownerId })
+      .eq("id", entityId)
+      .eq("workspace_id", ctx.workspace.id));
+  }
+
+  if (error) {
+    return { ok: false, error: "Could not reassign the owner. Try again." };
+  }
+
+  revalidatePath(`/${ws}/admin/ownership`);
+  revalidatePath(`/${ws}/departments`);
+  revalidatePath(`/${ws}/projects`);
   return { ok: true };
 }

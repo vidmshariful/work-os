@@ -1,28 +1,12 @@
-import type { Metadata } from "next";
-import { getWorkspaceContext } from "@/lib/data/context";
-import { Card, CardBody, CardHeader } from "@/components/primitives/card";
-import { WorkspaceForm } from "@/components/features/admin/workspace-form";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Workspace" };
-
+// Workspace settings folded into General, so workspace identity is edited in
+// one place rather than two. The old URL still resolves.
 export default async function AdminWorkspacePage({
   params,
 }: {
   params: Promise<{ ws: string }>;
 }) {
   const { ws } = await params;
-  const ctx = await getWorkspaceContext(ws);
-
-  return (
-    <Card>
-      <CardHeader title="Workspace settings" />
-      <CardBody>
-        <WorkspaceForm
-          ws={ws}
-          name={ctx.workspace.name}
-          accentColor={ctx.workspace.accent_color}
-        />
-      </CardBody>
-    </Card>
-  );
+  redirect(`/${ws}/admin/general`);
 }

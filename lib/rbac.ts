@@ -102,11 +102,20 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
   ],
 };
 
-export function navGroupsFor(archetype: Archetype): NavGroup[] {
+// Archetype decides what a role may reach. `enabledKeys`, when given, is the
+// admin's feature switchboard from lib/data/workspace-settings.ts: turning a
+// feature off in Settings removes it from the sidebar for everyone, because
+// every nav surface renders from this one result.
+export function navGroupsFor(
+  archetype: Archetype,
+  enabledKeys?: Set<string>
+): NavGroup[] {
   const allowed = new Set(NAV_BY_ARCHETYPE[archetype]);
   return ALL_GROUPS.map((g) => ({
     label: g.label,
-    items: g.items.filter((i) => allowed.has(i)),
+    items: g.items.filter(
+      (i) => allowed.has(i) && (!enabledKeys || enabledKeys.has(i))
+    ),
   })).filter((g) => g.items.length > 0);
 }
 

@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
+  { key: "general", label: "General" },
+  { key: "features", label: "Features" },
+  { key: "ownership", label: "Ownership" },
   { key: "people", label: "People" },
   { key: "departments", label: "Spaces" },
   { key: "templates", label: "Templates" },
   { key: "integrations", label: "Integrations" },
-  { key: "workspace", label: "Workspace" },
 ];
 
 export function AdminTabs({ ws }: { ws: string }) {
@@ -22,6 +24,7 @@ export function AdminTabs({ ws }: { ws: string }) {
         return (
           <Link
             key={t.key}
+            id={`admin-tab-${t.key}`}
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
