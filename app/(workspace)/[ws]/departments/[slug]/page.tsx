@@ -13,21 +13,31 @@ import { Breadcrumbs, CodeLabel, CountBadge } from "@/components/primitives/misc
 import { EmptyState } from "@/components/primitives/empty-state";
 import { Button } from "@/components/ui/button";
 import { fmtDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { ProjectBoard } from "@/components/features/projects/project-board";
 import {
   NewListForm,
   DeleteListButton,
 } from "@/components/features/departments/department-controls";
 import type { Department, ProjectList } from "@/lib/types";
-import type { ProjectWithOwner } from "@/components/features/projects/types";
+import type {
+  CompletionMap,
+  ProjectWithOwner,
+} from "@/components/features/projects/types";
 
 export const metadata: Metadata = { title: "Department" };
 
 export default async function DepartmentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ ws: string; slug: string }>;
+  searchParams: Promise<{ view?: string }>;
 }) {
   const { ws, slug } = await params;
+  const sp = await searchParams;
+  // List stays the default, so an existing link to a space is unchanged.
+  const view = sp.view === "board" ? "board" : "list";
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
@@ -61,20 +71,34 @@ export default async function DepartmentPage({
 
   const lists = (listRows ?? []) as ProjectList[];
   const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
-  const completion = new Map<string, { done: number; total: number }>();
+  // Shaped as CompletionMap so the list sections and the board read the same
+  // counts from one source.
+  const completion: CompletionMap = {};
   for (const t of (taskRows ?? []) as { project_id: string; status: string }[]) {
-    const c = completion.get(t.project_id) ?? { done: 0, total: 0 };
+    const c = (completion[t.project_id] ??= { done: 0, total: 0 });
     c.total += 1;
     if (t.status === "done") c.done += 1;
-    completion.set(t.project_id, c);
   }
 
   const canManage = ctx.capabilities.canCreateProjects;
   const canAddList = ctx.capabilities.canAssignTasks;
   const unlisted = projects.filter((p) => !p.list_id);
 
+  const base = `/${ws}/departments/${slug}`;
+  const tab = (key: string, label: string) => (
+    <Link
+      href={`${base}${key === "list" ? "" : `?view=${key}`}`}
+      className={cn(
+        "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
+        view === key ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
+      )}
+    >
+      {label}
+    </Link>
+  );
+
   const ProjectRow = (p: ProjectWithOwner) => {
-    const c = completion.get(p.id) ?? { done: 0, total: 0 };
+    const c = completion[p.id] ?? { done: 0, total: 0 };
     return (
       <ListRow
         key={p.id}
@@ -138,6 +162,10 @@ export default async function DepartmentPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <div className="inline-flex items-center gap-0.5 rounded-[9px] border border-border bg-surface p-0.5">
+            {tab("list", "List")}
+            {tab("board", "Board")}
+          </div>
           {canAddList ? <NewListForm ws={ws} departmentId={dept.id} slug={slug} /> : null}
           {canManage ? (
             <Button asChild>
@@ -166,6 +194,10 @@ export default async function DepartmentPage({
             }
           />
         </Card>
+      ) : view === "board" ? (
+        // The board groups every project in the space by status, so it cuts
+        // across the lists rather than nesting inside them.
+        <ProjectBoard ws={ws} projects={projects} completion={completion} />
       ) : (
         <div className="flex flex-col gap-5">
           {lists.map((l) => {
