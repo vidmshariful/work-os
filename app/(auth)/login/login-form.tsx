@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { signIn, type AuthState } from "@/lib/actions/auth";
 
@@ -26,6 +26,13 @@ export function LoginForm({
   const [state, formAction, pending] = useActionState(signIn, initialState);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Which demo row is mid sign-in, so only that row shows the pending label.
+  const [submitting, setSubmitting] = useState<string | null>(null);
+
+  // A rejected sign-in returns here instead of redirecting, so clear the row.
+  useEffect(() => {
+    if (!pending) setSubmitting(null);
+  }, [pending]);
 
   return (
     <>
@@ -91,34 +98,46 @@ export function LoginForm({
         <div className="mt-4 rounded-[14px] border border-border bg-surface p-4">
           <div className="flex items-baseline justify-between">
             <h2 className="text-[13px] font-semibold text-text-1">Demo accounts</h2>
-            <span className="text-[11.5px] text-text-3">Click to fill</span>
+            <span className="text-[11.5px] text-text-3">Click to sign in</span>
           </div>
           <div className="mt-2 flex flex-col">
             {demoAccounts.map((a) => (
-              <button
+              // One form per account so the click carries its own credentials
+              // straight to the action. No state round trip, no second click.
+              <form
                 key={a.email}
-                type="button"
-                onClick={() => {
-                  setEmail(a.email);
-                  setPassword(demoPassword ?? "");
-                }}
-                className="flex items-center justify-between gap-3 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
+                action={formAction}
+                onSubmit={() => setSubmitting(a.email)}
               >
-                <span className="min-w-0">
-                  <span className="block truncate text-[12.5px] font-medium text-text-1">
-                    {a.name}
+                <input type="hidden" name="email" value={a.email} />
+                <input type="hidden" name="password" value={demoPassword ?? ""} />
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="flex w-full items-center justify-between gap-3 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2 disabled:opacity-60"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-[12.5px] font-medium text-text-1">
+                      {a.name}
+                    </span>
+                    <span className="block truncate font-mono text-[11px] text-text-3">
+                      {a.email}
+                    </span>
                   </span>
-                  <span className="block truncate font-mono text-[11px] text-text-3">
-                    {a.email}
+                  <span className="flex shrink-0 flex-col items-end gap-0.5">
+                    <span className="text-[11px] text-text-2">{a.role}</span>
+                    {submitting === a.email ? (
+                      <span className="text-[10px] font-medium text-brand">
+                        Signing in
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-chip-gray px-1.5 py-0.5 text-[10px] font-medium text-text-2">
+                        {a.wall} wall
+                      </span>
+                    )}
                   </span>
-                </span>
-                <span className="flex shrink-0 flex-col items-end gap-0.5">
-                  <span className="text-[11px] text-text-2">{a.role}</span>
-                  <span className="rounded-full bg-chip-gray px-1.5 py-0.5 text-[10px] font-medium text-text-2">
-                    {a.wall} wall
-                  </span>
-                </span>
-              </button>
+                </button>
+              </form>
             ))}
           </div>
           {demoPassword ? (
