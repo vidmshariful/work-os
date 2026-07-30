@@ -155,6 +155,65 @@ export async function createProject(
   redirect(`/${ws}/projects/${project.id}`);
 }
 
+// The inline row at the bottom of a list section. One field, because
+// anything else would make it slower than the modal it exists to avoid.
+// Everything not asked for takes the same default the full form would give
+// it: backlog, the creator as owner, no client, no dates, no template.
+//
+// listId null files it into the space with no list, which is what the
+// Unlisted section's quick add means.
+export async function quickAddProject(
+  ws: string,
+  slug: string,
+  departmentId: string,
+  listId: string | null,
+  title: string
+): Promise<{ error: string | null; code: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canCreateProjects) {
+    return { error: "Only managers can create projects.", code: null };
+  }
+  const clean = title.trim();
+  if (!clean) return { error: "Type a title first.", code: null };
+
+  const supabase = await createClient();
+  // A list belongs to one space, so the pairing is checked before a code is
+  // burned rather than after.
+  if (listId) {
+    const { data: list } = await supabase
+      .from("project_lists")
+      .select("id, department_id")
+      .eq("id", listId)
+      .maybeSingle();
+    if (!list) return { error: "That list no longer exists.", code: null };
+    if (list.department_id !== departmentId) {
+      return { error: "That list belongs to a different space.", code: null };
+    }
+  }
+
+  const { data: code, error: codeError } = await supabase.rpc("next_code", {
+    ws: ctx.workspace.id,
+    kind: "project",
+  });
+  if (codeError || !code) {
+    return { error: "Could not generate a project code. Try again.", code: null };
+  }
+
+  const { error } = await supabase.from("projects").insert({
+    workspace_id: ctx.workspace.id,
+    department_id: departmentId,
+    list_id: listId,
+    code: code as string,
+    title: clean,
+    status: "backlog",
+    owner_id: ctx.userId,
+  });
+  if (error) return { error: "Could not create the project. Try again.", code: null };
+
+  revalidatePath(`/${ws}/departments/${slug}`);
+  return { error: null, code: code as string };
+}
+
 // ---- sub-projects ----
 // A sub-project inherits its parent's space, list, and client, but has its own
 // owner and tasks. One level deep, enforced by a database trigger too.
@@ -526,6 +585,407 @@ export async function deleteProjectFile(
   const admin = createAdminClient();
   const { error } = await admin.storage.from(BUCKET).remove([path]);
   if (error) return { error: "Could not delete the file. Try again." };
+
+  revalidatePath(`/${ws}/projects/${projectId}`);
+  return { error: null };
+}
+
+// Inline owner change from the table view. Gated exactly like
+// updateProjectStatus, because projects_update allows a manager or the
+// current owner and nothing else. A non-manager owner handing the project to
+// someone else is refused by the policy's CHECK, since they would no longer
+// satisfy it, and that refusal surfaces as a clean message rather than a
+// silent no-op.
+export async function setProjectOwner(
+  ws: string,
+  projectId: string,
+  ownerId: string | null
+): Promise<{ error: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  const supabase = await createClient();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, owner_id")
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!project) return { error: "Project not found." };
+
+  const isOwner = project.owner_id === ctx.userId;
+  if (!ctx.capabilities.canCreateProjects && !isOwner) {
+    return { error: "Only managers or the project owner can change the owner." };
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ owner_id: ownerId })
+    .eq("id", projectId)
+    .select("id");
+  if (error) return { error: "Could not update the owner. Try again." };
+  if (!data || data.length === 0) {
+    return { error: "You cannot hand this project to someone else." };
+  }
+
+  revalidatePath(`/${ws}/projects`);
+  revalidatePath(`/${ws}/projects/${projectId}`);
+  return { error: null };
+}
+
+// Moving a project into a list, or out of every list when listId is null.
+// Gated like every other project write: projects_update permits a manager or
+// the current owner. The trigger writes the activity entry.
+export async function setProjectList(
+  ws: string,
+  projectId: string,
+  listId: string | null
+): Promise<{ error: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  const supabase = await createClient();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, owner_id, department_id")
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!project) return { error: "Project not found." };
+  if (!ctx.capabilities.canCreateProjects && project.owner_id !== ctx.userId) {
+    return { error: "Only managers or the project owner can move this." };
+  }
+
+  // A list belongs to one space, so refuse a move that would file a project
+  // into a list from somewhere else.
+  if (listId) {
+    const { data: list } = await supabase
+      .from("project_lists")
+      .select("id, department_id")
+      .eq("id", listId)
+      .maybeSingle();
+    if (!list) return { error: "That list no longer exists." };
+    if (list.department_id !== project.department_id) {
+      return { error: "That list belongs to a different space." };
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ list_id: listId })
+    .eq("id", projectId)
+    .select("id");
+  if (error) return { error: "Could not move the project. Try again." };
+  if (!data || data.length === 0) return { error: "You cannot move this project." };
+
+  revalidatePath(`/${ws}`, "layout");
+  return { error: null };
+}
+
+// Making a project a sub-project, or promoting it back with parentId null.
+// The one-level rule is enforced by a database trigger; these checks exist so
+// the person gets a reason instead of a raised exception.
+export async function setProjectParent(
+  ws: string,
+  projectId: string,
+  parentId: string | null
+): Promise<{ error: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  const supabase = await createClient();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, owner_id, department_id, parent_project_id")
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!project) return { error: "Project not found." };
+  if (!ctx.capabilities.canCreateProjects && project.owner_id !== ctx.userId) {
+    return { error: "Only managers or the project owner can move this." };
+  }
+
+  if (parentId) {
+    if (parentId === projectId) {
+      return { error: "A project cannot be its own parent." };
+    }
+    const { data: parent } = await supabase
+      .from("projects")
+      .select("id, title, parent_project_id, department_id")
+      .eq("id", parentId)
+      .maybeSingle();
+    if (!parent) return { error: "That project no longer exists." };
+    if (parent.parent_project_id) {
+      return {
+        error: "Sub-projects only go one level deep, and that one is already a sub-project.",
+      };
+    }
+    const { count } = await supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("parent_project_id", projectId);
+    if ((count ?? 0) > 0) {
+      return {
+        error: "This project has sub-projects of its own, so it cannot become one.",
+      };
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ parent_project_id: parentId })
+    .eq("id", projectId)
+    .select("id");
+  // The trigger is the real gate. If it fires anyway, say so plainly rather
+  // than leaking the raised text.
+  if (error) {
+    return { error: "Sub-projects only go one level deep. That move is not allowed." };
+  }
+  if (!data || data.length === 0) return { error: "You cannot move this project." };
+
+  revalidatePath(`/${ws}`, "layout");
+  return { error: null };
+}
+
+// Moving a project to another space. The clear-the-list rule lives in
+// updateProject and is not repeated here: a list belongs to exactly one
+// space, so leaving list_id behind would file the project into a list that
+// is no longer reachable from it.
+//
+// Sub-projects come along. createSubProject files a child into its parent's
+// space, so leaving children behind would split a parent from its own work
+// across two spaces, where each half is visible to a different set of people.
+export async function setProjectDepartment(
+  ws: string,
+  projectId: string,
+  departmentId: string
+): Promise<{ error: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  const supabase = await createClient();
+
+  const { data: dept } = await supabase
+    .from("departments")
+    .select("id")
+    .eq("id", departmentId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!dept) return { error: "That space is not available." };
+
+  const moved = await updateProject(ws, projectId, { department_id: departmentId });
+  if (moved.error) return { error: moved.error };
+
+  const { data: children } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("parent_project_id", projectId);
+  for (const child of (children ?? []) as { id: string }[]) {
+    const res = await updateProject(ws, child.id, { department_id: departmentId });
+    // A child owned by someone else is refused by projects_update. Say so
+    // rather than reporting a clean move that left half the work behind.
+    if (res.error) {
+      return { error: "The project moved, but a sub-project could not follow it." };
+    }
+  }
+
+  revalidatePath(`/${ws}`, "layout");
+  return { error: null };
+}
+
+// Setting or clearing a due date from the row menu. Thin on purpose: the
+// permission check and the write both live in updateProject, and the trigger
+// logs due_changed.
+export async function setProjectDueDate(
+  ws: string,
+  projectId: string,
+  dueDate: string | null
+): Promise<{ error: string | null }> {
+  const res = await updateProject(ws, projectId, { due_date: dueDate });
+  if (res.error) return res;
+  revalidatePath(`/${ws}`, "layout");
+  return { error: null };
+}
+
+// Copy a project's shape so a repeat engagement does not have to be rebuilt
+// by hand. What comes across: the header fields, the phase structure, the
+// task titles, and the deliverable checklist.
+//
+// What deliberately does not: progress of any kind. The copy starts in
+// backlog with every task back in backlog and every deliverable unchecked,
+// because a duplicate is work still to do, not work already done. Comments,
+// files, and activity stay with the original, and sub-projects are not
+// duplicated: cloning a tree from a menu item is more than the gesture
+// promises.
+export async function duplicateProject(
+  ws: string,
+  projectId: string
+): Promise<{ error: string | null; id: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canCreateProjects) {
+    return { error: "Only managers can duplicate projects.", id: null };
+  }
+
+  const supabase = await createClient();
+  const { data: source } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!source) return { error: "Project not found.", id: null };
+
+  const { data: code, error: codeError } = await supabase.rpc("next_code", {
+    ws: ctx.workspace.id,
+    kind: "project",
+  });
+  if (codeError || !code) {
+    return { error: "Could not generate a project code. Try again.", id: null };
+  }
+
+  const { data: copy, error: insertError } = await supabase
+    .from("projects")
+    .insert({
+      workspace_id: ctx.workspace.id,
+      client_id: source.client_id,
+      department_id: source.department_id,
+      list_id: source.list_id,
+      parent_project_id: source.parent_project_id,
+      code: code as string,
+      title: `${source.title} (copy)`,
+      type: source.type,
+      status: "backlog",
+      owner_id: source.owner_id,
+      start_date: source.start_date,
+      due_date: source.due_date,
+      brief: source.brief,
+    })
+    .select("id")
+    .single();
+  if (insertError || !copy) {
+    return { error: "Could not duplicate the project. Try again.", id: null };
+  }
+
+  const [{ data: phases }, { data: deliverables }] = await Promise.all([
+    supabase
+      .from("project_phases")
+      .select("id, name, sort_order")
+      .eq("project_id", projectId)
+      .order("sort_order"),
+    supabase
+      .from("deliverables")
+      .select("title, sort_order")
+      .eq("project_id", projectId)
+      .order("sort_order"),
+  ]);
+
+  // Tasks point at phases, so the phases have to exist first and the old id
+  // has to map to the new one.
+  const phaseIdMap = new Map<string, string>();
+  if ((phases ?? []).length > 0) {
+    const { data: newPhases } = await supabase
+      .from("project_phases")
+      .insert(
+        (phases ?? []).map((p) => ({
+          project_id: copy.id,
+          name: p.name,
+          sort_order: p.sort_order,
+        }))
+      )
+      .select("id, sort_order");
+    const bySort = new Map(
+      ((newPhases ?? []) as { id: string; sort_order: number }[]).map((p) => [
+        p.sort_order,
+        p.id,
+      ])
+    );
+    for (const p of phases ?? []) {
+      const next = bySort.get(p.sort_order);
+      if (next) phaseIdMap.set(p.id, next);
+    }
+  }
+
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("title, description, phase_id")
+    .eq("project_id", projectId);
+  if ((tasks ?? []).length > 0) {
+    await supabase.from("tasks").insert(
+      (tasks ?? []).map((t) => ({
+        project_id: copy.id,
+        phase_id: t.phase_id ? phaseIdMap.get(t.phase_id) ?? null : null,
+        title: t.title,
+        description: t.description,
+        status: "backlog" as const,
+      }))
+    );
+  }
+
+  if ((deliverables ?? []).length > 0) {
+    await supabase.from("deliverables").insert(
+      (deliverables ?? []).map((d) => ({
+        project_id: copy.id,
+        title: d.title,
+        sort_order: d.sort_order,
+      }))
+    );
+  }
+
+  revalidatePath(`/${ws}`, "layout");
+  return { error: null, id: copy.id };
+}
+
+// Permanent delete. projects_delete is executive only, and the check here
+// mirrors it so a manager gets a sentence instead of a silent no-op.
+//
+// The foreign keys decide what goes with it: tasks, phases, deliverables,
+// comments, the intake and the commercials row all cascade. Payments and
+// sub-projects are set null instead, so a child is promoted to top level
+// rather than deleted along with its parent. The caller is told this before
+// it happens.
+export async function deleteProject(
+  ws: string,
+  projectId: string
+): Promise<{ error: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canDeleteProjects) {
+    return { error: "Only executives can delete projects." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .select("id");
+  if (error) return { error: "Could not delete the project. Try again." };
+  if (!data || data.length === 0) return { error: "You cannot delete this project." };
+
+  revalidatePath(`/${ws}`, "layout");
+  return { error: null };
+}
+
+// ---- comments ----
+
+// Anyone who can see the project may comment, which is the same rule
+// task_comments uses. RLS is the real gate: the insert policy checks both the
+// author and workspace membership, so a project the caller cannot see rejects
+// the row rather than trusting anything decided here.
+export async function addProjectComment(
+  _prev: ProjectFormState,
+  formData: FormData
+): Promise<ProjectFormState> {
+  const ws = String(formData.get("ws") ?? "");
+  const projectId = String(formData.get("project_id") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  const ctx = await getWorkspaceContext(ws);
+  if (!projectId) return { error: "Missing project." };
+  if (!body) return { error: "Write a comment first." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("project_comments").insert({
+    project_id: projectId,
+    author_id: ctx.userId,
+    body,
+  });
+
+  if (error) return { error: "The comment could not be posted." };
 
   revalidatePath(`/${ws}/projects/${projectId}`);
   return { error: null };

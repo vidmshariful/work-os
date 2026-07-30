@@ -177,7 +177,7 @@ export function EditProjectDialog({
           </Field>
           {departments.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Department" htmlFor="ep_dept">
+              <Field label="Space" htmlFor="ep_dept">
                 <select
                   id="ep_dept"
                   className={inputClass}

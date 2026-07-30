@@ -1,43 +1,62 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FolderKanban, Plus } from "lucide-react";
+import { Archive, FolderKanban, Layers, Plus, Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
+import { loadSpaceDirectory } from "@/lib/data/spaces";
+import {
+  SpaceGlyph,
+  SpaceSettingsMenu,
+} from "@/components/features/departments/space-settings";
 import { Card } from "@/components/primitives/card";
-import { ListRow } from "@/components/primitives/list-row";
-import { ProjectStatusChip } from "@/components/primitives/tag";
-import { PersonAvatar } from "@/components/primitives/avatar";
-import { ProgressRing } from "@/components/primitives/progress";
-import { Breadcrumbs, CodeLabel, CountBadge } from "@/components/primitives/misc";
+import { Breadcrumbs } from "@/components/primitives/misc";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { Button } from "@/components/ui/button";
-import { fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ProjectBoard } from "@/components/features/projects/project-board";
+import { ProjectActionsProvider } from "@/components/features/projects/project-actions";
+import { isOverdue } from "@/components/features/projects/due-date";
+import { SpaceControls } from "@/components/features/departments/space-controls";
+import { SpaceGroupedList } from "@/components/features/departments/space-grouped-list";
+import { SpaceTable } from "@/components/features/departments/space-table";
+import { ProjectCalendar } from "@/components/features/departments/project-calendar";
 import {
-  NewListForm,
-  DeleteListButton,
-} from "@/components/features/departments/department-controls";
+  NO_LIST,
+  UNASSIGNED,
+  activeFilterCount,
+  applySpaceFilters,
+  buildSpaceQuery,
+  groupNests,
+  groupProjects,
+  hasExplicitGroup,
+  hasExplicitView,
+  parseSpaceFilters,
+  parseView,
+} from "@/components/features/departments/space-filters";
+import { NewListForm } from "@/components/features/departments/department-controls";
 import type { Department, ProjectList } from "@/lib/types";
-import type {
-  CompletionMap,
-  ProjectWithOwner,
-} from "@/components/features/projects/types";
+import { completionFrom } from "@/components/features/projects/types";
+import type { MemberOption, ProjectWithOwner } from "@/components/features/projects/types";
 
-export const metadata: Metadata = { title: "Department" };
+export const metadata: Metadata = { title: "Space" };
 
 export default async function DepartmentPage({
   params,
   searchParams,
 }: {
   params: Promise<{ ws: string; slug: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { ws, slug } = await params;
   const sp = await searchParams;
   // List stays the default, so an existing link to a space is unchanged.
-  const view = sp.view === "board" ? "board" : "list";
+  const view = parseView(sp.view);
+  const month =
+    typeof sp.m === "string" && /^\d{4}-\d{2}$/.test(sp.m)
+      ? sp.m
+      : new Date().toISOString().slice(0, 7);
+  const filters = parseSpaceFilters(sp);
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
@@ -50,8 +69,14 @@ export default async function DepartmentPage({
   if (!deptRow) notFound();
   const dept = deptRow as Department;
 
-  const [{ data: listRows }, { data: projectRows }, { data: taskRows }] =
-    await Promise.all([
+  const [
+    { data: listRows },
+    { data: projectRows },
+    { data: progressRows },
+    { data: memberRows },
+    { data: spaceRows },
+    directory,
+  ] = await Promise.all([
       supabase
         .from("project_lists")
         .select("*")
@@ -63,31 +88,121 @@ export default async function DepartmentPage({
         .eq("department_id", dept.id)
         .neq("status", "archived")
         .order("created_at", { ascending: false }),
+      // Progress comes from the view, which already rolls sub-project tasks
+      // into their parent. RLS scopes it to what this reader can see.
+      supabase.from("v_project_progress").select("*"),
+      // Candidates for the table's inline assignee picker.
       supabase
-        .from("tasks")
-        .select("project_id, status, project:projects!inner(department_id)")
-        .eq("project.department_id", dept.id),
+        .from("memberships")
+        .select("profile:profiles!profile_id!inner(id, full_name)")
+        .eq("workspace_id", ctx.workspace.id)
+        .eq("is_active", true),
+      // Destinations for "Move to space". departments_select already limits
+      // this to spaces the reader belongs to, or everything for an executive,
+      // so the menu cannot name a space they are not in.
+      supabase
+        .from("departments")
+        .select("id, name")
+        .eq("workspace_id", ctx.workspace.id)
+        .order("name"),
+      // Only fetched for an executive: the settings panel is theirs alone.
+      loadSpaceDirectory(ctx.workspace.id, ctx.capabilities.canSeeAdmin),
     ]);
 
   const lists = (listRows ?? []) as ProjectList[];
-  const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
-  // Shaped as CompletionMap so the list sections and the board read the same
-  // counts from one source.
-  const completion: CompletionMap = {};
-  for (const t of (taskRows ?? []) as { project_id: string; status: string }[]) {
-    const c = (completion[t.project_id] ??= { done: 0, total: 0 });
-    c.total += 1;
-    if (t.status === "done") c.done += 1;
-  }
+  const allProjects = (projectRows ?? []) as unknown as ProjectWithOwner[];
+  const completion = completionFrom(progressRows);
 
+  // Counted over everything in the space, so the pill does not change when
+  // the filter it controls is already on.
+  const overdueCount = allProjects.filter((p) =>
+    isOverdue(p.due_date, p.status)
+  ).length;
+
+  // Filtering and sorting happen here, on the server, so the browser receives
+  // only the rows it will draw.
+  const { visible, contextIds, matchedCount } = applySpaceFilters(
+    allProjects,
+    filters,
+    completion,
+    (ctx.settings.week_start_day ?? 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    new Map(((listRows ?? []) as ProjectList[]).map((l) => [l.id, l.name]))
+  );
+  const projects = visible;
+  const filterCount = activeFilterCount(filters);
+
+  // Only people who actually own something here, so the menu never lists the
+  // whole workspace. Unassigned is a real choice, not the absence of one.
+  const assigneeOptions = [
+    ...new Map(
+      allProjects
+        .filter((p) => p.owner)
+        .map((p) => [p.owner!.id, { value: p.owner!.id, label: p.owner!.full_name }])
+    ).values(),
+  ].sort((a, b) => a.label.localeCompare(b.label));
+  if (allProjects.some((p) => !p.owner_id)) {
+    assigneeOptions.push({ value: UNASSIGNED, label: "Unassigned" });
+  }
+  const listOptions = [
+    ...lists.map((l) => ({ value: l.id, label: l.name })),
+    ...(allProjects.some((p) => !p.list_id)
+      ? [{ value: NO_LIST, label: "No list" }]
+      : []),
+  ];
+
+  // Grouping runs after filtering, so a section only ever holds rows that
+  // survived the bar.
+  const nests = groupNests(filters.group);
+  const groups = groupProjects(projects, filters.group, lists);
+  // Built from every project in the space, not just the visible ones, so a
+  // breadcrumb still resolves when the parent is filtered out or grouped
+  // somewhere else.
+  const parentOf = new Map(
+    allProjects.map((p) => [p.id, { id: p.id, code: p.code, title: p.title }])
+  );
+  const listNames = new Map(lists.map((l) => [l.id, l.name]));
+  const members = ((memberRows ?? []) as unknown as { profile: MemberOption }[])
+    .map((m) => m.profile)
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
   const canManage = ctx.capabilities.canCreateProjects;
   const canAddList = ctx.capabilities.canAssignTasks;
-  const unlisted = projects.filter((p) => !p.list_id);
+  const isExec = ctx.capabilities.canSeeAdmin;
+  // Everything the row menu and the bulk bar need, resolved once here so no
+  // client component queries for it.
+  const actionScope = {
+    ws,
+    viewerId: ctx.userId,
+    canManage,
+    canDelete: ctx.capabilities.canDeleteProjects,
+    lists: lists.map((l) => ({ id: l.id, name: l.name })),
+    spaces: ((spaceRows ?? []) as { id: string; name: string }[]).map((d) => ({
+      id: d.id,
+      name: d.name,
+    })),
+    members,
+  };
+  // Counted over every project in the space, not the filtered view. The list
+  // delete confirmation quotes this number, so it has to be the real one.
+  const listCounts: Record<string, number> = {};
+  for (const l of lists) listCounts[l.id] = 0;
+  for (const p of allProjects) {
+    if (p.list_id && listCounts[p.list_id] !== undefined) listCounts[p.list_id] += 1;
+  }
 
   const base = `/${ws}/departments/${slug}`;
+  // Every link keeps the filters that are already on, so switching view or
+  // toggling the pill never silently resets the rest of the bar.
+  const href = (opts: { view?: string; due?: string | null }) => {
+    const qs = buildSpaceQuery({
+      ...filters,
+      due: (opts.due === undefined ? filters.due : opts.due) as never,
+      view: opts.view ?? view,
+    });
+    return qs ? `${base}?${qs}` : base;
+  };
   const tab = (key: string, label: string) => (
     <Link
-      href={`${base}${key === "list" ? "" : `?view=${key}`}`}
+      href={href({ view: key })}
       className={cn(
         "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
         view === key ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
@@ -96,43 +211,6 @@ export default async function DepartmentPage({
       {label}
     </Link>
   );
-
-  const ProjectRow = (p: ProjectWithOwner) => {
-    const c = completion[p.id] ?? { done: 0, total: 0 };
-    return (
-      <ListRow
-        key={p.id}
-        leading={<ProgressRing value={c.total > 0 ? c.done / c.total : 0} size={32} />}
-        title={
-          <Link href={`/${ws}/projects/${p.id}`} className="hover:underline">
-            {p.title}
-          </Link>
-        }
-        subtitle={<CodeLabel code={p.code} />}
-        meta={
-          <>
-            {p.owner ? (
-              <PersonAvatar name={p.owner.full_name} src={p.owner.avatar_url} size={22} />
-            ) : null}
-            {p.due_date ? (
-              <span className="font-mono text-[12px] text-text-2 tabular">
-                {fmtDate(p.due_date)}
-              </span>
-            ) : null}
-            <ProjectStatusChip status={p.status} />
-          </>
-        }
-        trailing={
-          <Link
-            href={`/${ws}/projects/${p.id}`}
-            className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
-          >
-            Open
-          </Link>
-        }
-      />
-    );
-  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -143,21 +221,58 @@ export default async function DepartmentPage({
         ]}
       />
 
+      {dept.archived_at ? (
+        <div className="flex items-start gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2.5 text-[12.5px] text-text-2">
+          <Archive className="mt-px size-4 shrink-0 text-text-3" strokeWidth={1.5} />
+          <span>
+            This space is archived. It is out of the sidebar and the index,
+            and everything in it still works. Restore it from the space
+            settings danger zone.
+          </span>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span
-            className="flex size-10 items-center justify-center rounded-[11px] text-[15px] font-semibold"
-            style={{ backgroundColor: `${dept.accent_color}1A`, color: dept.accent_color }}
-          >
-            {dept.name.slice(0, 1)}
-          </span>
+          <SpaceGlyph
+            name={dept.name}
+            icon={dept.icon}
+            color={dept.accent_color}
+            size={40}
+            className="rounded-[11px]"
+          />
           <div>
             <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
               {dept.name}
             </h1>
-            <p className="mt-0.5 text-sm text-text-2">
-              {projects.length} project{projects.length === 1 ? "" : "s"} across{" "}
-              {lists.length} list{lists.length === 1 ? "" : "s"}.
+            {dept.description ? (
+              <p className="mt-0.5 text-sm text-text-2">{dept.description}</p>
+            ) : null}
+            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-text-2">
+              <span>
+                {allProjects.length} project{allProjects.length === 1 ? "" : "s"}{" "}
+                across {lists.length} list{lists.length === 1 ? "" : "s"}.
+              </span>
+              {/* Hidden at zero: an empty red pill would read as a problem.
+                  It drives the same due filter the bar exposes, so the two
+                  stay in sync rather than fighting each other. */}
+              {overdueCount > 0 ? (
+                <Link
+                  href={href({ due: filters.due === "overdue" ? null : "overdue" })}
+                  aria-pressed={filters.due === "overdue"}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium transition-colors",
+                    filters.due === "overdue"
+                      ? "bg-danger text-white"
+                      : "bg-danger-soft text-danger hover:bg-danger hover:text-white"
+                  )}
+                >
+                  {overdueCount} overdue
+                  {filters.due === "overdue" ? (
+                    <X className="size-3.5" strokeWidth={2} />
+                  ) : null}
+                </Link>
+              ) : null}
             </p>
           </div>
         </div>
@@ -165,6 +280,8 @@ export default async function DepartmentPage({
           <div className="inline-flex items-center gap-0.5 rounded-[9px] border border-border bg-surface p-0.5">
             {tab("list", "List")}
             {tab("board", "Board")}
+            {tab("table", "Table")}
+            {tab("calendar", "Calendar")}
           </div>
           {canAddList ? <NewListForm ws={ws} departmentId={dept.id} slug={slug} /> : null}
           {canManage ? (
@@ -175,78 +292,181 @@ export default async function DepartmentPage({
               </Link>
             </Button>
           ) : null}
+          {/* Executive only, and nothing else belongs in this menu yet, so a
+              non-executive gets no menu rather than an empty one. */}
+          {isExec ? (
+            <SpaceSettingsMenu
+              ws={ws}
+              space={dept}
+              members={directory.membersByDept.get(dept.id) ?? []}
+              executives={directory.executives}
+              candidates={directory.everyone}
+              projectCount={allProjects.length}
+              listCount={lists.length}
+            />
+          ) : null}
         </div>
       </div>
 
-      {lists.length === 0 && projects.length === 0 ? (
+      {/* Row actions, bulk selection, and the keyboard layer are shared by
+          everything below, including the control bar, whose search box is
+          what the "/" shortcut reaches for. Switching view keeps a
+          selection, minus anything the new view does not draw. */}
+      <ProjectActionsProvider scope={actionScope} rows={projects}>
+      {/* Sits directly under the header and governs every view alike. */}
+      {allProjects.length > 0 ? (
+        <SpaceControls
+          base={base}
+          view={view}
+          filters={filters}
+          assignees={assigneeOptions}
+          lists={listOptions}
+          userId={ctx.userId}
+          slug={slug}
+          groupFromUrl={hasExplicitGroup(sp)}
+          viewFromUrl={hasExplicitView(sp)}
+        />
+      ) : null}
+
+      {filterCount > 0 && matchedCount === 0 ? (
+        // The space is not empty, the filter is. Say so, and offer the way
+        // back. Worded to match the other empty states: what is true, then
+        // the one action that changes it.
         <Card>
           <EmptyState
-            icon={<FolderKanban />}
-            title="This department is empty. Add a list to organize work, or start a project."
+            icon={<Search />}
+            title="No projects match these filters. Clearing them brings the space back."
             action={
-              canManage ? (
-                <Button asChild>
-                  <Link href={`/${ws}/projects/new?department=${dept.id}`}>
-                    New project
-                  </Link>
-                </Button>
-              ) : undefined
+              <Button asChild variant="outline">
+                <Link href={view === "board" ? `${base}?view=board` : base}>
+                  Clear filters
+                </Link>
+              </Button>
             }
           />
         </Card>
+      ) : lists.length === 0 ? (
+        // No lists at all. A list is the thing projects get filed into, so
+        // that is the action, even when some projects already exist.
+        <Card>
+          <EmptyState
+            icon={<Layers />}
+            title={
+              allProjects.length > 0
+                ? `This space has ${allProjects.length} project${
+                    allProjects.length === 1 ? "" : "s"
+                  } and nowhere to file them. Add a list to group the work.`
+                : "This space has no lists yet. A list is a bucket for work, like Custom or Premade."
+            }
+            action={
+              canAddList ? (
+                <NewListForm ws={ws} departmentId={dept.id} slug={slug} />
+              ) : (
+                <p className="text-[12.5px] text-text-3">
+                  Ask a team lead or a manager to add one.
+                </p>
+              )
+            }
+          />
+        </Card>
+      ) : allProjects.length === 0 ? (
+        // Lists exist and nothing is in them. Different problem, different
+        // action: the work, not the filing.
+        <Card>
+          <EmptyState
+            icon={<FolderKanban />}
+            title={`${lists.length} list${
+              lists.length === 1 ? "" : "s"
+            } ready and no projects yet. Start one and it lands in the first list.`}
+            action={
+              canManage ? (
+                <Button asChild>
+                  <Link href={`/${ws}/projects/new?department=${dept.id}&list=${lists[0].id}`}>
+                    New project
+                  </Link>
+                </Button>
+              ) : (
+                <p className="text-[12.5px] text-text-3">
+                  Ask a manager to start the first one.
+                </p>
+              )
+            }
+          />
+        </Card>
+      ) : view === "table" ? (
+        <SpaceTable
+          ws={ws}
+          base={base}
+          userId={ctx.userId}
+          filters={filters}
+          projects={projects}
+          completion={completion}
+          listNames={listNames}
+          members={members}
+          canManage={canManage}
+          viewerId={ctx.userId}
+          contextIds={contextIds}
+        />
+      ) : view === "calendar" ? (
+        // The same month grid the list page uses, scoped to the whole space.
+        <ProjectCalendar
+          ws={ws}
+          base={href({ view: "calendar" })}
+          month={month}
+          projects={projects.filter((p) => !contextIds.has(p.id))}
+        />
       ) : view === "board" ? (
         // The board groups every project in the space by status, so it cuts
-        // across the lists rather than nesting inside them.
-        <ProjectBoard ws={ws} projects={projects} completion={completion} />
+        // across the lists rather than nesting inside them. Context parents
+        // are dropped here: a board has no "beneath", so a non-matching card
+        // would read as a result rather than as context.
+        <ProjectBoard
+          ws={ws}
+          projects={projects.filter((p) => !contextIds.has(p.id))}
+          completion={completion}
+        />
       ) : (
-        <div className="flex flex-col gap-5">
-          {lists.map((l) => {
-            const items = projects.filter((p) => p.list_id === l.id);
-            return (
-              <section key={l.id} id={`list-${l.id}`} className="scroll-mt-6">
-                <div className="group/list flex items-center gap-2 px-1 pb-1">
-                  <span className="group-label">{l.name}</span>
-                  <CountBadge count={items.length} className="ml-0" />
-                  <div className="ml-auto flex items-center gap-1">
-                    {canManage ? (
-                      <Link
-                        href={`/${ws}/projects/new?department=${dept.id}&list=${l.id}`}
-                        className="rounded-[8px] px-2 py-1 text-[12px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover/list:opacity-100"
-                      >
-                        New project
-                      </Link>
-                    ) : null}
-                    {canAddList ? (
-                      <DeleteListButton ws={ws} listId={l.id} slug={slug} />
-                    ) : null}
-                  </div>
-                </div>
-                <Card>
-                  {items.length === 0 ? (
-                    <p className="px-5 py-4 text-[12.5px] text-text-3">
-                      Nothing in this list yet.
-                    </p>
-                  ) : (
-                    items.map((p) => ProjectRow(p))
-                  )}
-                </Card>
-              </section>
-            );
-          })}
-
-          {unlisted.length > 0 ? (
-            <section>
-              <div className="flex items-center gap-2 px-1 pb-1">
-                <span className="group-label">
-                  {lists.length > 0 ? "Unlisted" : "Projects"}
-                </span>
-                <CountBadge count={unlisted.length} className="ml-0" />
-              </div>
-              <Card>{unlisted.map((p) => ProjectRow(p))}</Card>
-            </section>
-          ) : null}
-        </div>
+        <SpaceGroupedList
+          ws={ws}
+          slug={slug}
+          userId={ctx.userId}
+          groups={groups}
+          group={filters.group}
+          completion={completion}
+          contextIds={[...contextIds]}
+          filterActive={filterCount > 0}
+          nested={nests}
+          parentOf={[...parentOf.values()]}
+          canReorderLists={canAddList}
+          canManage={canManage}
+          departmentId={dept.id}
+          lists={lists.map((l) => ({ id: l.id, name: l.name, color: l.color }))}
+          listCounts={listCounts}
+          spaces={actionScope.spaces}
+          sectionActions={Object.fromEntries(
+            lists.map((l) => [
+              l.id,
+              // The quick add row covers the common case. This stays for the
+              // times a project needs a client, a template, or dates set at
+              // creation, which one text field cannot ask for.
+              canManage ? (
+                <Link
+                  key={l.id}
+                  href={`/${ws}/projects/new?department=${dept.id}&list=${l.id}`}
+                  className="rounded-[8px] px-2 py-1 text-[12px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover/section:opacity-100"
+                >
+                  New with details
+                </Link>
+              ) : null,
+            ])
+          )}
+          emptyNote={{
+            [NO_LIST]:
+              "Nothing is sitting outside a list, which is how it should be.",
+          }}
+        />
       )}
+      </ProjectActionsProvider>
     </div>
   );
 }

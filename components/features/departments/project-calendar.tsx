@@ -1,8 +1,17 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/primitives/card";
+import { EmptyState } from "@/components/primitives/empty-state";
+import { Button } from "@/components/ui/button";
 import { STATUS_DOT } from "@/components/features/projects/status-dot";
 import type { ProjectWithOwner } from "@/components/features/projects/types";
+
+// YYYY-MM to a comparable integer, so "nearest month" is a subtraction
+// rather than a date parse.
+const monthIndex = (m: string) => {
+  const [y, mm] = m.split("-").map(Number);
+  return y * 12 + (mm - 1);
+};
 
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -42,6 +51,22 @@ export function ProjectCalendar({
   for (let d = 1; d <= days; d++) cells.push(d);
   while (cells.length % 7 !== 0) cells.push(null);
 
+  // A month with nothing in it should say where the work actually is, not
+  // just that this month is empty. The nearest month that has a due date is
+  // the one action worth offering.
+  const dated = projects.filter((p) => p.due_date);
+  const undated = projects.length - dated.length;
+  const months = [...new Set(dated.map((p) => p.due_date!.slice(0, 7)))].sort();
+  const nearest = months.length
+    ? months.reduce((best, candidate) =>
+        Math.abs(monthIndex(candidate) - monthIndex(month)) <
+        Math.abs(monthIndex(best) - monthIndex(month))
+          ? candidate
+          : best
+      )
+    : null;
+  const empty = (byDay.size === 0);
+
   return (
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -57,6 +82,31 @@ export function ProjectCalendar({
           </Link>
         </div>
       </div>
+      {empty ? (
+        <EmptyState
+          className="py-10"
+          icon={<CalendarOff />}
+          title={
+            nearest
+              ? `Nothing is due in ${MONTHS[m - 1]}.`
+              : undated > 0
+                ? `Nothing here has a due date, so the calendar has nothing to place. ${undated} project${
+                    undated === 1 ? " is" : "s are"
+                  } waiting in the list view.`
+                : "No projects to place on a calendar yet."
+          }
+          action={
+            nearest ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`${base}&m=${nearest}`}>
+                  Jump to {MONTHS[Number(nearest.slice(5, 7)) - 1]}{" "}
+                  {nearest.slice(0, 4)}
+                </Link>
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
       <div className="grid grid-cols-7 gap-px overflow-hidden rounded-[10px] border border-border bg-border">
         {WD.map((w) => (
           <div key={w} className="bg-surface-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.05em] text-text-3">
@@ -85,6 +135,7 @@ export function ProjectCalendar({
           </div>
         ))}
       </div>
+      )}
     </Card>
   );
 }

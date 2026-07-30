@@ -122,6 +122,10 @@ export function navGroupsFor(
 export interface Capabilities {
   canManageClients: boolean; // create and edit client records
   canCreateProjects: boolean;
+  // Mirrors projects_delete, which is executive only. Deleting a project
+  // takes its tasks, deliverables, and comments with it, so it sits a step
+  // above every other project write rather than alongside them.
+  canDeleteProjects: boolean;
   canAssignTasks: boolean; // create tasks and assign them
   canManageTemplates: boolean;
   canApproveLeave: boolean; // sees approval queue (leads approve their reports)
@@ -143,6 +147,7 @@ export function capabilitiesFor(
     // Client writes require above wall or revenue. Enforced again server-side.
     canManageClients: wallSide === "above" || archetype === "revenue",
     canCreateProjects: isExec || isDm,
+    canDeleteProjects: isExec,
     canAssignTasks: isExec || isDm || isLead,
     canManageTemplates: isExec || isDm,
     canApproveLeave: isExec || isDm || isLead,

@@ -25,10 +25,11 @@ import {
   RemoveDependencyButton,
   RevisionForm,
 } from "@/components/features/tasks/detail-forms";
+import type { ActivityItem } from "@/components/features/activity/activity-panel";
 import {
-  ActivityPanel,
-  type ActivityItem,
-} from "@/components/features/activity/activity-panel";
+  ActivityFeed,
+  type FeedComment,
+} from "@/components/features/activity/activity-feed";
 import {
   SubtasksCard,
   type SubtaskRow,
@@ -69,7 +70,7 @@ export default async function TaskDetailPage({
   };
 
   const [
-    { data: comments },
+    { data: commentRows },
     { data: revisions },
     { data: depRows },
     { data: projectTasks },
@@ -138,6 +139,7 @@ export default async function TaskDetailPage({
     .sort((a, b) => a.full_name.localeCompare(b.full_name));
   const phases = (phaseRows ?? []) as { id: string; name: string }[];
   const activity = (activityRows ?? []) as unknown as ActivityItem[];
+  const comments = (commentRows ?? []) as unknown as FeedComment[];
   const subtasks = (subtaskRows ?? []) as unknown as SubtaskRow[];
   const parentTask = (parentRes?.data ?? null) as { id: string; title: string } | null;
   const isSubtask = task.parent_task_id !== null;
@@ -183,7 +185,9 @@ export default async function TaskDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      {/* The rail carries the activity and comment thread, so it needs a
+          little more room than a plain meta column would. */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader title="Description" />
@@ -276,47 +280,6 @@ export default async function TaskDetailPage({
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader
-              title={
-                <span className="flex items-center gap-2">
-                  <MessageSquare className="size-4 text-text-3" strokeWidth={1.5} />
-                  Comments
-                </span>
-              }
-            />
-            <CardBody className="flex flex-col gap-4">
-              {(comments ?? []).map((c) => {
-                const comment = c as unknown as {
-                  id: string;
-                  body: string;
-                  created_at: string;
-                  author: PersonRef | null;
-                };
-                return (
-                  <div key={comment.id} className="flex gap-2.5">
-                    <PersonAvatar
-                      name={comment.author?.full_name}
-                      src={comment.author?.avatar_url}
-                      size={28}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12.5px]">
-                        <span className="font-medium text-text-1">
-                          {comment.author?.full_name ?? "Someone"}
-                        </span>{" "}
-                        <span className="text-text-3">{fmtTimeAgo(comment.created_at)}</span>
-                      </p>
-                      <p className="mt-0.5 whitespace-pre-wrap text-sm leading-relaxed text-text-1">
-                        {comment.body}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              <CommentForm ws={ws} taskId={id} />
-            </CardBody>
-          </Card>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -436,12 +399,22 @@ export default async function TaskDetailPage({
           </Card>
 
           <Card className="p-4">
-            <h4 className="flex items-center gap-2 text-[13px] font-semibold text-text-1">
-              <History className="size-4 text-text-3" strokeWidth={1.5} />
-              Activity
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="flex items-center gap-2 text-[13px] font-semibold text-text-1">
+                <History className="size-4 text-text-3" strokeWidth={1.5} />
+                Activity
+              </h4>
+              <span className="flex items-center gap-1 text-[11.5px] text-text-3">
+                <MessageSquare className="size-3.5" strokeWidth={1.5} />
+                {comments.length}
+              </span>
+            </div>
             <div className="mt-3">
-              <ActivityPanel items={activity} />
+              <ActivityFeed
+                activity={activity}
+                comments={comments}
+                composer={<CommentForm ws={ws} taskId={id} />}
+              />
             </div>
           </Card>
         </div>

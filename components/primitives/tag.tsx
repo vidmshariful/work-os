@@ -25,6 +25,29 @@ const TONES: Record<TagTone, { bg: string; dot: string; text: string }> = {
   gray: { bg: "bg-tag-gray-soft", dot: "bg-tag-gray", text: "text-[#5d6675]" },
 };
 
+// The palette in picker order. project_lists.color is constrained to exactly
+// these seven in Postgres, so a colour chosen here always has a token.
+export const TAG_TONES: TagTone[] = [
+  "blue",
+  "violet",
+  "green",
+  "amber",
+  "rose",
+  "teal",
+  "gray",
+];
+
+// The saturated fill for a tone, for callers that want the dot without the
+// pill around it. Reads from the same table the pill does, so the two can
+// never drift.
+export function toneDotClass(tone: TagTone): string {
+  return TONES[tone].dot;
+}
+
+export function isTagTone(value: unknown): value is TagTone {
+  return typeof value === "string" && value in TONES;
+}
+
 // Pill tag: soft pastel background plus a saturated dot. Department, status,
 // people.
 export function Tag({

@@ -20,9 +20,14 @@ import { Card } from "@/components/primitives/card";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { ProgressRing } from "@/components/primitives/progress";
 import { CodeLabel, CountBadge } from "@/components/primitives/misc";
-import { fmtDate } from "@/lib/format";
+import { DueDate } from "@/components/features/projects/due-date";
 import { cn } from "@/lib/utils";
 import { updateProjectStatus } from "@/lib/actions/projects";
+import {
+  ProjectContextMenu,
+  ProjectOverflowButton,
+  useProjectActions,
+} from "./project-actions";
 import type { CompletionMap, ProjectWithOwner } from "./types";
 import { BOARD_COLUMNS } from "./types";
 import type { ProjectStatus } from "@/lib/types";
@@ -30,21 +35,24 @@ import type { ProjectStatus } from "@/lib/types";
 function CardBody({
   p,
   completion,
+  withActions = false,
 }: {
   p: ProjectWithOwner;
   completion: CompletionMap;
+  // Off for the drag overlay, where a menu button would be a target that
+  // moves with the pointer.
+  withActions?: boolean;
 }) {
   const c = completion[p.id] ?? { done: 0, total: 0 };
   const fraction = c.total > 0 ? c.done / c.total : 0;
   return (
-    <Card className="p-3.5 transition-colors hover:border-border-strong">
+    <Card className="group p-3.5 transition-colors hover:border-border-strong">
       <div className="flex items-center justify-between gap-2">
         <CodeLabel code={p.code} />
-        {p.due_date ? (
-          <span className="font-mono text-[11.5px] text-text-3 tabular">
-            {fmtDate(p.due_date)}
-          </span>
-        ) : null}
+        <span className="flex items-center gap-1">
+          <DueDate due={p.due_date} status={p.status} className="text-[11.5px]" />
+          {withActions ? <ProjectOverflowButton project={p} /> : null}
+        </span>
       </div>
       <p className="mt-1.5 line-clamp-2 text-[13.5px] font-medium leading-snug text-text-1">
         {p.title}
@@ -76,19 +84,21 @@ function DraggableCard({
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : undefined;
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      onClick={() => onOpen(p.id)}
-      className={cn(
-        "cursor-grab touch-none rounded-[14px] outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:cursor-grabbing",
-        isDragging && "opacity-40"
-      )}
-    >
-      <CardBody p={p} completion={completion} />
-    </div>
+    <ProjectContextMenu project={p}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...listeners}
+        {...attributes}
+        onClick={() => onOpen(p.id)}
+        className={cn(
+          "cursor-grab touch-none rounded-[14px] outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:cursor-grabbing",
+          isDragging && "opacity-40"
+        )}
+      >
+        <CardBody p={p} completion={completion} withActions />
+      </div>
+    </ProjectContextMenu>
   );
 }
 
@@ -119,8 +129,20 @@ function Column({
         <CountBadge count={count} className="ml-0" />
       </div>
       {count === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-border px-4 py-8 text-center text-[12.5px] text-text-3">
-          Nothing here.
+        // Named, so four empty columns do not all say the same thing, and
+        // pointed at the one action a column actually offers.
+        <div
+          className={cn(
+            "rounded-[14px] border border-dashed px-4 py-8 text-center text-[12.5px] text-text-3 transition-colors",
+            isOver ? "border-brand text-brand" : "border-border"
+          )}
+        >
+          {isOver ? `Drop to move here` : `Nothing in ${label.toLowerCase()}.`}
+          {!isOver ? (
+            <span className="mt-0.5 block text-[11.5px]">
+              Drag a card here to move it.
+            </span>
+          ) : null}
         </div>
       ) : (
         children
@@ -142,6 +164,11 @@ export function ProjectBoard({
   completion: CompletionMap;
 }) {
   const router = useRouter();
+  // Present on the space page, absent on Projects. With it, a card change
+  // made from the menu and one made by dragging share the same optimistic
+  // state; without it the board keeps its own, which is how the surfaces that
+  // have not adopted the menu carry on unchanged.
+  const actions = useProjectActions();
   const [overlay, setOverlay] = useState<Record<string, ProjectStatus>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
@@ -149,7 +176,7 @@ export function ProjectBoard({
     useSensor(KeyboardSensor)
   );
 
-  const rows = projects.map((p) =>
+  const rows = (actions ? actions.resolve(projects) : projects).map((p) =>
     overlay[p.id] ? { ...p, status: overlay[p.id] } : p
   );
   const active = rows.find((p) => p.id === activeId) ?? null;
@@ -166,6 +193,11 @@ export function ProjectBoard({
     const project = rows.find((p) => p.id === a.id);
     const next = over.id as ProjectStatus;
     if (!project || !columnStatuses.includes(next) || project.status === next) return;
+
+    if (actions) {
+      actions.setStatus(project, next);
+      return;
+    }
 
     setOverlay((o) => ({ ...o, [project.id]: next }));
     void updateProjectStatus(ws, project.id, next).then((res) => {

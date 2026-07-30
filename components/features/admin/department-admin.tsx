@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { Card } from "@/components/primitives/card";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { Button } from "@/components/ui/button";
+import { DeleteSpaceCard } from "@/components/features/departments/space-settings";
 import {
   addDepartmentMember,
   createDepartment,
-  deleteDepartment,
   removeDepartmentMember,
   renameDepartment,
   setDefaultDepartment,
@@ -28,6 +28,10 @@ export interface DeptAdminRow {
   accent_color: string;
   is_default: boolean;
   members: DeptAdminMember[];
+  // Quoted back in the delete confirmation, so it says what will actually
+  // happen rather than a general warning.
+  projectCount: number;
+  listCount: number;
 }
 
 const ACCENTS = ["#3B6FF6", "#7C5CFC", "#16A34A", "#E5486D", "#12A8A0", "#8A94A3"];
@@ -50,7 +54,7 @@ function CreateDepartment({ ws }: { ws: string }) {
         return;
       }
       setName("");
-      toast.success("Department created.");
+      toast.success("Space created.");
     });
   };
 
@@ -66,7 +70,7 @@ function CreateDepartment({ ws }: { ws: string }) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="New department name"
+          placeholder="New space name"
           className={`${inputClass} max-w-xs`}
         />
         <div className="flex items-center gap-1.5">
@@ -74,7 +78,7 @@ function CreateDepartment({ ws }: { ws: string }) {
             <button
               key={c}
               type="button"
-              aria-label={`Accent ${c}`}
+              aria-label={`Colour ${c}`}
               onClick={() => setAccent(c)}
               className="flex size-6 items-center justify-center rounded-full"
               style={{ backgroundColor: `${c}2A` }}
@@ -89,7 +93,7 @@ function CreateDepartment({ ws }: { ws: string }) {
         </div>
         <Button type="submit" size="sm" disabled={pending || !name.trim()}>
           <Plus />
-          Add department
+          Add space
         </Button>
       </form>
     </Card>
@@ -106,6 +110,7 @@ function DepartmentCard({
   allMembers: DeptAdminMember[];
 }) {
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState(dept.name);
   const [pending, start] = useTransition();
 
@@ -180,28 +185,52 @@ function DepartmentCard({
                 size="sm"
                 disabled={pending}
                 onClick={() =>
-                  run(() => setDefaultDepartment(ws, dept.id), "Default department set.")
+                  run(() => setDefaultDepartment(ws, dept.id), "Default space set.")
                 }
               >
                 <Star />
                 Make default
               </Button>
+              {/* The one-click trash that used to sit here is gone. Deleting
+                  a space unfiles its projects and removes its lists, and
+                  deleteDepartment now requires the name typed out, so this
+                  opens the same danger zone the space settings panel does. */}
               <Button
                 variant="ghost"
-                size="icon-sm"
-                aria-label="Delete department"
+                size="sm"
+                aria-label={`Delete ${dept.name}`}
                 className="text-text-3 hover:text-danger"
                 disabled={pending}
-                onClick={() =>
-                  run(() => deleteDepartment(ws, dept.id), "Department deleted.")
-                }
+                onClick={() => setDeleting(true)}
               >
                 <Trash2 className="size-4" strokeWidth={1.5} />
+                Delete
               </Button>
             </>
           ) : null}
         </div>
       </div>
+
+      {deleting ? (
+        <div className="mt-3">
+          <DeleteSpaceCard
+            ws={ws}
+            space={{
+              id: dept.id,
+              name: dept.name,
+              slug: dept.slug,
+              description: null,
+              icon: null,
+              accent_color: dept.accent_color,
+              is_default: dept.is_default,
+              archived_at: null,
+            }}
+            projectCount={dept.projectCount}
+            listCount={dept.listCount}
+            onDeleted={() => setDeleting(false)}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {dept.members.length === 0 ? (
@@ -263,8 +292,8 @@ export function DepartmentAdmin({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[12.5px] text-text-2">
-        Departments are spaces for parts of the studio. People see only the
-        departments they belong to; executives see all. Keep names brand-blind,
+        A space is an area of the studio. People see only the spaces they
+        belong to, and executives see all of them. Keep names brand-blind,
         never a client name.
       </p>
       <CreateDepartment ws={ws} />

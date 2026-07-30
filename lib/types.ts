@@ -236,6 +236,9 @@ export interface Project {
   start_date: string | null;
   due_date: string | null;
   created_at: string;
+  // Stamped by a trigger on every update, added in 0032 so a space can be
+  // sorted by last updated.
+  updated_at: string;
 }
 
 export interface Department {
@@ -248,6 +251,12 @@ export interface Department {
   is_default: boolean;
   lead_id: string | null;
   created_at: string;
+  description: string | null;
+  // A single emoji, or null for the letter avatar built from the name.
+  icon: string | null;
+  // Null while the space is active. Archiving hides it from the index and
+  // the sidebar; it never changes who is allowed to see it.
+  archived_at: string | null;
 }
 
 export interface ProjectList {
@@ -257,6 +266,9 @@ export interface ProjectList {
   sort_order: number;
   owner_id: string | null;
   created_at: string;
+  // A TagTone key, or null for no colour. Constrained in Postgres to the same
+  // seven the design system draws with.
+  color: string | null;
 }
 
 export interface ProjectPhase {
@@ -296,6 +308,15 @@ export interface Task {
 export interface TaskComment {
   id: string;
   task_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+}
+
+// The project-level thread. Same shape as TaskComment, hung off a project.
+export interface ProjectComment {
+  id: string;
+  project_id: string;
   author_id: string;
   body: string;
   created_at: string;

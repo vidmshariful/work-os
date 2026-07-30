@@ -12,9 +12,11 @@ import { cn } from "@/lib/utils";
 import { ProjectBoard } from "@/components/features/projects/project-board";
 import { ProjectCalendar } from "@/components/features/departments/project-calendar";
 import { CollapsibleProjectList } from "@/components/features/departments/collapsible-project-list";
+import { ProjectActionsProvider } from "@/components/features/projects/project-actions";
 import type { Department, ProjectList } from "@/lib/types";
+import { completionFrom } from "@/components/features/projects/types";
 import type {
-  CompletionMap,
+  MemberOption,
   ProjectWithOwner,
 } from "@/components/features/projects/types";
 
@@ -52,7 +54,13 @@ export default async function ListPage({
   if (!listRow) notFound();
   const list = listRow as ProjectList;
 
-  const [{ data: projectRows }, { data: taskRows }] = await Promise.all([
+  const [
+    { data: projectRows },
+    { data: progressRows },
+    { data: listRows },
+    { data: memberRows },
+    { data: spaceRows },
+  ] = await Promise.all([
     supabase
       .from("projects")
       .select("*, owner:profiles(id, full_name, avatar_url)")
@@ -60,20 +68,42 @@ export default async function ListPage({
       .eq("list_id", listId)
       .neq("status", "archived")
       .order("created_at", { ascending: false }),
+    // Rolled-up progress from the view. A parent in this list counts its
+    // sub-projects even when they sit in another list.
+    supabase.from("v_project_progress").select("*"),
+    // Destinations for the row menu. Lists are the sibling lists of this
+    // space; spaces come back already filtered by departments_select.
     supabase
-      .from("tasks")
-      .select("project_id, status, project:projects!inner(list_id)")
-      .eq("project.list_id", listId),
+      .from("project_lists")
+      .select("id, name")
+      .eq("department_id", dept.id)
+      .order("sort_order"),
+    supabase
+      .from("memberships")
+      .select("profile:profiles!profile_id!inner(id, full_name)")
+      .eq("workspace_id", ctx.workspace.id)
+      .eq("is_active", true),
+    supabase
+      .from("departments")
+      .select("id, name")
+      .eq("workspace_id", ctx.workspace.id)
+      .order("name"),
   ]);
 
   const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
-  const completion: CompletionMap = {};
-  for (const t of (taskRows ?? []) as { project_id: string; status: string }[]) {
-    const c = (completion[t.project_id] ??= { done: 0, total: 0 });
-    c.total += 1;
-    if (t.status === "done") c.done += 1;
-  }
+  const completion = completionFrom(progressRows);
   const canManage = ctx.capabilities.canCreateProjects;
+  const actionScope = {
+    ws,
+    viewerId: ctx.userId,
+    canManage,
+    canDelete: ctx.capabilities.canDeleteProjects,
+    lists: (listRows ?? []) as { id: string; name: string }[],
+    spaces: (spaceRows ?? []) as { id: string; name: string }[],
+    members: ((memberRows ?? []) as unknown as { profile: MemberOption }[])
+      .map((m) => m.profile)
+      .sort((a, b) => a.full_name.localeCompare(b.full_name)),
+  };
 
   const tops = projects.filter((p) => !p.parent_project_id);
   const base = `/${ws}/departments/${slug}/lists/${listId}`;
@@ -128,6 +158,7 @@ export default async function ListPage({
         </div>
       </div>
 
+      <ProjectActionsProvider scope={actionScope} rows={projects}>
       {projects.length === 0 ? (
         <Card>
           <EmptyState
@@ -149,8 +180,14 @@ export default async function ListPage({
       ) : view === "calendar" ? (
         <ProjectCalendar ws={ws} base={`${base}?view=calendar`} month={month} projects={projects} />
       ) : (
-        <CollapsibleProjectList ws={ws} projects={projects} completion={completion} />
+        <CollapsibleProjectList
+          ws={ws}
+          userId={ctx.userId}
+          projects={projects}
+          completion={completion}
+        />
       )}
+      </ProjectActionsProvider>
     </div>
   );
 }

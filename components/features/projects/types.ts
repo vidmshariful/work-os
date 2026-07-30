@@ -28,6 +28,27 @@ export interface CompletionMap {
   [projectId: string]: { done: number; total: number };
 }
 
+// One row of v_project_progress. The database does the arithmetic, so no
+// screen aggregates tasks itself and every surface shows the same number.
+export interface ProgressRow {
+  project_id: string;
+  direct_done: number;
+  direct_total: number;
+  child_count: number;
+  rollup_done: number;
+  rollup_total: number;
+}
+
+// Rings and bars show the rolled-up figure, so a parent reflects the work
+// happening in its sub-projects. For a leaf the rollup equals its own tasks.
+export function completionFrom(rows: unknown): CompletionMap {
+  const map: CompletionMap = {};
+  for (const r of (rows ?? []) as ProgressRow[]) {
+    map[r.project_id] = { done: r.rollup_done, total: r.rollup_total };
+  }
+  return map;
+}
+
 export const BOARD_COLUMNS: { status: ProjectStatus; label: string }[] = [
   { status: "backlog", label: "Backlog" },
   { status: "in_progress", label: "In progress" },

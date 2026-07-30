@@ -138,7 +138,7 @@ export function NewProjectForm({
           </select>
         </Field>
 
-        <Field label="List" htmlFor="list_id" hint="Optional bucket inside the department.">
+        <Field label="List" htmlFor="list_id" hint="Optional bucket inside the space.">
           <select
             id="list_id"
             name="list_id"

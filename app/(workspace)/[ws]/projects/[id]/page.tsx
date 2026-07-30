@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, Layers, ListChecks, Plus, SquareCheckBig } from "lucide-react";
+import {
+  CalendarDays,
+  Layers,
+  ListChecks,
+  MessageSquare,
+  Plus,
+  SquareCheckBig,
+} from "lucide-react";
 import { SubProjectAdd } from "@/components/features/projects/sub-projects";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
@@ -19,7 +26,9 @@ import { Breadcrumbs, CodeLabel } from "@/components/primitives/misc";
 import { RightRailPanel } from "@/components/primitives/right-rail";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { Button } from "@/components/ui/button";
-import { fmtDate, fmtDateFull, daysUntil } from "@/lib/format";
+import { fmtDate, fmtDateFull } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { dueState } from "@/components/features/projects/due-date";
 import { clientLabel, isConfidential, isUnmasked } from "@/lib/wall";
 import { ProjectStatusSelect } from "@/components/features/projects/status-select";
 import { DeliverableToggle } from "@/components/features/projects/deliverable-toggle";
@@ -28,17 +37,20 @@ import {
   EditProjectDialog,
   ProjectBrief,
 } from "@/components/features/projects/project-edit";
-import {
-  ActivityPanel,
-  type ActivityItem,
-} from "@/components/features/activity/activity-panel";
+import type { ActivityItem } from "@/components/features/activity/activity-panel";
 import {
   ProjectIntakePanel,
   IntakeStatusTag,
 } from "@/components/features/clients/project-intake-panel";
 import { CommercialsPanel } from "@/components/features/clients/commercials-card";
+import {
+  ActivityFeed,
+  type FeedComment,
+} from "@/components/features/activity/activity-feed";
+import { ProjectCommentForm } from "@/components/features/projects/project-comments";
 import { listProjectFiles } from "@/lib/actions/projects";
 import type {
+  ProgressRow,
   ProjectWithOwner,
   TaskWithAssignee,
 } from "@/components/features/projects/types";
@@ -84,6 +96,8 @@ export default async function ProjectDetailPage({
     { data: listRows },
     { data: subProjectRows },
     parentRes,
+    { data: commentRows },
+    progressRes,
   ] = await Promise.all([
     supabase
       .from("project_phases")
@@ -137,6 +151,14 @@ export default async function ProjectDetailPage({
     project.parent_project_id
       ? supabase.from("projects").select("id, code, title").eq("id", project.parent_project_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    // Oldest first, so the thread reads top to bottom like a conversation.
+    supabase
+      .from("project_comments")
+      .select("id, body, created_at, author:profiles!author_id(id, full_name, avatar_url)")
+      .eq("project_id", id)
+      .order("created_at"),
+    // Direct and rolled-up counts, computed in the database.
+    supabase.from("v_project_progress").select("*").eq("project_id", id).maybeSingle(),
   ]);
 
   const phases = (phaseRows ?? []) as ProjectPhase[];
@@ -145,12 +167,22 @@ export default async function ProjectDetailPage({
   const client = (clientRes.data ?? null) as VClient | null;
   const intake = (intakeRes.data ?? null) as ProjectIntake | null;
   const commercials = (commercialsRes.data ?? null) as ProjectCommercials | null;
+  const comments = (commentRows ?? []) as unknown as FeedComment[];
   const canEditCommercials =
     ctx.membership.archetype === "executive" ||
     (project.owner_id === ctx.userId && ctx.aboveWall);
 
-  const done = tasks.filter((t) => t.status === "done").length;
-  const fraction = tasks.length > 0 ? done / tasks.length : 0;
+  // Progress comes from v_project_progress, the same view every list, board,
+  // and ring reads, so this page cannot drift from them. A project with
+  // sub-projects reports the rolled-up figure; a leaf reports its own tasks,
+  // because there the rollup equals the direct count.
+  const progress = (progressRes.data ?? null) as ProgressRow | null;
+  const directDone = progress?.direct_done ?? 0;
+  const directTotal = progress?.direct_total ?? 0;
+  const childCount = progress?.child_count ?? 0;
+  const done = progress?.rollup_done ?? 0;
+  const total = progress?.rollup_total ?? 0;
+  const fraction = total > 0 ? done / total : 0;
   const assignees = Array.from(
     new Map(
       tasks
@@ -180,7 +212,9 @@ export default async function ProjectDetailPage({
         .map((l) => ({ id: l.id, name: l.name })),
     })
   );
-  const remaining = daysUntil(project.due_date);
+  // One source for how this project's due date reads, shared with every row
+  // and board card through the same helper.
+  const due = dueState(project.due_date, project.status);
   const subProjects = (subProjectRows ?? []) as unknown as ProjectWithOwner[];
   const parentProject = (parentRes?.data ?? null) as {
     id: string;
@@ -275,7 +309,9 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      {/* The rail carries the activity and comment thread, so it needs a
+          little more room than a plain meta column would. */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
           {canManage || project.brief ? (
             <Card>
@@ -376,11 +412,17 @@ export default async function ProjectDetailPage({
           <Card className="p-5">
             <div className="flex items-center justify-between text-[12.5px] font-medium text-text-2">
               <span>
-                {done} of {tasks.length} tasks done
+                {done} of {total} tasks done
               </span>
               <span className="font-mono tabular">{Math.round(fraction * 100)}%</span>
             </div>
             <ProgressBar value={fraction} className="mt-2" />
+            {childCount > 0 ? (
+              <p className="mt-2 text-[11.5px] text-text-3">
+                Includes {childCount} sub-project{childCount === 1 ? "" : "s"}.{" "}
+                {directDone} of {directTotal} sit on this project directly.
+              </p>
+            ) : null}
           </Card>
 
           {taskGroups.length === 0 ? (
@@ -485,6 +527,7 @@ export default async function ProjectDetailPage({
               </div>
             )}
           </Card>
+
         </div>
 
         <div className="flex flex-col gap-4">
@@ -557,24 +600,58 @@ export default async function ProjectDetailPage({
               {project.due_date ? (
                 <div className="flex items-center justify-between">
                   <span className="text-text-2">Due</span>
-                  <span className="font-mono text-text-1 tabular">
+                  <span
+                    className={cn(
+                      "font-mono tabular",
+                      due?.tone === "overdue"
+                        ? "font-medium text-danger"
+                        : due?.tone === "soon"
+                          ? "font-medium text-warning"
+                          : "text-text-1"
+                    )}
+                  >
                     {fmtDateFull(project.due_date)}
                   </span>
                 </div>
               ) : null}
-              {remaining !== null ? (
-                <div className="mt-1 flex items-center gap-1.5 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-text-2">
+              {due ? (
+                <div
+                  className={cn(
+                    "mt-1 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5",
+                    due.tone === "overdue"
+                      ? "bg-danger-soft font-medium text-danger"
+                      : due.tone === "soon"
+                        ? "bg-warning-soft font-medium text-warning"
+                        : "bg-surface-2 text-text-2"
+                  )}
+                >
                   <CalendarDays className="size-3.5" strokeWidth={1.5} />
-                  {remaining >= 0
-                    ? `${remaining} day${remaining === 1 ? "" : "s"} remaining`
-                    : `${Math.abs(remaining)} day${remaining === -1 ? "" : "s"} overdue`}
+                  {due.tone !== "neutral"
+                    ? due.label
+                    : due.days >= 0
+                      ? `${due.days} day${due.days === 1 ? "" : "s"} remaining`
+                      : // A delivered project past its date is not late, so
+                        // this states the fact without urgency.
+                        "Due date passed"}
                 </div>
               ) : null}
             </div>
           </RightRailPanel>
 
-          <RightRailPanel title="Activity">
-            <ActivityPanel items={activity} />
+          <RightRailPanel
+            title="Activity"
+            action={
+              <span className="flex items-center gap-1 text-[11.5px] text-text-3">
+                <MessageSquare className="size-3.5" strokeWidth={1.5} />
+                {comments.length}
+              </span>
+            }
+          >
+            <ActivityFeed
+              activity={activity}
+              comments={comments}
+              composer={<ProjectCommentForm ws={ws} projectId={id} />}
+            />
           </RightRailPanel>
 
           <RightRailPanel title="Files">

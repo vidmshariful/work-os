@@ -11,13 +11,13 @@ import { ProgressRing } from "@/components/primitives/progress";
 import { CodeLabel } from "@/components/primitives/misc";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { Button } from "@/components/ui/button";
-import { fmtDate } from "@/lib/format";
 import { ViewToggle } from "@/components/features/projects/view-toggle";
 import { ProjectFilters } from "@/components/features/projects/project-filters";
 import { ProjectBoard } from "@/components/features/projects/project-board";
+import { DueDate } from "@/components/features/projects/due-date";
 import { ProjectRowActions } from "@/components/features/projects/project-row-actions";
+import { completionFrom } from "@/components/features/projects/types";
 import type {
-  CompletionMap,
   MemberOption,
   ProjectWithOwner,
 } from "@/components/features/projects/types";
@@ -51,13 +51,12 @@ export default async function ProjectsPage({
   else query = query.neq("status", "archived");
   if (owner) query = query.eq("owner_id", owner);
 
-  const [{ data: projectRows }, { data: taskRows }, { data: memberRows }] =
+  const [{ data: projectRows }, { data: progressRows }, { data: memberRows }] =
     await Promise.all([
       query,
-      supabase
-        .from("tasks")
-        .select("project_id, status, project:projects!inner(workspace_id)")
-        .eq("project.workspace_id", ctx.workspace.id),
+      // Rolled-up progress from the view, so a parent row reflects its
+      // sub-projects rather than only its own tasks.
+      supabase.from("v_project_progress").select("*"),
       supabase
         .from("memberships")
         .select("profile:profiles!profile_id!inner(id, full_name)")
@@ -66,15 +65,7 @@ export default async function ProjectsPage({
     ]);
 
   const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
-  const completion: CompletionMap = {};
-  for (const t of (taskRows ?? []) as unknown as {
-    project_id: string;
-    status: string;
-  }[]) {
-    const c = (completion[t.project_id] ??= { done: 0, total: 0 });
-    c.total += 1;
-    if (t.status === "done") c.done += 1;
-  }
+  const completion = completionFrom(progressRows);
   const members = ((memberRows ?? []) as unknown as {
     profile: MemberOption;
   }[])
@@ -157,11 +148,7 @@ export default async function ProjectsPage({
                         <span className="hidden lg:inline">{p.owner.full_name}</span>
                       </span>
                     ) : null}
-                    {p.due_date ? (
-                      <span className="font-mono text-[12px] text-text-2 tabular">
-                        {fmtDate(p.due_date)}
-                      </span>
-                    ) : null}
+                    <DueDate due={p.due_date} status={p.status} />
                     <ProjectStatusChip status={p.status} />
                   </>
                 }

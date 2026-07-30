@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { createList, deleteList } from "@/lib/actions/departments";
+import { createList } from "@/lib/actions/departments";
 
 const inputClass =
   "h-8 w-44 rounded-[9px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
@@ -70,29 +70,7 @@ export function NewListForm({
   );
 }
 
-export function DeleteListButton({
-  ws,
-  listId,
-  slug,
-}: {
-  ws: string;
-  listId: string;
-  slug: string;
-}) {
-  const [pending, start] = useTransition();
-  return (
-    <button
-      aria-label="Remove list"
-      disabled={pending}
-      onClick={() =>
-        start(async () => {
-          const res = await deleteList(ws, listId, slug);
-          if (res.error) toast.error(res.error);
-        })
-      }
-      className="rounded-[7px] p-1 text-text-3 opacity-0 transition-opacity hover:bg-danger-soft hover:text-danger group-hover/list:opacity-100"
-    >
-      <X className="size-3.5" strokeWidth={1.5} />
-    </button>
-  );
-}
+// The bare delete button that used to live on each list header is gone. It
+// removed a list on one click with nothing said about the projects inside
+// it. Delete now sits in the list overflow menu behind a confirmation that
+// names the count, in list-controls.tsx.

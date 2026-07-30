@@ -8,7 +8,7 @@ import {
 } from "@/components/features/admin/department-admin";
 import type { Department } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Departments" };
+export const metadata: Metadata = { title: "Spaces" };
 
 interface ProfileRef {
   id: string;
@@ -25,8 +25,13 @@ export default async function AdminDepartmentsPage({
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
-  const [{ data: deptRows }, { data: memberRows }, { data: wsMemberRows }] =
-    await Promise.all([
+  const [
+    { data: deptRows },
+    { data: memberRows },
+    { data: wsMemberRows },
+    { data: projRows },
+    { data: listRows },
+  ] = await Promise.all([
       supabase
         .from("departments")
         .select("*")
@@ -40,7 +45,24 @@ export default async function AdminDepartmentsPage({
         .select("profile:profiles!profile_id(id, full_name, avatar_url)")
         .eq("workspace_id", ctx.workspace.id)
         .eq("is_active", true),
+      // Quoted in the delete confirmation, so it states what will happen to
+      // this space's work rather than warning in the abstract.
+      supabase
+        .from("projects")
+        .select("department_id")
+        .eq("workspace_id", ctx.workspace.id),
+      supabase.from("project_lists").select("department_id"),
     ]);
+
+  const projectCount = new Map<string, number>();
+  for (const p of (projRows ?? []) as { department_id: string | null }[]) {
+    if (p.department_id)
+      projectCount.set(p.department_id, (projectCount.get(p.department_id) ?? 0) + 1);
+  }
+  const listCount = new Map<string, number>();
+  for (const l of (listRows ?? []) as { department_id: string }[]) {
+    listCount.set(l.department_id, (listCount.get(l.department_id) ?? 0) + 1);
+  }
 
   const membersByDept = new Map<string, DeptAdminMember[]>();
   for (const row of (memberRows ?? []) as unknown as {
@@ -67,6 +89,8 @@ export default async function AdminDepartmentsPage({
       members: (membersByDept.get(d.id) ?? []).sort((a, b) =>
         a.name.localeCompare(b.name)
       ),
+      projectCount: projectCount.get(d.id) ?? 0,
+      listCount: listCount.get(d.id) ?? 0,
     })
   );
 

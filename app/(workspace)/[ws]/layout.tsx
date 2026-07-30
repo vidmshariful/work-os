@@ -41,6 +41,9 @@ export default async function WorkspaceLayout({
       .from("departments")
       .select("id, name, slug, accent_color")
       .eq("workspace_id", ctx.workspace.id)
+      // Archived spaces leave the sidebar. They are still reachable from the
+      // index and from a direct link, and nobody's access changed.
+      .is("archived_at", null)
       .order("sort_order"),
     supabase.from("project_lists").select("id, name, department_id").order("sort_order"),
   ]);
