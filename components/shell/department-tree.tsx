@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ChevronRight, Folder } from "lucide-react";
+import { Building2, ChevronRight, Folder, FolderOpen, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface DeptTreeItem {
@@ -72,8 +72,22 @@ function DeptRow({
 }) {
   const deptHref = `/${ws}/departments/${dept.slug}`;
   const active = pathname === deptHref;
-  const [open, setOpen] = useState(active);
+  // True anywhere under this space, including a list page, which is exactly
+  // the case the old check missed.
+  const holdsRoute = pathname.startsWith(`${deptHref}/`) || active;
   const hasLists = dept.lists.length > 0 || dept.folders.length > 0;
+
+  // Null means "nobody has clicked, follow the route". Once someone toggles
+  // it the choice is theirs until they navigate into a different space.
+  const [manual, setManual] = useState<boolean | null>(null);
+  const lastRoute = useRef(holdsRoute);
+  useEffect(() => {
+    // Arriving somewhere under this space overrides a stale manual collapse,
+    // so the tree always points at where you are after a navigation.
+    if (holdsRoute && !lastRoute.current) setManual(null);
+    lastRoute.current = holdsRoute;
+  }, [holdsRoute]);
+  const open = manual ?? holdsRoute;
 
   return (
     <div>
@@ -86,7 +100,7 @@ function DeptRow({
         <button
           type="button"
           aria-label={open ? "Collapse" : "Expand"}
-          onClick={() => hasLists && setOpen((o) => !o)}
+          onClick={() => hasLists && setManual(!open)}
           className="flex size-6 shrink-0 items-center justify-center rounded-[7px] text-text-3 hover:text-text-1"
         >
           <ChevronRight
@@ -141,21 +155,31 @@ function FolderRow({
   const holdsCurrent = folder.lists.some(
     (l) => pathname === `${base}/lists/${l.id}`
   );
-  const [open, setOpen] = useState(holdsCurrent);
+  const [manual, setManual] = useState<boolean | null>(null);
+  const lastHeld = useRef(holdsCurrent);
+  useEffect(() => {
+    if (holdsCurrent && !lastHeld.current) setManual(null);
+    lastHeld.current = holdsCurrent;
+  }, [holdsCurrent]);
+  const open = manual ?? holdsCurrent;
 
   return (
     <div>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setManual(!open)}
         aria-expanded={open}
-        className="flex w-full items-center gap-1.5 rounded-[8px] px-1 py-[5px] text-[12.5px] text-text-2 outline-none transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:ring-2 focus-visible:ring-brand/40"
+        className="flex h-7 w-full items-center gap-1.5 rounded-[8px] px-1 text-[12.5px] text-text-2 outline-none transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:ring-2 focus-visible:ring-brand/40"
       >
         <ChevronRight
           className={cn("size-3 shrink-0 transition-transform", open && "rotate-90")}
           strokeWidth={2}
         />
-        <Folder className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+        {open ? (
+          <FolderOpen className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+        ) : (
+          <Folder className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+        )}
         <span className="truncate">{folder.name}</span>
         <span className="ml-auto font-mono text-[10.5px] text-text-3 tabular">
           {folder.lists.length}
@@ -185,14 +209,19 @@ function ListLink({
   return (
     <Link
       href={href}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "truncate rounded-[8px] px-2 py-[5px] text-[12.5px] transition-colors",
+        "flex h-7 items-center gap-1.5 rounded-[8px] px-2 text-[12.5px] transition-colors",
         active
           ? "bg-nav-active font-medium text-text-1"
           : "text-text-2 hover:bg-surface-2 hover:text-text-1"
       )}
     >
-      {name}
+      <List
+        className={cn("size-3.5 shrink-0", active ? "text-brand" : "text-text-3")}
+        strokeWidth={1.5}
+      />
+      <span className="truncate">{name}</span>
     </Link>
   );
 }
