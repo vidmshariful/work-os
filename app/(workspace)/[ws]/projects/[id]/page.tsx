@@ -94,6 +94,7 @@ export default async function ProjectDetailPage({
     { data: activityRows },
     { data: deptRows },
     { data: listRows },
+    { data: folderRows },
     { data: subProjectRows },
     parentRes,
     { data: commentRows },
@@ -137,10 +138,14 @@ export default async function ProjectDetailPage({
       .limit(20),
     supabase
       .from("departments")
-      .select("id, name")
+      .select("id, name, slug")
       .eq("workspace_id", ctx.workspace.id)
       .order("sort_order"),
-    supabase.from("project_lists").select("id, name, department_id").order("sort_order"),
+    supabase
+      .from("project_lists")
+      .select("id, name, department_id, folder_id")
+      .order("sort_order"),
+    supabase.from("project_folders").select("id, name").order("sort_order"),
     // The family: for a parent, its sub-projects; for a sub-project, its
     // siblings (so any video shows the rest of its series).
     supabase
@@ -203,15 +208,45 @@ export default async function ProjectDetailPage({
     name: string;
     department_id: string;
   }[];
-  const departments = ((deptRows ?? []) as { id: string; name: string }[]).map(
-    (d) => ({
-      id: d.id,
-      name: d.name,
-      lists: deptLists
-        .filter((l) => l.department_id === d.id)
-        .map((l) => ({ id: l.id, name: l.name })),
-    })
-  );
+  const deptRowsTyped = (deptRows ?? []) as {
+    id: string;
+    name: string;
+    slug: string;
+  }[];
+  const departments = deptRowsTyped.map((d) => ({
+    id: d.id,
+    name: d.name,
+    lists: deptLists
+      .filter((l) => l.department_id === d.id)
+      .map((l) => ({ id: l.id, name: l.name })),
+  }));
+
+  // Space, folder, list, project. The same trail people already read at the
+  // top of a ClickUp task, built from whatever this project actually has: an
+  // unfiled project simply gets a shorter one rather than empty crumbs.
+  const space = deptRowsTyped.find((d) => d.id === project.department_id) ?? null;
+  const listRow = (
+    (listRows ?? []) as { id: string; name: string; folder_id: string | null }[]
+  ).find((l) => l.id === project.list_id);
+  const folderRow = listRow?.folder_id
+    ? ((folderRows ?? []) as { id: string; name: string }[]).find(
+        (f) => f.id === listRow.folder_id
+      )
+    : undefined;
+  const trail: { label: string; href?: string }[] = [
+    { label: "Spaces", href: `/${ws}/departments` },
+  ];
+  if (space) trail.push({ label: space.name, href: `/${ws}/departments/${space.slug}` });
+  // A folder has no page of its own, so it reads as plain text, the way it
+  // does in the sidebar.
+  if (folderRow) trail.push({ label: folderRow.name });
+  if (space && listRow) {
+    trail.push({
+      label: listRow.name,
+      href: `/${ws}/departments/${space.slug}/lists/${listRow.id}`,
+    });
+  }
+  trail.push({ label: project.code });
   // One source for how this project's due date reads, shared with every row
   // and board card through the same helper.
   const due = dueState(project.due_date, project.status);
@@ -236,12 +271,10 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <Breadcrumbs
-        items={[
-          { label: "Projects", href: `/${ws}/projects` },
-          { label: project.code },
-        ]}
-      />
+      {/* The trail people already read in ClickUp: space, folder, list, then
+          the project. Each part is only shown when the project actually has
+          it, so an unfiled project still gets a sensible short trail. */}
+      <Breadcrumbs items={trail} />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
