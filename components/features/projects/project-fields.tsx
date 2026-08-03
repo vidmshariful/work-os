@@ -18,6 +18,7 @@ import {
   EmptyValue,
   PropertyRow,
   propertyInputClass as inputClass,
+  propertyTriggerClass,
 } from "@/components/features/projects/property-row";
 import { setProjectFieldValue } from "@/lib/actions/project-fields";
 import { fmtDate } from "@/lib/format";
@@ -172,7 +173,7 @@ function FieldControl({
             <button
               type="button"
               aria-label={`Set ${field.name}`}
-              className="rounded-[8px] px-1 py-0.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40"
+              className={propertyTriggerClass}
             >
               {current ? <Tag tone={tone(current)}>{current.label}</Tag> : empty}
             </button>
@@ -220,7 +221,7 @@ function FieldControl({
             <button
               type="button"
               aria-label={`Set ${field.name}`}
-              className="rounded-[8px] px-1 py-0.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40"
+              className={propertyTriggerClass}
             >
               {chips.length ? (
                 <span className="flex flex-wrap gap-1">

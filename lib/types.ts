@@ -399,6 +399,12 @@ export interface TaskDependency {
 export interface TemplateStructure {
   phases: { name: string; tasks: { title: string; description?: string }[] }[];
   deliverables?: string[];
+  // Custom field values stamped onto a project built from this template.
+  // Lives in the jsonb rather than its own table because it is part of the
+  // template's shape, exactly like its phases and deliverables, and because
+  // a field deleted later should simply stop applying rather than leave a
+  // dangling row behind.
+  fields?: { field_id: string; value: unknown }[];
 }
 
 export interface ProjectTemplate {

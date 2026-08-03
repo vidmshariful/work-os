@@ -149,6 +149,30 @@ export async function createProject(
         }))
       );
     }
+
+    // Field values the template stamps on. Checked against the live
+    // definitions rather than trusted from the jsonb: a field deleted since
+    // the template was written simply stops applying, and one scoped to a
+    // different space is skipped rather than filed where it does not belong.
+    const templateFields = (structure.fields ?? []).filter(
+      (f) => f.field_id && f.value !== null && f.value !== undefined && f.value !== ""
+    );
+    if (templateFields.length > 0) {
+      const { data: known } = await supabase
+        .from("project_fields")
+        .select("id, department_id")
+        .eq("workspace_id", ctx.workspace.id)
+        .in("id", templateFields.map((f) => f.field_id));
+      const applies = new Map(
+        ((known ?? []) as { id: string; department_id: string | null }[])
+          .filter((f) => f.department_id === null || f.department_id === departmentId)
+          .map((f) => [f.id, true])
+      );
+      const rows = templateFields
+        .filter((f) => applies.has(f.field_id))
+        .map((f) => ({ project_id: project.id, field_id: f.field_id, value: f.value }));
+      if (rows.length > 0) await supabase.from("project_field_values").insert(rows);
+    }
   }
 
   revalidatePath(`/${ws}/projects`);

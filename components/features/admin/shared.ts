@@ -1,6 +1,11 @@
 // Shared constants and types for the admin area. Plain module so both the
 // server actions and the client components can import it.
-import type { Archetype, TemplateStructure } from "@/lib/types";
+import type {
+  Archetype,
+  ProjectFieldKind,
+  ProjectFieldOption,
+  TemplateStructure,
+} from "@/lib/types";
 
 export const ARCHETYPE_LABELS: Record<Archetype, string> = {
   executive: "Executive",
@@ -28,6 +33,19 @@ export const ACCENT_PRESETS = [
 // the shared TemplateStructure with the optional default project title.
 export interface TemplateStructureDraft extends TemplateStructure {
   default_title?: string;
+}
+
+// A field a template can set, paired with the definition so the editor can
+// draw the right control for its kind. space is the name of the one space
+// the field is scoped to, or null when it applies everywhere: a template
+// that stamps a Production-only field onto a Sales project would silently
+// drop it, so the editor says which is which.
+export interface TemplateFieldOption {
+  id: string;
+  name: string;
+  kind: ProjectFieldKind;
+  options: ProjectFieldOption[];
+  space: string | null;
 }
 
 export const WALL_HELPER_COPY =

@@ -10,7 +10,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { isToggleable } from "@/lib/data/workspace-settings";
-import type { Archetype, RoleType, WallSide } from "@/lib/types";
+import type {
+  Archetype,
+  RoleType,
+  TemplateStructure,
+  WallSide,
+} from "@/lib/types";
 import {
   ACCENT_PRESETS,
   type TemplateStructureDraft,
@@ -117,13 +122,44 @@ export async function saveTemplate(
     .map((d) => d.trim())
     .filter((d) => d.length > 0);
   const defaultTitle = draft.structure.default_title?.trim();
+
+  const supabase = await createClient();
+
+  // Field defaults. The browser sends field ids, so they are checked against
+  // this workspace's own definitions before being written: an id from
+  // somewhere else, or one deleted while the editor was open, is dropped
+  // rather than stored as a value nothing will ever read. Empties are
+  // dropped too, so "set to nothing" and "not set" stay one thing.
+  const drafted = (draft.structure.fields ?? []).filter(
+    (f) =>
+      f.field_id &&
+      f.value !== null &&
+      f.value !== undefined &&
+      f.value !== "" &&
+      !(Array.isArray(f.value) && f.value.length === 0)
+  );
+  let fields: TemplateStructure["fields"] = [];
+  if (drafted.length > 0) {
+    const { data: known } = await supabase
+      .from("project_fields")
+      .select("id")
+      .eq("workspace_id", ctx.workspace.id)
+      .in(
+        "id",
+        drafted.map((f) => f.field_id)
+      );
+    const live = new Set(((known ?? []) as { id: string }[]).map((f) => f.id));
+    fields = drafted
+      .filter((f) => live.has(f.field_id))
+      .map((f) => ({ field_id: f.field_id, value: f.value }));
+  }
+
   const structure: TemplateStructureDraft = {
     ...(defaultTitle ? { default_title: defaultTitle } : {}),
     phases,
     deliverables,
+    fields,
   };
-
-  const supabase = await createClient();
 
   // Setting a template as default clears the previous default first.
   if (draft.is_default) {

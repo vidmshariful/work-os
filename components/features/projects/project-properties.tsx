@@ -21,6 +21,7 @@ import {
   EmptyValue,
   PropertyRow,
   propertyInputClass,
+  propertyTriggerClass,
 } from "@/components/features/projects/property-row";
 import { PROJECT_STATUS_OPTIONS } from "@/components/features/projects/types";
 import type { MemberOption } from "@/components/features/projects/types";
@@ -100,7 +101,7 @@ export function ProjectProperties({
                 <button
                   type="button"
                   aria-label="Change status"
-                  className="rounded-[8px] px-1 py-0.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40"
+                  className={propertyTriggerClass}
                 >
                   <ProjectStatusChip status={project.status} />
                 </button>
@@ -135,7 +136,7 @@ export function ProjectProperties({
                 <button
                   type="button"
                   aria-label="Change owner"
-                  className="flex items-center gap-1.5 rounded-[8px] px-2 py-0.5 text-[13px] text-text-1 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40"
+                  className={cn(propertyTriggerClass, "flex items-center gap-1.5 text-[13px] text-text-1")}
                 >
                   {project.owner ? (
                     <>

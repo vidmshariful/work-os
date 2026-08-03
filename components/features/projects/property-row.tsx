@@ -15,8 +15,17 @@ import { cn } from "@/lib/utils";
 // hover treatment, the pending fade and the Empty convention are literally
 // the same code.
 
+// A transparent border until hover reads as static text, which is exactly
+// what people reported: the fields looked like a printout rather than
+// something you could type into. The border is now visible at rest, faint,
+// and firms up on hover.
 export const propertyInputClass =
-  "w-full rounded-[8px] border border-transparent bg-transparent px-2 py-1 text-[13px] text-text-1 outline-none transition-colors hover:border-border focus-visible:border-brand focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-brand/25";
+  "w-full rounded-[8px] border border-border/60 bg-transparent px-2 py-1 text-[13px] text-text-1 outline-none transition-colors hover:border-border-strong hover:bg-surface-2/50 focus-visible:border-brand focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-brand/25";
+
+// The same affordance for a value that opens a menu rather than taking
+// typing: a chip, an avatar, a set of tags.
+export const propertyTriggerClass =
+  "rounded-[8px] border border-border/60 px-1.5 py-0.5 outline-none transition-colors hover:border-border-strong hover:bg-surface-2/50 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 // An unset value is not a blank. A blank reads as a rendering fault; this
 // reads as a fact nobody has filled in yet.
