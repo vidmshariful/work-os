@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  CalendarDays,
   Layers,
   ListChecks,
   MessageSquare,
@@ -17,18 +16,15 @@ import { ListRow } from "@/components/primitives/list-row";
 import {
   ProjectStatusChip,
   TaskStatusChip,
-  ConfidentialChip,
   Tag,
 } from "@/components/primitives/tag";
-import { PersonAvatar, AvatarStack } from "@/components/primitives/avatar";
+import { PersonAvatar } from "@/components/primitives/avatar";
 import { ProgressBar } from "@/components/primitives/progress";
 import { Breadcrumbs, CodeLabel } from "@/components/primitives/misc";
 import { RightRailPanel } from "@/components/primitives/right-rail";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { Button } from "@/components/ui/button";
-import { fmtDate, fmtDateFull } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { dueState } from "@/components/features/projects/due-date";
+import { fmtDate } from "@/lib/format";
 import { clientLabel, isConfidential, isUnmasked } from "@/lib/wall";
 import { ProjectStatusSelect } from "@/components/features/projects/status-select";
 import { DeliverableToggle } from "@/components/features/projects/deliverable-toggle";
@@ -56,6 +52,7 @@ import type {
   TaskWithAssignee,
 } from "@/components/features/projects/types";
 import { ProjectFields } from "@/components/features/projects/project-fields";
+import { ProjectProperties } from "@/components/features/projects/project-properties";
 import type {
   Deliverable,
   ProjectCommercials,
@@ -145,10 +142,14 @@ export default async function ProjectDetailPage({
       .from("departments")
       .select("id, name, slug")
       .eq("workspace_id", ctx.workspace.id)
+      // An archived space is not a filing destination, which is what every
+      // other surface already assumes.
+      .is("archived_at", null)
       .order("sort_order"),
     supabase
       .from("project_lists")
       .select("id, name, department_id, folder_id")
+      .is("archived_at", null)
       .order("sort_order"),
     supabase.from("project_folders").select("id, name").order("sort_order"),
     // Custom fields: the definitions for this workspace, and this project's
@@ -205,6 +206,14 @@ export default async function ProjectDetailPage({
   const done = progress?.rollup_done ?? 0;
   const total = progress?.rollup_total ?? 0;
   const fraction = total > 0 ? done / total : 0;
+  const unmasked = client ? isUnmasked(client) : false;
+  const clientCell = {
+    href: client && unmasked ? `/${ws}/clients/${client.id}` : null,
+    label: client && unmasked ? clientLabel(client) : null,
+    code: client && !unmasked ? client.code : null,
+    confidential: client ? unmasked && isConfidential(client) : false,
+  };
+
   const assignees = Array.from(
     new Map(
       tasks
@@ -279,7 +288,6 @@ export default async function ProjectDetailPage({
   ).map((f) => ({ field: f, value: valueByField.get(f.id) ?? null }));
   // One source for how this project's due date reads, shared with every row
   // and board card through the same helper.
-  const due = dueState(project.due_date, project.status);
   const subProjects = (subProjectRows ?? []) as unknown as ProjectWithOwner[];
   const parentProject = (parentRes?.data ?? null) as {
     id: string;
@@ -308,13 +316,7 @@ export default async function ProjectDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <CodeLabel code={project.code} className="text-[13px]" />
-            <ProjectStatusChip status={project.status} />
-            {client && isUnmasked(client) && isConfidential(client) ? (
-              <ConfidentialChip />
-            ) : null}
-          </div>
+          <CodeLabel code={project.code} className="text-[13px]" />
           {parentProject ? (
             <Link
               href={`/${ws}/projects/${parentProject.id}`}
@@ -327,27 +329,6 @@ export default async function ProjectDetailPage({
           <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight text-text-1">
             {project.title}
           </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-2">
-            {client ? (
-              <Link
-                href={`/${ws}/clients/${client.id}`}
-                className="font-medium text-text-1 hover:text-brand"
-              >
-                {clientLabel(client)}
-              </Link>
-            ) : null}
-            {project.type ? <span>{project.type}</span> : null}
-            {project.owner ? (
-              <span className="flex items-center gap-1.5">
-                <PersonAvatar
-                  name={project.owner.full_name}
-                  src={project.owner.avatar_url}
-                  size={20}
-                />
-                {project.owner.full_name}
-              </span>
-            ) : null}
-          </div>
         </div>
         <div className="flex items-center gap-2">
           {canManage ? (
@@ -376,6 +357,26 @@ export default async function ProjectDetailPage({
           little more room than a plain meta column would. */}
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
+          {/* Everything a person asks about a project at a glance, in one
+              block that never collapses. A deliberate sibling of the Fields
+              block below it: same row shell, same Empty convention. */}
+          <ProjectProperties
+            ws={ws}
+            project={{
+              id: project.id,
+              status: project.status,
+              type: project.type,
+              start_date: project.start_date,
+              due_date: project.due_date,
+              created_at: project.created_at,
+              owner: project.owner,
+            }}
+            client={clientCell}
+            members={members}
+            assignees={assignees}
+            canEdit={canManage}
+          />
+
           {/* The Fields block, which is where the studio's own process
               lives: production stage, category, script, the Drive and Figma
               links. Renders nothing when the workspace has defined none. */}
@@ -629,87 +630,6 @@ export default async function ProjectDetailPage({
               />
             </RightRailPanel>
           ) : null}
-
-          <RightRailPanel title="Assigned people">
-            {assignees.length === 0 ? (
-              <p className="py-2 text-center text-[12.5px] text-text-3">
-                Nobody assigned yet.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2.5">
-                <AvatarStack
-                  people={assignees.map((a) => ({
-                    name: a.full_name,
-                    src: a.avatar_url,
-                  }))}
-                  size={30}
-                />
-                {assignees.map((a) => (
-                  <div key={a.id} className="flex items-center gap-2">
-                    <PersonAvatar name={a.full_name} src={a.avatar_url} size={22} />
-                    <span className="text-[12.5px] text-text-1">{a.full_name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </RightRailPanel>
-
-          <RightRailPanel title="Timeline">
-            <div className="flex flex-col gap-2 text-[12.5px]">
-              <div className="flex items-center justify-between">
-                <span className="text-text-2">Created</span>
-                <span className="font-mono text-text-1 tabular">
-                  {fmtDateFull(project.created_at)}
-                </span>
-              </div>
-              {project.start_date ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-text-2">Start</span>
-                  <span className="font-mono text-text-1 tabular">
-                    {fmtDateFull(project.start_date)}
-                  </span>
-                </div>
-              ) : null}
-              {project.due_date ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-text-2">Due</span>
-                  <span
-                    className={cn(
-                      "font-mono tabular",
-                      due?.tone === "overdue"
-                        ? "font-medium text-danger"
-                        : due?.tone === "soon"
-                          ? "font-medium text-warning"
-                          : "text-text-1"
-                    )}
-                  >
-                    {fmtDateFull(project.due_date)}
-                  </span>
-                </div>
-              ) : null}
-              {due ? (
-                <div
-                  className={cn(
-                    "mt-1 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5",
-                    due.tone === "overdue"
-                      ? "bg-danger-soft font-medium text-danger"
-                      : due.tone === "soon"
-                        ? "bg-warning-soft font-medium text-warning"
-                        : "bg-surface-2 text-text-2"
-                  )}
-                >
-                  <CalendarDays className="size-3.5" strokeWidth={1.5} />
-                  {due.tone !== "neutral"
-                    ? due.label
-                    : due.days >= 0
-                      ? `${due.days} day${due.days === 1 ? "" : "s"} remaining`
-                      : // A delivered project past its date is not late, so
-                        // this states the fact without urgency.
-                        "Due date passed"}
-                </div>
-              ) : null}
-            </div>
-          </RightRailPanel>
 
           <RightRailPanel
             title="Activity"

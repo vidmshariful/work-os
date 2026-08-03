@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card } from "@/components/primitives/card";
 import { Tag, isTagTone, type TagTone } from "@/components/primitives/tag";
+import {
+  EmptyValue,
+  PropertyRow,
+  propertyInputClass as inputClass,
+} from "@/components/features/projects/property-row";
 import { setProjectFieldValue } from "@/lib/actions/project-fields";
 import { fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -23,9 +28,6 @@ export interface FieldWithValue {
   field: ProjectField;
   value: unknown;
 }
-
-const inputClass =
-  "w-full rounded-[8px] border border-transparent bg-transparent px-2 py-1 text-[13px] text-text-1 outline-none transition-colors hover:border-border focus-visible:border-brand focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-brand/25";
 
 const tone = (o: ProjectFieldOption | undefined): TagTone =>
   o?.color && isTagTone(o.color) ? o.color : "gray";
@@ -123,21 +125,16 @@ function FieldRow({
     });
 
   return (
-    <div className="flex items-start gap-3 px-5 py-2">
-      <span className="w-[170px] shrink-0 pt-1 text-[12.5px] text-text-2">
-        {field.name}
-      </span>
-      <div className={cn("min-w-0 flex-1", pending && "opacity-60")}>
-        <FieldControl
-          field={field}
-          value={value}
-          draft={draft}
-          setDraft={setDraft}
-          canEdit={canEdit}
-          onSave={save}
-        />
-      </div>
-    </div>
+    <PropertyRow label={field.name} pending={pending}>
+      <FieldControl
+        field={field}
+        value={value}
+        draft={draft}
+        setDraft={setDraft}
+        canEdit={canEdit}
+        onSave={save}
+      />
+    </PropertyRow>
   );
 }
 
@@ -156,7 +153,7 @@ function FieldControl({
   canEdit: boolean;
   onSave: (next: unknown) => void;
 }) {
-  const empty = <span className="px-2 text-[13px] text-text-3">Empty</span>;
+  const empty = <EmptyValue />;
   const options = field.options ?? [];
 
   switch (field.kind) {

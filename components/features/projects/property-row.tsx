@@ -1,0 +1,52 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+
+// The shared shell behind both the property grid and the Fields block.
+//
+// It exists so the two cannot become two ideas. A project's built-in facts
+// and the studio's own custom fields are the same kind of thing to a reader:
+// a label, a value, edited where it is read. Before this they looked nothing
+// alike, and the page implied that a custom field mattered more than the due
+// date.
+//
+// The only difference between the two is the label column, wider in the
+// full-width Fields block than in a half-width grid cell. Typography, radii,
+// hover treatment, the pending fade and the Empty convention are literally
+// the same code.
+
+export const propertyInputClass =
+  "w-full rounded-[8px] border border-transparent bg-transparent px-2 py-1 text-[13px] text-text-1 outline-none transition-colors hover:border-border focus-visible:border-brand focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-brand/25";
+
+// An unset value is not a blank. A blank reads as a rendering fault; this
+// reads as a fact nobody has filled in yet.
+export function EmptyValue({ label = "Empty" }: { label?: string }) {
+  return <span className="px-2 text-[13px] text-text-3">{label}</span>;
+}
+
+export function PropertyRow({
+  label,
+  size = "wide",
+  pending = false,
+  children,
+}: {
+  label: string;
+  // wide is the full-width Fields block, half is a grid cell.
+  size?: "wide" | "half";
+  pending?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 px-5 py-2">
+      <span
+        className={cn(
+          "shrink-0 pt-1 text-[12.5px] text-text-2",
+          size === "wide" ? "w-[170px]" : "w-[104px]"
+        )}
+      >
+        {label}
+      </span>
+      <div className={cn("min-w-0 flex-1", pending && "opacity-60")}>{children}</div>
+    </div>
+  );
+}
