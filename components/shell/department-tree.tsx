@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Building2, ChevronRight, Folder, FolderOpen, List } from "lucide-react";
+import { isTagTone, toneTextClass } from "@/components/primitives/tag";
+import { SpaceGlyph } from "@/components/features/departments/space-glyph";
 import { cn } from "@/lib/utils";
 
 export interface DeptTreeItem {
@@ -11,9 +13,19 @@ export interface DeptTreeItem {
   name: string;
   slug: string;
   accent_color: string;
+  // The emoji, or null for the letter avatar built from the name. Same
+  // glyph the spaces index and the space header draw.
+  icon: string | null;
   // Folders in sort order, each with its own lists. A space with no folders
   // has an empty array here and renders exactly as it did before.
-  folders: { id: string; name: string; lists: { id: string; name: string }[] }[];
+  folders: {
+    id: string;
+    name: string;
+    // A TagTone key, or null. Tints the folder icon so a colour set in the
+    // space page is visible here too.
+    color: string | null;
+    lists: { id: string; name: string }[];
+  }[];
   // Lists sitting directly in the space, below the folders.
   lists: { id: string; name: string }[];
 }
@@ -119,9 +131,13 @@ function DeptRow({
             active ? "text-text-1" : "text-text-2 group-hover:text-text-1"
           )}
         >
-          <span
-            className="size-2 shrink-0 rounded-full"
-            style={{ backgroundColor: dept.accent_color }}
+          <SpaceGlyph
+            name={dept.name}
+            icon={dept.icon}
+            color={dept.accent_color}
+            size={20}
+            fontScale={0.55}
+            className="rounded-[6px]"
           />
           <span className="truncate">{dept.name}</span>
         </Link>
@@ -149,12 +165,23 @@ function FolderRow({
   pathname,
 }: {
   base: string;
-  folder: { id: string; name: string; lists: { id: string; name: string }[] };
+  folder: {
+    id: string;
+    name: string;
+    color: string | null;
+    lists: { id: string; name: string }[];
+  };
   pathname: string;
 }) {
   const holdsCurrent = folder.lists.some(
     (l) => pathname === `${base}/lists/${l.id}`
   );
+  // The folder's own colour, when it has one. Set on the space page and
+  // until now invisible in the tree.
+  const folderTint =
+    folder.color && isTagTone(folder.color)
+      ? toneTextClass(folder.color)
+      : "text-text-3";
   const [manual, setManual] = useState<boolean | null>(null);
   const lastHeld = useRef(holdsCurrent);
   useEffect(() => {
@@ -176,9 +203,9 @@ function FolderRow({
           strokeWidth={2}
         />
         {open ? (
-          <FolderOpen className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+          <FolderOpen className={cn("size-3.5 shrink-0", folderTint)} strokeWidth={1.5} />
         ) : (
-          <Folder className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+          <Folder className={cn("size-3.5 shrink-0", folderTint)} strokeWidth={1.5} />
         )}
         <span className="truncate">{folder.name}</span>
         <span className="ml-auto font-mono text-[10.5px] text-text-3 tabular">

@@ -50,6 +50,23 @@ export function toneDotClass(tone: TagTone): string {
   return TONES[tone].dot;
 }
 
+// The saturated tone as a text colour, for an icon drawn directly on a
+// surface rather than on a soft fill. Deliberately not the -text token,
+// which is tuned to sit on that pastel fill and is too quiet on its own.
+const TONE_ICON: Record<TagTone, string> = {
+  blue: "text-tag-blue",
+  violet: "text-tag-violet",
+  green: "text-tag-green",
+  amber: "text-tag-amber",
+  rose: "text-tag-rose",
+  teal: "text-tag-teal",
+  gray: "text-tag-gray",
+};
+
+export function toneTextClass(tone: TagTone): string {
+  return TONE_ICON[tone];
+}
+
 export function isTagTone(value: unknown): value is TagTone {
   return typeof value === "string" && value in TONES;
 }

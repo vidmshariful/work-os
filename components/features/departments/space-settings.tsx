@@ -53,7 +53,12 @@ import {
   updateDepartment,
 } from "@/lib/actions/departments";
 import { cn } from "@/lib/utils";
+import { SpaceGlyph } from "./space-glyph";
 import type { Archetype } from "@/lib/types";
+
+// Re-exported: it used to live here, and half the app imports it from
+// this path.
+export { SpaceGlyph };
 
 export interface SpacePerson {
   id: string;
@@ -75,42 +80,6 @@ export interface SpaceSettingsSpace {
 
 const inputClass =
   "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
-
-// The letter avatar every surface already draws, with the icon taking its
-// place when one is set. Kept here so the panel's preview and the real thing
-// cannot drift.
-export function SpaceGlyph({
-  name,
-  icon,
-  color,
-  size = 36,
-  className,
-}: {
-  name: string;
-  icon: string | null;
-  color: string;
-  size?: number;
-  className?: string;
-}) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-[10px] font-semibold",
-        className
-      )}
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: `${color}1A`,
-        color,
-        fontSize: icon ? size * 0.5 : size * 0.4,
-      }}
-    >
-      {icon || name.slice(0, 1)}
-    </span>
-  );
-}
 
 // Creating a space asks for the two things it cannot be without: a name and
 // a colour. Everything else lives in the settings panel, which is where the

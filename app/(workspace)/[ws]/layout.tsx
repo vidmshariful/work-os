@@ -40,7 +40,7 @@ export default async function WorkspaceLayout({
       .eq("is_read", false),
     supabase
       .from("departments")
-      .select("id, name, slug, accent_color")
+      .select("id, name, slug, accent_color, icon")
       .eq("workspace_id", ctx.workspace.id)
       // Archived spaces leave the sidebar. They are still reachable from the
       // index and from a direct link, and nobody's access changed.
@@ -52,7 +52,10 @@ export default async function WorkspaceLayout({
       .select("id, name, department_id, folder_id")
       .is("archived_at", null)
       .order("sort_order"),
-    supabase.from("project_folders").select("id, name, department_id").order("sort_order"),
+    supabase
+      .from("project_folders")
+      .select("id, name, department_id, color")
+      .order("sort_order"),
   ]);
 
   const roleLabel = ROLE_LABELS[ctx.membership.role] ?? ctx.membership.role;
@@ -67,6 +70,7 @@ export default async function WorkspaceLayout({
     id: string;
     name: string;
     department_id: string;
+    color: string | null;
   }[];
   const departments: DeptTreeItem[] = (
     (deptRows ?? []) as {
@@ -74,17 +78,20 @@ export default async function WorkspaceLayout({
       name: string;
       slug: string;
       accent_color: string;
+      icon: string | null;
     }[]
   ).map((d) => ({
     id: d.id,
     name: d.name,
     slug: d.slug,
     accent_color: d.accent_color,
+    icon: d.icon,
     folders: deptFolders
       .filter((f) => f.department_id === d.id)
       .map((f) => ({
         id: f.id,
         name: f.name,
+        color: f.color,
         lists: deptLists
           .filter((l) => l.folder_id === f.id)
           .map((l) => ({ id: l.id, name: l.name })),
