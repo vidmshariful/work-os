@@ -69,35 +69,13 @@ export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
-  const { data: projectRow } = await supabase
-    .from("projects")
-    .select("*, owner:profiles(id, full_name, avatar_url)")
-    .eq("id", id)
-    .eq("workspace_id", ctx.workspace.id)
-    .maybeSingle();
-  if (!projectRow) notFound();
-  const project = projectRow as unknown as ProjectWithOwner;
-
-  const [
-    { data: phaseRows },
-    { data: taskRows },
-    { data: deliverableRows },
-    clientRes,
-    files,
-    intakeRes,
-    commercialsRes,
-    { data: memberRows },
-    { data: activityRows },
-    { data: deptRows },
-    { data: listRows },
-    { data: folderRows },
-    { data: fieldRows },
-    { data: fieldValueRows },
-    { data: subProjectRows },
-    parentRes,
-    { data: commentRows },
-    progressRes,
-  ] = await Promise.all([
+  // Everything that only needs the project id starts now, in parallel with
+  // the project row itself. It used to wait for that row to come back before
+  // any of it began, which put one whole round trip in front of every render
+  // of this page: every open of the floating panel, and every server action
+  // that revalidates it. Only three of the reads genuinely need a column off
+  // the project; they start when it lands and finish alongside this group.
+  const independent = Promise.all([
     supabase
       .from("project_phases")
       .select("*")
@@ -114,9 +92,6 @@ export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
       .select("*")
       .eq("project_id", id)
       .order("sort_order"),
-    project.client_id
-      ? supabase.from("v_clients").select("*").eq("id", project.client_id).maybeSingle()
-      : Promise.resolve({ data: null }),
     listProjectFiles(ws, id),
     // Both are RLS-gated: intake to above-wall members, commercials to
     // executives and the assigned manager. Everyone else gets null.
@@ -160,6 +135,37 @@ export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
       .from("project_field_values")
       .select("field_id, value")
       .eq("project_id", id),
+    // Oldest first, so the thread reads top to bottom like a conversation.
+    supabase
+      .from("project_comments")
+      .select("id, body, created_at, author:profiles!author_id(id, full_name, avatar_url)")
+      .eq("project_id", id)
+      .order("created_at"),
+    // Direct and rolled-up counts, computed in the database.
+    supabase.from("v_project_progress").select("*").eq("project_id", id).maybeSingle(),
+  ]);
+  // A missing project throws out of here before those reads are awaited, so
+  // the group keeps a handler and cannot become an unhandled rejection.
+  independent.catch(() => {});
+
+  const { data: projectRow } = await supabase
+    .from("projects")
+    .select("*, owner:profiles(id, full_name, avatar_url)")
+    .eq("id", id)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!projectRow) notFound();
+  const project = projectRow as unknown as ProjectWithOwner;
+
+  // The three that need a column off the project row start the moment it
+  // lands, alongside whatever of the group above is still running, rather
+  // than after all of it. Awaiting the group first would put the slowest of
+  // fifteen reads in front of these three and leave the page with two
+  // waits again, which is the shape this was written to remove.
+  const dependent = Promise.all([
+    project.client_id
+      ? supabase.from("v_clients").select("*").eq("id", project.client_id).maybeSingle()
+      : Promise.resolve({ data: null }),
     // The family: for a parent, its sub-projects; for a sub-project, its
     // siblings (so any video shows the rest of its series).
     supabase
@@ -170,15 +176,28 @@ export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
     project.parent_project_id
       ? supabase.from("projects").select("id, code, title").eq("id", project.parent_project_id).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Oldest first, so the thread reads top to bottom like a conversation.
-    supabase
-      .from("project_comments")
-      .select("id, body, created_at, author:profiles!author_id(id, full_name, avatar_url)")
-      .eq("project_id", id)
-      .order("created_at"),
-    // Direct and rolled-up counts, computed in the database.
-    supabase.from("v_project_progress").select("*").eq("project_id", id).maybeSingle(),
   ]);
+
+  const [
+    [
+      { data: phaseRows },
+      { data: taskRows },
+      { data: deliverableRows },
+      files,
+      intakeRes,
+      commercialsRes,
+      { data: memberRows },
+      { data: activityRows },
+      { data: deptRows },
+      { data: listRows },
+      { data: folderRows },
+      { data: fieldRows },
+      { data: fieldValueRows },
+      { data: commentRows },
+      progressRes,
+    ],
+    [clientRes, { data: subProjectRows }, parentRes],
+  ] = await Promise.all([independent, dependent]);
 
   const phases = (phaseRows ?? []) as ProjectPhase[];
   const tasks = (taskRows ?? []) as unknown as TaskWithAssignee[];

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -22,6 +21,8 @@ import {
   PropertyRow,
   propertyInputClass,
   propertyTriggerClass,
+  sameValue,
+  type Edit,
 } from "@/components/features/projects/property-row";
 import { PROJECT_STATUS_OPTIONS } from "@/components/features/projects/types";
 import type { MemberOption } from "@/components/features/projects/types";
@@ -80,21 +81,116 @@ export function ProjectProperties({
   // projects_update is manager-or-owner, so this is per project.
   canEdit: boolean;
 }) {
-  const router = useRouter();
-  const [pending, start] = useTransition();
+  // Same deal as the Fields block below: the picked value is drawn from the
+  // click and the round trip happens behind it. Before this, a status change
+  // waited for the action to re-render the page and then for a second render
+  // from router.refresh(), about four seconds for a write that takes ninety
+  // milliseconds. The action already revalidates this path, so the refresh
+  // was a duplicate of work the response was carrying anyway.
+  //
+  // Keyed by property name rather than by field id, and each one settles as
+  // soon as the server's copy says the same thing.
+  const [edits, setEdits] = useState<Record<string, Edit>>({});
+  const seqRef = useRef<Record<string, number>>({});
 
-  const run = (fn: () => Promise<{ error: string | null }>) =>
-    start(async () => {
-      const res = await fn();
-      if (res.error) toast.error(res.error);
-      else router.refresh();
+  // edits is a dependency too: a write that settles on the value the server
+  // already held changes none of the five below, and without it the override
+  // would sit there for good, deaf to anything anyone else changed later.
+  useEffect(() => {
+    const server: Record<string, unknown> = {
+      status: project.status,
+      owner: project.owner?.id ?? null,
+      start_date: project.start_date,
+      due_date: project.due_date,
+      type: project.type,
+    };
+    setEdits((prev) => {
+      let changed = false;
+      const next: Record<string, Edit> = {};
+      for (const [key, edit] of Object.entries(prev)) {
+        if (!edit.pending && sameValue(server[key], edit.value)) {
+          changed = true;
+          continue;
+        }
+        next[key] = edit;
+      }
+      // Returning prev unchanged is what stops this from looping.
+      return changed ? next : prev;
     });
+  }, [
+    project.status,
+    project.owner?.id,
+    project.start_date,
+    project.due_date,
+    project.type,
+    edits,
+  ]);
+
+  const run = useCallback(
+    (key: string, next: unknown, label: string, fn: () => Promise<{ error: string | null }>) => {
+      const seq = (seqRef.current[key] ?? 0) + 1;
+      seqRef.current[key] = seq;
+      setEdits((prev) => ({ ...prev, [key]: { value: next, seq, pending: true } }));
+
+      const revert = () =>
+        setEdits((prev) => {
+          const copy = { ...prev };
+          delete copy[key];
+          return copy;
+        });
+
+      void (async () => {
+        let res;
+        try {
+          res = await fn();
+        } catch {
+          // A server action rejects rather than returns when the request does
+          // not complete: offline, a 500, a session that lapsed into a
+          // redirect, or a deploy that moved the action. Without this the
+          // value would stay on screen as though it saved, and stay pending,
+          // so nothing would ever correct it.
+          if (seqRef.current[key] !== seq) return;
+          toast.error(`${label} could not be saved. Check your connection and try again.`);
+          revert();
+          return;
+        }
+        if (seqRef.current[key] !== seq) return;
+        if (res.error) {
+          toast.error(`${label}: ${res.error}`);
+          revert();
+          return;
+        }
+        setEdits((prev) => ({ ...prev, [key]: { value: next, seq, pending: false } }));
+      })();
+    },
+    []
+  );
+
+  const shown = <T,>(key: string, fallback: T): T =>
+    (edits[key] ? (edits[key].value as T) : fallback);
+  const busy = (key: string) => Boolean(edits[key]?.pending);
+
+  const status = shown("status", project.status);
+  const ownerId = shown<string | null>("owner", project.owner?.id ?? null);
+  // The picker only carries names, so an owner shown before the server has
+  // confirmed wears initials for a beat and then gains their photo. Better
+  // than the name not moving at all.
+  const picked = members.find((m) => m.id === ownerId);
+  const owner =
+    ownerId === (project.owner?.id ?? null)
+      ? project.owner
+      : picked
+        ? { id: picked.id, full_name: picked.full_name, avatar_url: null }
+        : null;
+  const startDate = shown<string | null>("start_date", project.start_date);
+  const dueDate = shown<string | null>("due_date", project.due_date);
+  const type = shown<string | null>("type", project.type);
 
   return (
     <Card>
       <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0">
         {/* Status */}
-        <PropertyRow label="Status" size="half" pending={pending}>
+        <PropertyRow label="Status" size="half" pending={busy("status")}>
           {canEdit ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -103,19 +199,20 @@ export function ProjectProperties({
                   aria-label="Change status"
                   className={propertyTriggerClass}
                 >
-                  <ProjectStatusChip status={project.status} />
+                  <ProjectStatusChip status={status} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-44">
                 {PROJECT_STATUS_OPTIONS.map((s) => (
                   <DropdownMenuItem
                     key={s.value}
-                    onSelect={() => run(() => updateProjectStatus(ws, project.id, s.value))}
+                    onSelect={() =>
+                      run("status", s.value, "Status", () =>
+                        updateProjectStatus(ws, project.id, s.value)
+                      )
+                    }
                   >
-                    <Check
-                      strokeWidth={2}
-                      className={cn(project.status !== s.value && "opacity-0")}
-                    />
+                    <Check strokeWidth={2} className={cn(status !== s.value && "opacity-0")} />
                     {s.label}
                   </DropdownMenuItem>
                 ))}
@@ -123,13 +220,13 @@ export function ProjectProperties({
             </DropdownMenu>
           ) : (
             <span className="px-1">
-              <ProjectStatusChip status={project.status} />
+              <ProjectStatusChip status={status} />
             </span>
           )}
         </PropertyRow>
 
         {/* Owner */}
-        <PropertyRow label="Owner" size="half" pending={pending}>
+        <PropertyRow label="Owner" size="half" pending={busy("owner")}>
           {canEdit ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -138,14 +235,14 @@ export function ProjectProperties({
                   aria-label="Change owner"
                   className={cn(propertyTriggerClass, "flex items-center gap-1.5 text-[13px] text-text-1")}
                 >
-                  {project.owner ? (
+                  {owner ? (
                     <>
                       <PersonAvatar
-                        name={project.owner.full_name}
-                        src={project.owner.avatar_url}
+                        name={owner.full_name}
+                        src={owner.avatar_url}
                         size={20}
                       />
-                      {project.owner.full_name}
+                      {owner.full_name}
                     </>
                   ) : (
                     <EmptyValue label="Unassigned" />
@@ -156,29 +253,28 @@ export function ProjectProperties({
                 {members.map((m) => (
                   <DropdownMenuItem
                     key={m.id}
-                    onSelect={() => run(() => setProjectOwner(ws, project.id, m.id))}
+                    onSelect={() =>
+                      run("owner", m.id, "Owner", () => setProjectOwner(ws, project.id, m.id))
+                    }
                   >
-                    <Check
-                      strokeWidth={2}
-                      className={cn(project.owner?.id !== m.id && "opacity-0")}
-                    />
+                    <Check strokeWidth={2} className={cn(ownerId !== m.id && "opacity-0")} />
                     {m.full_name}
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => run(() => setProjectOwner(ws, project.id, null))}>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    run("owner", null, "Owner", () => setProjectOwner(ws, project.id, null))
+                  }
+                >
                   Unassigned
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : project.owner ? (
+          ) : owner ? (
             <span className="flex items-center gap-1.5 px-2 text-[13px] text-text-1">
-              <PersonAvatar
-                name={project.owner.full_name}
-                src={project.owner.avatar_url}
-                size={20}
-              />
-              {project.owner.full_name}
+              <PersonAvatar name={owner.full_name} src={owner.avatar_url} size={20} />
+              {owner.full_name}
             </span>
           ) : (
             <EmptyValue label="Unassigned" />
@@ -187,39 +283,47 @@ export function ProjectProperties({
 
         {/* Dates. The due tone comes from dueState through DueDate, never
             re-derived, so this cannot drift from every row and board card. */}
-        <PropertyRow label="Dates" size="half" pending={pending}>
+        <PropertyRow
+          label="Dates"
+          size="half"
+          pending={busy("start_date") || busy("due_date")}
+        >
           <div className="flex flex-wrap items-center gap-1.5">
             {canEdit ? (
               <>
                 <input
                   type="date"
-                  defaultValue={project.start_date ?? ""}
+                  value={startDate ?? ""}
                   aria-label="Start date"
                   onChange={(e) =>
-                    run(() => updateProject(ws, project.id, { start_date: e.target.value || null }))
+                    run("start_date", e.target.value || null, "Start date", () =>
+                      updateProject(ws, project.id, { start_date: e.target.value || null })
+                    )
                   }
                   className={cn(propertyInputClass, "w-[132px] font-mono tabular")}
                 />
                 <span className="text-text-3">to</span>
                 <input
                   type="date"
-                  defaultValue={project.due_date ?? ""}
+                  value={dueDate ?? ""}
                   aria-label="Due date"
                   onChange={(e) =>
-                    run(() => setProjectDueDate(ws, project.id, e.target.value || null))
+                    run("due_date", e.target.value || null, "Due date", () =>
+                      setProjectDueDate(ws, project.id, e.target.value || null)
+                    )
                   }
                   className={cn(propertyInputClass, "w-[132px] font-mono tabular")}
                 />
               </>
-            ) : project.start_date || project.due_date ? (
+            ) : startDate || dueDate ? (
               <span className="px-2 font-mono text-[13px] text-text-1 tabular">
-                {project.start_date ? fmtDateFull(project.start_date) : "Any time"} to{" "}
-                {project.due_date ? fmtDateFull(project.due_date) : "no end"}
+                {startDate ? fmtDateFull(startDate) : "Any time"} to{" "}
+                {dueDate ? fmtDateFull(dueDate) : "no end"}
               </span>
             ) : (
               <EmptyValue />
             )}
-            <DueDate due={project.due_date} status={project.status} />
+            <DueDate due={dueDate} status={status} />
           </div>
         </PropertyRow>
 
@@ -263,14 +367,20 @@ export function ProjectProperties({
         </PropertyRow>
 
         {/* Type */}
-        <PropertyRow label="Type" size="half" pending={pending}>
+        <PropertyRow label="Type" size="half" pending={busy("type")}>
           {canEdit ? (
             <TypeCell
-              value={project.type}
-              onSave={(v) => run(() => updateProject(ws, project.id, { type: v }))}
+              value={type}
+              // Settled on the trimmed value, which is what updateProject
+              // stores, so the override matches when the server answers.
+              onSave={(v) =>
+                run("type", v.trim() || null, "Type", () =>
+                  updateProject(ws, project.id, { type: v })
+                )
+              }
             />
-          ) : project.type ? (
-            <span className="px-2 text-[13px] text-text-1">{project.type}</span>
+          ) : type ? (
+            <span className="px-2 text-[13px] text-text-1">{type}</span>
           ) : (
             <EmptyValue />
           )}

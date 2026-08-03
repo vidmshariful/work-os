@@ -11,6 +11,9 @@ import type {
 
 export interface FieldActionState {
   error: string | null;
+  // What was actually stored, after trimming and coercion. Null when the
+  // field ended up empty or the write was refused.
+  value?: ProjectFieldValue;
 }
 
 const KINDS: ProjectFieldKind[] = [
@@ -113,40 +116,59 @@ export async function setProjectFieldValue(
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, owner_id")
-    .eq("id", projectId)
-    .eq("workspace_id", ctx.workspace.id)
-    .maybeSingle();
-  if (!project) return { error: "Project not found." };
+  // Independent lookups, so they cost one trip rather than two. The screen
+  // shows the new value the moment it is picked, which makes every leg of
+  // this worth removing.
+  const [{ data: project }, { data: field }] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, owner_id")
+      .eq("id", projectId)
+      .eq("workspace_id", ctx.workspace.id)
+      .maybeSingle(),
+    supabase
+      .from("project_fields")
+      .select("id, kind, options")
+      .eq("id", fieldId)
+      .eq("workspace_id", ctx.workspace.id)
+      .maybeSingle(),
+  ]);
+  if (!project) return { error: "Project not found.", value: null };
   if (!ctx.capabilities.canCreateProjects && project.owner_id !== ctx.userId) {
-    return { error: "Only managers or the project owner can change this." };
+    return { error: "Only managers or the project owner can change this.", value: null };
   }
-
-  const { data: field } = await supabase
-    .from("project_fields")
-    .select("id, kind, options")
-    .eq("id", fieldId)
-    .eq("workspace_id", ctx.workspace.id)
-    .maybeSingle();
-  if (!field) return { error: "That field no longer exists." };
+  if (!field) return { error: "That field no longer exists.", value: null };
 
   const { value, error } = await cleanFieldValue(
     field.kind as ProjectFieldKind,
     (field.options ?? []) as ProjectFieldOption[],
     raw
   );
-  if (error) return { error };
+  if (error) return { error, value: null };
 
-  // Empty removes the row. One representation of "not set" beats two.
-  if (value === null || (Array.isArray(value) && value.length === 0)) {
-    const { error: delError } = await supabase
+  // Empty removes the row. One representation of "not set" beats two, and an
+  // unticked checkbox is empty: otherwise ticking and unticking would leave a
+  // false behind that the Fields counter would go on counting as filled.
+  if (value === null || value === false || (Array.isArray(value) && value.length === 0)) {
+    const { data, error: delError } = await supabase
       .from("project_field_values")
       .delete()
       .eq("project_id", projectId)
-      .eq("field_id", fieldId);
-    if (delError) return { error: "Could not clear the field. Try again." };
+      .eq("field_id", fieldId)
+      .select("project_id");
+    if (delError) return { error: "Could not clear the field. Try again.", value: null };
+    // Deleting nothing is the normal answer when the field was already empty,
+    // and the sound of RLS refusing when it was not. Only the second is an
+    // error, so the two are told apart rather than both reported as success.
+    if (!data || data.length === 0) {
+      const { data: still } = await supabase
+        .from("project_field_values")
+        .select("project_id")
+        .eq("project_id", projectId)
+        .eq("field_id", fieldId)
+        .maybeSingle();
+      if (still) return { error: "You cannot change this project.", value: null };
+    }
   } else {
     const { data, error: upError } = await supabase
       .from("project_field_values")
@@ -155,12 +177,18 @@ export async function setProjectFieldValue(
         { onConflict: "project_id,field_id" }
       )
       .select("project_id");
-    if (upError) return { error: "Could not save the field. Try again." };
-    if (!data || data.length === 0) return { error: "You cannot change this project." };
+    if (upError) return { error: "Could not save the field. Try again.", value: null };
+    if (!data || data.length === 0) {
+      return { error: "You cannot change this project.", value: null };
+    }
   }
 
   revalidatePath(`/${ws}/projects/${projectId}`);
-  return { error: null };
+  // The cleaned value goes back, not the raw one. cleanFieldValue trims text,
+  // coerces numbers and dedupes choices, so a screen showing what the person
+  // typed can be out of step with what was stored. Now it settles on the
+  // stored value without waiting for a page render.
+  return { error: null, value: value === false ? null : value };
 }
 
 // ---- definitions ----

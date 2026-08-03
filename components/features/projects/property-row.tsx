@@ -27,6 +27,21 @@ export const propertyInputClass =
 export const propertyTriggerClass =
   "rounded-[8px] border border-border/60 px-1.5 py-0.5 outline-none transition-colors hover:border-border-strong hover:bg-surface-2/50 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
+// An edit that has been drawn before the server has confirmed it. Both
+// blocks show the picked value immediately and settle it afterwards, so the
+// shape of an in-flight edit belongs here with the rest of what they share.
+export interface Edit<T = unknown> {
+  // What to draw until the same value comes back as a prop.
+  value: T;
+  // Bumped per dispatch, so a slow answer to an old click cannot undo a
+  // newer one.
+  seq: number;
+  pending: boolean;
+}
+
+export const sameValue = (a: unknown, b: unknown) =>
+  JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
 // An unset value is not a blank. A blank reads as a rendering fault; this
 // reads as a fact nobody has filled in yet.
 export function EmptyValue({ label = "Empty" }: { label?: string }) {
