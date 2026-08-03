@@ -2,6 +2,7 @@ import { CircleHelp } from "lucide-react";
 import { GlobalSearch } from "./global-search";
 import { QuickCreate } from "./quick-create";
 import { NotificationsBell } from "./notifications-bell";
+import { ThemeToggle } from "./theme";
 import { UserMenu } from "./user-menu";
 import { MobileNav } from "./mobile-nav";
 import type { DeptTreeItem } from "./department-tree";
@@ -56,6 +57,7 @@ export function Topbar({
       >
         <CircleHelp className="size-[18px] stroke-[1.5]" />
       </a>
+      <ThemeToggle className="size-9" />
       <NotificationsBell
         userId={userId}
         workspaceId={workspace.id}

@@ -67,25 +67,35 @@
   --color-danger-soft: var(--danger-soft);
   --color-nav-active: var(--nav-active);
   --color-chip-gray: var(--chip-gray);
-  --color-tag-blue: #3b6ff6;
-  --color-tag-blue-soft: #eaf0fe;
-  --color-tag-violet: #7c5cfc;
-  --color-tag-violet-soft: #f0ecfd;
-  --color-tag-green: #16a34a;
-  --color-tag-green-soft: #e7f6ec;
-  --color-tag-amber: #c77a15;
-  --color-tag-amber-soft: #fbf0de;
-  --color-tag-rose: #e5486d;
-  --color-tag-rose-soft: #fdecef;
-  --color-tag-teal: #12a8a0;
-  --color-tag-teal-soft: #e5f6f5;
-  --color-tag-gray: #8a94a3;
-  --color-tag-gray-soft: #f0f1f3;
+  /* Every tag colour goes through a variable so a theme can move it. These
+     were literal hex, which is why the pastel -soft fills could not be
+     darkened and would have glowed on a dark canvas. */
+  --color-tag-blue: var(--tag-blue);
+  --color-tag-blue-soft: var(--tag-blue-soft);
+  --color-tag-violet: var(--tag-violet);
+  --color-tag-violet-soft: var(--tag-violet-soft);
+  --color-tag-green: var(--tag-green);
+  --color-tag-green-soft: var(--tag-green-soft);
+  --color-tag-amber: var(--tag-amber);
+  --color-tag-amber-soft: var(--tag-amber-soft);
+  --color-tag-rose: var(--tag-rose);
+  --color-tag-rose-soft: var(--tag-rose-soft);
+  --color-tag-teal: var(--tag-teal);
+  --color-tag-teal-soft: var(--tag-teal-soft);
+  --color-tag-gray: var(--tag-gray);
+  --color-tag-gray-soft: var(--tag-gray-soft);
+  /* The pill's label. On light it is darker than the dot so it reads on a
+     pastel fill; on dark it is lighter than the dot for the same reason. */
+  --color-tag-blue-text: var(--tag-blue-text);
+  --color-tag-violet-text: var(--tag-violet-text);
+  --color-tag-green-text: var(--tag-green-text);
+  --color-tag-amber-text: var(--tag-amber-text);
+  --color-tag-rose-text: var(--tag-rose-text);
+  --color-tag-teal-text: var(--tag-teal-text);
+  --color-tag-gray-text: var(--tag-gray-text);
   --radius-card: 14px;
   --radius-control: 9px;
   --radius-chip: 8px;
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow-pop: 0 4px 12px rgba(16, 24, 40, 0.08);
 }
 
 :root {
@@ -93,25 +103,25 @@
   --bg: #f6f7f9;
   --surface: #ffffff;
   --surface-2: #fbfbfc;
-  --border-strong: #d9dce1;
+  --border-strong: #d3d7dd;
 
   /* Text */
   --text: #1a1d21;
   --text-2: #6b7280;
-  --text-3: #9aa1ac;
+  --text-3: #8b919b;
 
   /* Actions */
   --brand: #3b6ff6;
   --brand-soft: #eaf0fe;
 
   /* Wall signal: above-wall confidential marker ONLY */
-  --wall: #c77a15;
+  --wall: #c07615;
   --wall-soft: #fbf0de;
 
   /* Semantic */
-  --success: #16a34a;
+  --success: #159b46;
   --success-soft: #e7f6ec;
-  --warning: #c77a15;
+  --warning: #c07615;
   --warning-soft: #fbf0de;
   --danger: #dc2626;
   --danger-soft: #fce9e9;
@@ -119,6 +129,33 @@
   /* Neutral fills */
   --nav-active: #f0f1f3;
   --chip-gray: #f0f1f3;
+
+  /* Tag palette */
+  --tag-blue: #3b6ff6;
+  --tag-blue-soft: #eaf0fe;
+  --tag-violet: #7c5cfc;
+  --tag-violet-soft: #f0ecfd;
+  --tag-green: #16a34a;
+  --tag-green-soft: #e7f6ec;
+  --tag-amber: #c77a15;
+  --tag-amber-soft: #fbf0de;
+  --tag-rose: #e5486d;
+  --tag-rose-soft: #fdecef;
+  --tag-teal: #12a8a0;
+  --tag-teal-soft: #e5f6f5;
+  --tag-gray: #8a94a3;
+  --tag-gray-soft: #f0f1f3;
+  --tag-blue-text: #2554d6;
+  --tag-violet-text: #5f41d9;
+  --tag-green-text: #117a38;
+  --tag-amber-text: #9c5f0e;
+  --tag-rose-text: #c92e55;
+  --tag-teal-text: #0b7570;
+  --tag-gray-text: #5d6675;
+
+  /* Depth. Light leans on a hairline shadow, dark leans on the border. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-pop: 0 4px 12px rgba(16, 24, 40, 0.08);
 
   /* shadcn mapping */
   --background: var(--bg);
@@ -153,6 +190,98 @@
   --sidebar-accent-foreground: var(--text);
   --sidebar-border: #e8eaed;
   --sidebar-ring: var(--brand);
+}
+
+/* ---------------------------------------------------------------------------
+   Dark theme
+   ---------------------------------------------------------------------------
+   Nothing but tokens. Not one component knows which theme is on, which is
+   the whole reason this was cheap to add: every surface, chip and border
+   already reads a semantic variable.
+
+   Three decisions worth stating, because they are what stop a dark theme
+   looking like an inverted light one.
+
+   1. The canvas is not black. #0f1114 sits slightly blue of neutral so that
+      pure white text never buzzes against it, and it leaves room for two
+      raised surfaces above it rather than one.
+   2. Depth comes from borders, not shadows. A drop shadow on a dark canvas
+      reads as smudge, so --shadow-card is reduced to almost nothing and the
+      border does the separating.
+   3. Foreground colours lift, background tints darken. A brand blue that is
+      legible on white is too dark on #16191d, and a pastel -soft fill that
+      works on white glows. Every pair is moved independently and the ratios
+      are asserted in the theme test, not eyeballed.
+
+   The wall keeps its amber on both sides. It is the one colour in the app
+   that carries meaning rather than decoration, so it has to read the same.
+   -------------------------------------------------------------------------- */
+
+.dark {
+  /* Canvas and surface */
+  --bg: #0f1114;
+  --surface: #16191d;
+  --surface-2: #1c2026;
+  --border-strong: #3a424c;
+
+  /* Text */
+  --text: #e9ecf0;
+  --text-2: #a2abb7;
+  --text-3: #7d8794;
+
+  /* Actions */
+  --brand: #6c93fa;
+  --brand-soft: #1b2742;
+
+  /* Wall signal: above-wall confidential marker ONLY */
+  --wall: #e0a132;
+  --wall-soft: #35280f;
+
+  /* Semantic */
+  --success: #45c47c;
+  --success-soft: #133020;
+  --warning: #e0a132;
+  --warning-soft: #35280f;
+  --danger: #f2606a;
+  --danger-soft: #3b171b;
+
+  /* Neutral fills */
+  --nav-active: #262b32;
+  --chip-gray: #262b32;
+
+  /* Tag palette */
+  --tag-blue: #7ba1fb;
+  --tag-blue-soft: #1b2742;
+  --tag-violet: #a48bfd;
+  --tag-violet-soft: #251f45;
+  --tag-green: #45c47c;
+  --tag-green-soft: #133020;
+  --tag-amber: #e0a132;
+  --tag-amber-soft: #35280f;
+  --tag-rose: #f2718f;
+  --tag-rose-soft: #3a1a25;
+  --tag-teal: #3ec8bf;
+  --tag-teal-soft: #10302e;
+  --tag-gray: #a2abb7;
+  --tag-gray-soft: #262b32;
+  --tag-blue-text: #a8c2fc;
+  --tag-violet-text: #c3b2fe;
+  --tag-green-text: #74d8a0;
+  --tag-amber-text: #edc072;
+  --tag-rose-text: #f79db2;
+  --tag-teal-text: #71dcd5;
+  --tag-gray-text: #b9c1cb;
+
+  /* Depth: borders do the work, so the shadows all but disappear. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-pop: 0 6px 20px rgba(0, 0, 0, 0.45);
+
+  /* shadcn mapping. Primary inverts: a near-black button is invisible on a
+     near-black canvas, so the primary surface goes light and its text dark. */
+  --primary: #e9ecf0;
+  --primary-foreground: #14171b;
+  --border: #262c33;
+  --input: #333a42;
 }
 
 @layer base {

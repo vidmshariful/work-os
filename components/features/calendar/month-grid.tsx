@@ -12,12 +12,15 @@ export interface CalendarItem {
 }
 
 const TONE_CLASSES: Record<CalendarItem["tone"], string> = {
-  blue: "bg-tag-blue-soft text-[#2554d6]",
-  violet: "bg-tag-violet-soft text-[#5f41d9]",
-  amber: "bg-tag-amber-soft text-[#9c5f0e]",
-  teal: "bg-tag-teal-soft text-[#0d827c]",
-  green: "bg-tag-green-soft text-[#12813b]",
-  gray: "bg-tag-gray-soft text-[#5d6675]",
+  // The same token pairs the Tag primitive uses. These were the hex values
+  // copied out of it, which meant the calendar would have kept light-mode
+  // text on a dark fill and been unreadable.
+  blue: "bg-tag-blue-soft text-tag-blue-text",
+  violet: "bg-tag-violet-soft text-tag-violet-text",
+  amber: "bg-tag-amber-soft text-tag-amber-text",
+  teal: "bg-tag-teal-soft text-tag-teal-text",
+  green: "bg-tag-green-soft text-tag-green-text",
+  gray: "bg-tag-gray-soft text-tag-gray-text",
 };
 
 const MAX_PILLS = 3;

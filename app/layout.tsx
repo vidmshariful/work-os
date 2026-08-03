@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/shell/theme";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,10 +28,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${plexMono.variable}`}>
+    // suppressHydrationWarning is required, not cosmetic: next-themes sets
+    // the class on <html> before React hydrates so the page never flashes
+    // the wrong theme, which means the server and client markup differ here
+    // by design.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${plexMono.variable}`}
+    >
       <body className="antialiased">
-        {children}
-        <Toaster position="bottom-right" />
+        <ThemeProvider>
+          {children}
+          <Toaster position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

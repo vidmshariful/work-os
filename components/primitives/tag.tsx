@@ -15,14 +15,20 @@ export type TagTone =
   | "teal"
   | "gray";
 
+// Three values per tone, not two: the fill, the dot, and the label. The
+// label is its own token because it has to move in the opposite direction
+// from the fill between themes. On light it is darker than the dot so it
+// reads on a pastel background; on dark it is lighter, for the same reason.
+// These were hardcoded hex, which is what would have made every chip
+// unreadable the moment a dark canvas appeared.
 const TONES: Record<TagTone, { bg: string; dot: string; text: string }> = {
-  blue: { bg: "bg-tag-blue-soft", dot: "bg-tag-blue", text: "text-[#2554d6]" },
-  violet: { bg: "bg-tag-violet-soft", dot: "bg-tag-violet", text: "text-[#5f41d9]" },
-  green: { bg: "bg-tag-green-soft", dot: "bg-tag-green", text: "text-[#12813b]" },
-  amber: { bg: "bg-tag-amber-soft", dot: "bg-tag-amber", text: "text-[#9c5f0e]" },
-  rose: { bg: "bg-tag-rose-soft", dot: "bg-tag-rose", text: "text-[#c92e55]" },
-  teal: { bg: "bg-tag-teal-soft", dot: "bg-tag-teal", text: "text-[#0d827c]" },
-  gray: { bg: "bg-tag-gray-soft", dot: "bg-tag-gray", text: "text-[#5d6675]" },
+  blue: { bg: "bg-tag-blue-soft", dot: "bg-tag-blue", text: "text-tag-blue-text" },
+  violet: { bg: "bg-tag-violet-soft", dot: "bg-tag-violet", text: "text-tag-violet-text" },
+  green: { bg: "bg-tag-green-soft", dot: "bg-tag-green", text: "text-tag-green-text" },
+  amber: { bg: "bg-tag-amber-soft", dot: "bg-tag-amber", text: "text-tag-amber-text" },
+  rose: { bg: "bg-tag-rose-soft", dot: "bg-tag-rose", text: "text-tag-rose-text" },
+  teal: { bg: "bg-tag-teal-soft", dot: "bg-tag-teal", text: "text-tag-teal-text" },
+  gray: { bg: "bg-tag-gray-soft", dot: "bg-tag-gray", text: "text-tag-gray-text" },
 };
 
 // The palette in picker order. project_lists.color is constrained to exactly

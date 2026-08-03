@@ -25,7 +25,7 @@ export const PRIORITY_META: Record<
   { label: string; tone: string; dot: string }
 > = {
   0: { label: "Normal", tone: "text-text-3", dot: "#9AA1AC" },
-  1: { label: "High", tone: "text-[#7C5CFC]", dot: "#7C5CFC" },
+  1: { label: "High", tone: "text-tag-violet", dot: "#7C5CFC" },
   2: { label: "Urgent", tone: "text-danger", dot: "#E5486D" },
 };
 
