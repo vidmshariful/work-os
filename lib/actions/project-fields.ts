@@ -327,3 +327,39 @@ export async function deleteProjectField(
   revalidatePath(`/${ws}`, "layout");
   return { error: null, cleared: count ?? 0 };
 }
+
+// Persist a new field order. Fields render in sort_order on every project,
+// so this is the one place that decides how the block reads.
+export async function reorderProjectFields(
+  ws: string,
+  orderedIds: string[]
+): Promise<FieldActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canManageTemplates) {
+    return { error: "Only managers can reorder fields." };
+  }
+  if (orderedIds.length === 0) return { error: null };
+
+  const supabase = await createClient();
+  // Confirm every id belongs to this workspace before writing any of them,
+  // so a tampered payload cannot reorder another workspace's fields.
+  const { data: owned } = await supabase
+    .from("project_fields")
+    .select("id")
+    .eq("workspace_id", ctx.workspace.id)
+    .in("id", orderedIds);
+  if ((owned ?? []).length !== orderedIds.length) {
+    return { error: "Those fields are not all in this workspace." };
+  }
+
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase
+      .from("project_fields")
+      .update({ sort_order: i })
+      .eq("id", orderedIds[i]);
+    if (error) return { error: "Could not save the new order. Try again." };
+  }
+
+  revalidatePath(`/${ws}`, "layout");
+  return { error: null };
+}

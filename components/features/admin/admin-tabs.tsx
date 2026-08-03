@@ -11,6 +11,7 @@ const TABS = [
   { key: "people", label: "People" },
   { key: "departments", label: "Spaces" },
   { key: "templates", label: "Templates" },
+  { key: "fields", label: "Fields" },
   { key: "integrations", label: "Integrations" },
 ];
 
