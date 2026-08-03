@@ -3,8 +3,10 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Archive,
   ArrowRightLeft,
   Copy,
+  Folder,
   MoreHorizontal,
   Palette,
   Pencil,
@@ -36,7 +38,9 @@ import {
   duplicateList,
   moveListToSpace,
   renameList,
+  setListArchived,
   setListColor,
+  setListFolder,
 } from "@/lib/actions/departments";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +123,30 @@ export function useListEdits({ ws, slug }: { ws: string; slug: string }) {
     [router, run, slug, ws]
   );
 
+  const refile = useCallback(
+    (id: string, folderId: string | null, folderName: string) => {
+      // It leaves this section and reappears under the folder, so the page
+      // is re-read rather than patched in place.
+      run(id, null, true, () => setListFolder(ws, slug, id, folderId), () => {
+        toast.success(
+          folderId ? `Moved into ${folderName}.` : "Moved to the top of the space."
+        );
+        router.refresh();
+      });
+    },
+    [router, run, slug, ws]
+  );
+
+  const archive = useCallback(
+    (id: string, name: string) => {
+      run(id, null, true, () => setListArchived(ws, slug, id, true), () => {
+        toast.success(`${name} archived. Its projects are untouched.`);
+        router.refresh();
+      });
+    },
+    [router, run, slug, ws]
+  );
+
   const duplicate = useCallback(
     (id: string, withProjects: boolean) => {
       // No optimistic section: the copy's id comes from the database.
@@ -166,6 +194,8 @@ export function useListEdits({ ws, slug }: { ws: string; slug: string }) {
     rename,
     setColor,
     move,
+    refile,
+    archive,
     duplicate,
     remove,
   };
@@ -180,8 +210,12 @@ export function ListSectionMenu({
   onStartRename,
   onSetColor,
   onMove,
+  onRefile,
+  onArchive,
   onDuplicate,
   onDelete,
+  folders,
+  currentFolderId,
 }: {
   list: { id: string; name: string; color: string | null };
   // Counted across the whole space, not the filtered view, because the
@@ -189,11 +223,17 @@ export function ListSectionMenu({
   projectCount: number;
   spaces: { id: string; name: string }[];
   currentSpaceId: string;
+  // Folders in this space. Empty means the space has none yet, and the
+  // submenu is hidden rather than shown with nothing in it.
+  folders: { id: string; name: string }[];
+  currentFolderId: string | null;
   // canCreateProjects. Anything that writes to projects needs it.
   canManage: boolean;
   onStartRename: () => void;
   onSetColor: (color: string | null) => void;
   onMove: (departmentId: string, spaceName: string) => void;
+  onRefile: (folderId: string | null, folderName: string) => void;
+  onArchive: () => void;
   onDuplicate: (withProjects: boolean) => void;
   onDelete: () => void;
 }) {
@@ -239,6 +279,32 @@ export function ListSectionMenu({
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
+          {folders.length > 0 ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Folder strokeWidth={1.5} />
+                Move to folder
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="max-h-64 w-48 overflow-y-auto">
+                {folders.map((f) => (
+                  <DropdownMenuItem
+                    key={f.id}
+                    disabled={f.id === currentFolderId}
+                    onSelect={() => onRefile(f.id, f.name)}
+                  >
+                    {f.name}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={currentFolderId === null}
+                  onSelect={() => onRefile(null, "")}
+                >
+                  No folder
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : null}
           {/* Moving a list rewrites its projects' space, which projects_update
               reserves for managers. Hidden rather than disabled for a lead. */}
           {canManage && elsewhere.length > 0 ? (
@@ -284,6 +350,12 @@ export function ListSectionMenu({
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
+          {/* Archive before Delete, and worded so the difference is obvious:
+              one is reversible and keeps everything, the other is not. */}
+          <DropdownMenuItem onSelect={onArchive}>
+            <Archive strokeWidth={1.5} />
+            Archive
+          </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onSelect={() => setConfirming(true)}>
             <Trash2 strokeWidth={1.5} />
             Delete

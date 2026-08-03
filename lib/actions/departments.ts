@@ -400,7 +400,10 @@ export async function createList(
   ws: string,
   departmentId: string,
   slug: string,
-  name: string
+  name: string,
+  // Null puts the list at the space root, which is where every list lived
+  // before folders existed.
+  folderId: string | null = null
 ): Promise<ListActionState> {
   const ctx = await getWorkspaceContext(ws);
   if (!ctx.capabilities.canAssignTasks) {
@@ -417,11 +420,244 @@ export async function createList(
   const { error } = await supabase.from("project_lists").insert({
     department_id: departmentId,
     name: clean,
+    folder_id: folderId,
     sort_order: count ?? 0,
   });
   if (error) return { error: "Could not add the list. Try again." };
 
   revalidatePath(`/${ws}/departments/${slug}`);
+  return { error: null };
+}
+
+// ---- folders ----
+// A folder groups lists inside one space. project_folders carries the same
+// four policies project_lists does, so the capability gate is the same
+// canAssignTasks, and these checks exist only to give a sentence instead of
+// a silent no-op.
+
+// createFolder deliberately does not call .select() after the insert.
+// project_folders_insert gates on the workspace archetype while
+// project_folders_select gates on space membership, so a lead who is not a
+// member of this space can insert and then read back zero rows. createList
+// has the same shape for the same reason.
+export async function createFolder(
+  ws: string,
+  slug: string,
+  departmentId: string,
+  name: string
+): Promise<ListActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can add folders." };
+  }
+  const clean = name.trim();
+  if (!clean) return { error: "Give the folder a name." };
+
+  const supabase = await createClient();
+  const { data: dept } = await supabase
+    .from("departments")
+    .select("id")
+    .eq("id", departmentId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!dept) return { error: "That space is not available." };
+
+  const { count } = await supabase
+    .from("project_folders")
+    .select("id", { count: "exact", head: true })
+    .eq("department_id", departmentId);
+  const { error } = await supabase.from("project_folders").insert({
+    department_id: departmentId,
+    name: clean,
+    sort_order: count ?? 0,
+  });
+  if (error) return { error: "Could not add the folder. Try again." };
+
+  revalidatePath(`/${ws}/departments/${slug}`);
+  return { error: null };
+}
+
+// Confirms a folder exists and sits in the space the caller names, so a
+// tampered id cannot reach into another space's folders. Mirrors listInSpace.
+async function folderInSpace(
+  slug: string,
+  folderId: string
+): Promise<{ id: string; department_id: string; name: string } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("project_folders")
+    .select("id, department_id, name, departments!inner(slug)")
+    .eq("id", folderId)
+    .maybeSingle();
+  const row = data as unknown as
+    | { id: string; department_id: string; name: string; departments: { slug: string } }
+    | null;
+  if (!row || row.departments.slug !== slug) return null;
+  return { id: row.id, department_id: row.department_id, name: row.name };
+}
+
+export async function renameFolder(
+  ws: string,
+  slug: string,
+  folderId: string,
+  name: string
+): Promise<ListActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can rename folders." };
+  }
+  const clean = name.trim();
+  if (!clean) return { error: "The folder name cannot be empty." };
+  if (!(await folderInSpace(slug, folderId))) {
+    return { error: "That folder is not in this space." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("project_folders")
+    .update({ name: clean })
+    .eq("id", folderId)
+    .select("id");
+  if (error) return { error: "Could not rename the folder. Try again." };
+  if (!data || data.length === 0) return { error: "You cannot rename this folder." };
+
+  revalidatePath(`/${ws}/departments/${slug}`);
+  return { error: null };
+}
+
+export async function setFolderColor(
+  ws: string,
+  slug: string,
+  folderId: string,
+  color: string | null
+): Promise<ListActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can change folder colours." };
+  }
+  if (color !== null && !LIST_COLORS.includes(color)) {
+    return { error: "That is not one of the available colours." };
+  }
+  if (!(await folderInSpace(slug, folderId))) {
+    return { error: "That folder is not in this space." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("project_folders")
+    .update({ color })
+    .eq("id", folderId)
+    .select("id");
+  if (error) return { error: "Could not change the colour. Try again." };
+  if (!data || data.length === 0) return { error: "You cannot change this folder." };
+
+  revalidatePath(`/${ws}/departments/${slug}`);
+  return { error: null };
+}
+
+// Moving a list into a folder, or out to the space root with folderId null.
+// The composite foreign key refuses a folder from another space, so the
+// check here is only to turn a constraint violation into a sentence.
+export async function setListFolder(
+  ws: string,
+  slug: string,
+  listId: string,
+  folderId: string | null
+): Promise<ListActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can move lists." };
+  }
+  const list = await listInSpace(slug, listId);
+  if (!list) return { error: "That list is not in this space." };
+
+  if (folderId) {
+    const folder = await folderInSpace(slug, folderId);
+    if (!folder) return { error: "That folder is not in this space." };
+    if (folder.department_id !== list.department_id) {
+      return { error: "That folder belongs to a different space." };
+    }
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("project_lists")
+    .update({ folder_id: folderId })
+    .eq("id", listId)
+    .select("id");
+  if (error) return { error: "Could not move the list. Try again." };
+  if (!data || data.length === 0) return { error: "You cannot move this list." };
+
+  revalidatePath(`/${ws}/departments/${slug}`);
+  return { error: null };
+}
+
+// Deleting a folder unfiles its lists rather than deleting them, which is
+// not application logic: the composite foreign key's ON DELETE SET NULL
+// (folder_id) does it. The count comes back so the confirmation the caller
+// showed can be checked against what actually happened.
+export async function deleteFolder(
+  ws: string,
+  slug: string,
+  folderId: string
+): Promise<{ error: string | null; unfiled: number }> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can remove folders.", unfiled: 0 };
+  }
+  if (!(await folderInSpace(slug, folderId))) {
+    return { error: "That folder is not in this space.", unfiled: 0 };
+  }
+
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("project_lists")
+    .select("id", { count: "exact", head: true })
+    .eq("folder_id", folderId);
+
+  const { data, error } = await supabase
+    .from("project_folders")
+    .delete()
+    .eq("id", folderId)
+    .select("id");
+  if (error) return { error: "Could not remove the folder. Try again.", unfiled: 0 };
+  if (!data || data.length === 0) {
+    return { error: "You cannot remove this folder.", unfiled: 0 };
+  }
+
+  revalidatePath(`/${ws}/departments/${slug}`);
+  return { error: null, unfiled: count ?? 0 };
+}
+
+// Archiving a list takes it out of the space page and the sidebar without
+// touching who can see it or what is inside it. Mirrors
+// setDepartmentArchived from 0036, including its posture: this is a UI
+// state, not a permission. The projects in an archived list keep working and
+// still open from a direct link.
+export async function setListArchived(
+  ws: string,
+  slug: string,
+  listId: string,
+  archived: boolean
+): Promise<ListActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!ctx.capabilities.canAssignTasks) {
+    return { error: "Only leads and up can archive lists." };
+  }
+  if (!(await listInSpace(slug, listId))) {
+    return { error: "That list is not in this space." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("project_lists")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", listId)
+    .select("id");
+  if (error) return { error: "Could not change the list. Try again." };
+  if (!data || data.length === 0) return { error: "You cannot change this list." };
+
+  revalidatePath(`/${ws}`, "layout");
   return { error: null };
 }
 
@@ -476,18 +712,37 @@ const LIST_COLORS = ["blue", "violet", "green", "amber", "rose", "teal", "gray"]
 async function listInSpace(
   slug: string,
   listId: string
-): Promise<{ id: string; department_id: string; name: string; color: string | null } | null> {
+): Promise<{
+  id: string;
+  department_id: string;
+  name: string;
+  color: string | null;
+  folder_id: string | null;
+} | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("project_lists")
-    .select("id, department_id, name, color, departments!inner(slug)")
+    .select("id, department_id, name, color, folder_id, departments!inner(slug)")
     .eq("id", listId)
     .maybeSingle();
   const row = data as unknown as
-    | { id: string; department_id: string; name: string; color: string | null; departments: { slug: string } }
+    | {
+        id: string;
+        department_id: string;
+        name: string;
+        color: string | null;
+        folder_id: string | null;
+        departments: { slug: string };
+      }
     | null;
   if (!row || row.departments.slug !== slug) return null;
-  return { id: row.id, department_id: row.department_id, name: row.name, color: row.color };
+  return {
+    id: row.id,
+    department_id: row.department_id,
+    name: row.name,
+    color: row.color,
+    folder_id: row.folder_id,
+  };
 }
 
 export async function renameList(
@@ -617,9 +872,13 @@ export async function moveListToSpace(
     movedCount++;
   }
 
+  // folder_id must be cleared in the same statement. A folder belongs to
+  // exactly one space, and the composite foreign key would refuse a list
+  // whose department_id and folder_id disagree. Same rule updateProject
+  // already applies to list_id when a project changes space.
   const { error } = await supabase
     .from("project_lists")
-    .update({ department_id: departmentId })
+    .update({ department_id: departmentId, folder_id: null })
     .eq("id", listId);
   if (error) {
     return { error: "The projects moved, but the list did not. Reload and check." };
@@ -664,6 +923,8 @@ export async function duplicateList(
       department_id: list.department_id,
       name: `${list.name} (copy)`,
       color: list.color,
+      // Beside its source, not at the space root.
+      folder_id: list.folder_id,
       sort_order: count ?? 0,
     })
     .select("id")

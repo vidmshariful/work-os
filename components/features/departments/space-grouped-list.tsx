@@ -14,6 +14,7 @@ import { DragHandle } from "@/components/primitives/misc";
 import { useProjectActionsRequired } from "@/components/features/projects/project-actions";
 import { reorderLists } from "@/lib/actions/departments";
 import { CollapsibleProjectList, visualOrder } from "./collapsible-project-list";
+import { FolderBlock } from "./folder-block";
 import { ListSectionMenu, useListEdits } from "./list-controls";
 import { QuickAddProject } from "./quick-add-project";
 import { SpaceSection } from "./space-section";
@@ -49,6 +50,8 @@ export function SpaceGroupedList({
   canManage,
   departmentId,
   lists,
+  folders,
+  listFolder,
   listCounts,
   spaces,
   sectionActions,
@@ -71,6 +74,11 @@ export function SpaceGroupedList({
   canManage: boolean;
   departmentId: string;
   lists: { id: string; name: string; color: string | null }[];
+  // Folders in this space, in sort order. Empty means the space has none,
+  // and the page renders exactly as it did before folders existed.
+  folders: { id: string; name: string; color: string | null }[];
+  // listId to folderId, null for a list sitting at the space root.
+  listFolder: Record<string, string | null>;
   // Per list, counted across the whole space rather than the filtered view,
   // so the delete confirmation states what will really happen.
   listCounts: Record<string, number>;
@@ -222,6 +230,32 @@ export function SpaceGroupedList({
     }
   }
 
+  // Sections carry no folder of their own, so they are bucketed here. Only
+  // grouping by list has folders at all: grouping by status or assignee cuts
+  // across them, and a folder header over a status column would be a lie.
+  const blocks = useMemo(() => {
+    const indexed = shown.map((g, i) => ({ g, i }));
+    if (group !== "list" || folders.length === 0) {
+      return [{ key: "__all", folder: null, groups: indexed }];
+    }
+    const out: {
+      key: string;
+      folder: { id: string; name: string; color: string | null } | null;
+      groups: { g: (typeof shown)[number]; i: number }[];
+    }[] = [];
+    for (const f of folders) {
+      const mine = indexed.filter(({ g }) => g.listId && listFolder[g.listId] === f.id);
+      // An empty folder still draws, so it is somewhere to drop a list into
+      // rather than something that vanishes the moment it is emptied.
+      out.push({ key: `folder:${f.id}`, folder: f, groups: mine });
+    }
+    const loose = indexed.filter(
+      ({ g }) => !g.listId || !listFolder[g.listId]
+    );
+    if (loose.length > 0) out.push({ key: "__loose", folder: null, groups: loose });
+    return out;
+  }, [shown, group, folders, listFolder]);
+
   const canReorder = group === "list" && canReorderLists;
 
   return (
@@ -232,7 +266,16 @@ export function SpaceGroupedList({
       onDragEnd={onDragEnd}
     >
       <div className="flex flex-col gap-5">
-        {shown.map((g, i) => {
+        {blocks.map((block) => (
+          <FolderBlock
+            key={block.key}
+            ws={ws}
+            slug={slug}
+            folder={block.folder}
+            listCount={block.groups.length}
+            canEdit={canReorderLists}
+          >
+        {block.groups.map(({ g, i }) => {
           const alwaysShow = group === "list" && g.key === NO_LIST;
           if (filterActive && g.items.length === 0 && !alwaysShow) return null;
           if (g.items.length === 0 && !alwaysShow && group !== "list") return null;
@@ -322,10 +365,16 @@ export function SpaceGroupedList({
                       projectCount={listCounts[listRow.id] ?? 0}
                       spaces={spaces}
                       currentSpaceId={departmentId}
+                      folders={folders.map((f) => ({ id: f.id, name: f.name }))}
+                      currentFolderId={listFolder[listRow.id] ?? null}
                       canManage={canManage}
                       onStartRename={() => listEdits.startRename(listRow.id)}
                       onSetColor={(color) => listEdits.setColor(listRow.id, color)}
                       onMove={(deptId, name) => listEdits.move(listRow.id, deptId, name)}
+                      onRefile={(folderId, name) =>
+                        listEdits.refile(listRow.id, folderId, name)
+                      }
+                      onArchive={() => listEdits.archive(listRow.id, listRow.name)}
                       onDuplicate={(withProjects) =>
                         listEdits.duplicate(listRow.id, withProjects)
                       }
@@ -389,6 +438,8 @@ export function SpaceGroupedList({
             </Droppable>
           );
         })}
+          </FolderBlock>
+        ))}
       </div>
 
       <DragOverlay>

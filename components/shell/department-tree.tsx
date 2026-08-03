@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ChevronRight } from "lucide-react";
+import { Building2, ChevronRight, Folder } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface DeptTreeItem {
@@ -11,6 +11,10 @@ export interface DeptTreeItem {
   name: string;
   slug: string;
   accent_color: string;
+  // Folders in sort order, each with its own lists. A space with no folders
+  // has an empty array here and renders exactly as it did before.
+  folders: { id: string; name: string; lists: { id: string; name: string }[] }[];
+  // Lists sitting directly in the space, below the folders.
   lists: { id: string; name: string }[];
 }
 
@@ -69,7 +73,7 @@ function DeptRow({
   const deptHref = `/${ws}/departments/${dept.slug}`;
   const active = pathname === deptHref;
   const [open, setOpen] = useState(active);
-  const hasLists = dept.lists.length > 0;
+  const hasLists = dept.lists.length > 0 || dept.folders.length > 0;
 
   return (
     <div>
@@ -111,26 +115,84 @@ function DeptRow({
 
       {open && hasLists ? (
         <div className="ml-[26px] mt-0.5 flex flex-col gap-0.5 border-l border-border pl-2">
-          {dept.lists.map((l) => {
-            const href = `${deptHref}/lists/${l.id}`;
-            const listActive = pathname === href;
-            return (
-              <Link
-                key={l.id}
-                href={href}
-                className={cn(
-                  "truncate rounded-[8px] px-2 py-[5px] text-[12.5px] transition-colors",
-                  listActive
-                    ? "bg-nav-active font-medium text-text-1"
-                    : "text-text-2 hover:bg-surface-2 hover:text-text-1"
-                )}
-              >
-                {l.name}
-              </Link>
-            );
-          })}
+          {dept.folders.map((f) => (
+            <FolderRow key={f.id} base={deptHref} folder={f} pathname={pathname} />
+          ))}
+          {dept.lists.map((l) => (
+            <ListLink key={l.id} href={`${deptHref}/lists/${l.id}`} name={l.name} pathname={pathname} />
+          ))}
         </div>
       ) : null}
     </div>
+  );
+}
+
+// The third level. Folders have no page of their own, so this is a disclosure
+// and not a link: clicking the name opens it rather than navigating nowhere.
+function FolderRow({
+  base,
+  folder,
+  pathname,
+}: {
+  base: string;
+  folder: { id: string; name: string; lists: { id: string; name: string }[] };
+  pathname: string;
+}) {
+  const holdsCurrent = folder.lists.some(
+    (l) => pathname === `${base}/lists/${l.id}`
+  );
+  const [open, setOpen] = useState(holdsCurrent);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-1.5 rounded-[8px] px-1 py-[5px] text-[12.5px] text-text-2 outline-none transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:ring-2 focus-visible:ring-brand/40"
+      >
+        <ChevronRight
+          className={cn("size-3 shrink-0 transition-transform", open && "rotate-90")}
+          strokeWidth={2}
+        />
+        <Folder className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+        <span className="truncate">{folder.name}</span>
+        <span className="ml-auto font-mono text-[10.5px] text-text-3 tabular">
+          {folder.lists.length}
+        </span>
+      </button>
+      {open && folder.lists.length > 0 ? (
+        <div className="ml-[14px] flex flex-col gap-0.5 border-l border-border pl-2">
+          {folder.lists.map((l) => (
+            <ListLink key={l.id} href={`${base}/lists/${l.id}`} name={l.name} pathname={pathname} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ListLink({
+  href,
+  name,
+  pathname,
+}: {
+  href: string;
+  name: string;
+  pathname: string;
+}) {
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "truncate rounded-[8px] px-2 py-[5px] text-[12.5px] transition-colors",
+        active
+          ? "bg-nav-active font-medium text-text-1"
+          : "text-text-2 hover:bg-surface-2 hover:text-text-1"
+      )}
+    >
+      {name}
+    </Link>
   );
 }

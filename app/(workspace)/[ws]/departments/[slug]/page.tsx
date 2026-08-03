@@ -34,8 +34,11 @@ import {
   parseSpaceFilters,
   parseView,
 } from "@/components/features/departments/space-filters";
-import { NewListForm } from "@/components/features/departments/department-controls";
-import type { Department, ProjectList } from "@/lib/types";
+import {
+  NewFolderForm,
+  NewListForm,
+} from "@/components/features/departments/department-controls";
+import type { Department, ProjectFolder, ProjectList } from "@/lib/types";
 import { completionFrom } from "@/components/features/projects/types";
 import type { MemberOption, ProjectWithOwner } from "@/components/features/projects/types";
 
@@ -71,6 +74,7 @@ export default async function DepartmentPage({
 
   const [
     { data: listRows },
+    { data: folderRows },
     { data: projectRows },
     { data: progressRows },
     { data: memberRows },
@@ -79,6 +83,14 @@ export default async function DepartmentPage({
   ] = await Promise.all([
       supabase
         .from("project_lists")
+        .select("*")
+        .eq("department_id", dept.id)
+        // Archived lists leave the page the way archived spaces leave the
+        // index. Nothing is deleted and nobody loses access.
+        .is("archived_at", null)
+        .order("sort_order"),
+      supabase
+        .from("project_folders")
         .select("*")
         .eq("department_id", dept.id)
         .order("sort_order"),
@@ -109,7 +121,20 @@ export default async function DepartmentPage({
       loadSpaceDirectory(ctx.workspace.id, ctx.capabilities.canSeeAdmin),
     ]);
 
-  const lists = (listRows ?? []) as ProjectList[];
+  const folders = (folderRows ?? []) as ProjectFolder[];
+  const folderRank = new Map(folders.map((f, i) => [f.id, i]));
+  // groupProjects emits one section per list in the order it is handed them,
+  // so sorting here is what puts each folder's sections together. A list with
+  // no folder sorts last, into the loose block under the folders.
+  const lists = ((listRows ?? []) as ProjectList[])
+    .slice()
+    .sort((a, b) => {
+      const fa = a.folder_id ? folderRank.get(a.folder_id) ?? 998 : 999;
+      const fb = b.folder_id ? folderRank.get(b.folder_id) ?? 998 : 999;
+      return fa !== fb ? fa - fb : a.sort_order - b.sort_order;
+    });
+  const listFolder: Record<string, string | null> = {};
+  for (const l of lists) listFolder[l.id] = l.folder_id;
   const allProjects = (projectRows ?? []) as unknown as ProjectWithOwner[];
   const completion = completionFrom(progressRows);
 
@@ -283,7 +308,12 @@ export default async function DepartmentPage({
             {tab("table", "Table")}
             {tab("calendar", "Calendar")}
           </div>
-          {canAddList ? <NewListForm ws={ws} departmentId={dept.id} slug={slug} /> : null}
+          {canAddList ? (
+            <>
+              <NewFolderForm ws={ws} departmentId={dept.id} slug={slug} />
+              <NewListForm ws={ws} departmentId={dept.id} slug={slug} />
+            </>
+          ) : null}
           {canManage ? (
             <Button asChild>
               <Link href={`/${ws}/projects/new?department=${dept.id}`}>
@@ -441,6 +471,8 @@ export default async function DepartmentPage({
           canManage={canManage}
           departmentId={dept.id}
           lists={lists.map((l) => ({ id: l.id, name: l.name, color: l.color }))}
+          folders={folders.map((f) => ({ id: f.id, name: f.name, color: f.color }))}
+          listFolder={listFolder}
           listCounts={listCounts}
           spaces={actionScope.spaces}
           sectionActions={Object.fromEntries(

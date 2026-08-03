@@ -21,6 +21,7 @@ export default async function WorkspaceLayout({
     { count: unreadCount },
     { data: deptRows },
     { data: listRows },
+    { data: folderRows },
   ] = await Promise.all([
     supabase
       .from("tasks")
@@ -45,12 +46,24 @@ export default async function WorkspaceLayout({
       // index and from a direct link, and nobody's access changed.
       .is("archived_at", null)
       .order("sort_order"),
-    supabase.from("project_lists").select("id, name, department_id").order("sort_order"),
+    // Archived lists leave the sidebar, the way archived spaces already do.
+    supabase
+      .from("project_lists")
+      .select("id, name, department_id, folder_id")
+      .is("archived_at", null)
+      .order("sort_order"),
+    supabase.from("project_folders").select("id, name, department_id").order("sort_order"),
   ]);
 
   const roleLabel = ROLE_LABELS[ctx.membership.role] ?? ctx.membership.role;
 
   const deptLists = (listRows ?? []) as {
+    id: string;
+    name: string;
+    department_id: string;
+    folder_id: string | null;
+  }[];
+  const deptFolders = (folderRows ?? []) as {
     id: string;
     name: string;
     department_id: string;
@@ -67,8 +80,18 @@ export default async function WorkspaceLayout({
     name: d.name,
     slug: d.slug,
     accent_color: d.accent_color,
+    folders: deptFolders
+      .filter((f) => f.department_id === d.id)
+      .map((f) => ({
+        id: f.id,
+        name: f.name,
+        lists: deptLists
+          .filter((l) => l.folder_id === f.id)
+          .map((l) => ({ id: l.id, name: l.name })),
+      })),
+    // Only the loose ones here; the rest hang off their folder above.
     lists: deptLists
-      .filter((l) => l.department_id === d.id)
+      .filter((l) => l.department_id === d.id && !l.folder_id)
       .map((l) => ({ id: l.id, name: l.name })),
   }));
 

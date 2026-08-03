@@ -259,6 +259,19 @@ export interface Department {
   archived_at: string | null;
 }
 
+// A folder groups lists inside one space. Optional and one level deep: a
+// list with folder_id null sits directly in the space, which is where every
+// list sat before folders existed.
+export interface ProjectFolder {
+  id: string;
+  department_id: string;
+  name: string;
+  sort_order: number;
+  // A TagTone key, or null. Same seven the design system draws with.
+  color: string | null;
+  created_at: string;
+}
+
 export interface ProjectList {
   id: string;
   department_id: string;
@@ -269,6 +282,14 @@ export interface ProjectList {
   // A TagTone key, or null for no colour. Constrained in Postgres to the same
   // seven the design system draws with.
   color: string | null;
+  // Null means the list sits directly in the space rather than in a folder.
+  // A composite foreign key guarantees the folder is in the same space, which
+  // is what keeps project_lists_select unchanged.
+  folder_id: string | null;
+  // Null while the list is active. Archiving hides it from the space page and
+  // the sidebar; it never changes who is allowed to see it, and the projects
+  // inside keep working.
+  archived_at: string | null;
 }
 
 export interface ProjectPhase {
