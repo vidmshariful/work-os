@@ -7,9 +7,13 @@ import type { DeptTreeItem } from "@/components/shell/department-tree";
 
 export default async function WorkspaceLayout({
   children,
+  // The parallel slot that holds an intercepted route. Null on every page
+  // that is not one, via @modal/default.tsx.
+  modal,
   params,
 }: {
   children: React.ReactNode;
+  modal: React.ReactNode;
   params: Promise<{ ws: string }>;
 }) {
   const { ws } = await params;
@@ -137,6 +141,7 @@ export default async function WorkspaceLayout({
             {children}
           </div>
         </main>
+        {modal}
       </div>
     </div>
   );
