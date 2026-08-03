@@ -19,6 +19,7 @@ import {
   VIEW_CHOICES,
   activeFilterCount,
   buildSpaceQuery,
+  restoreTarget,
   type DueChoice,
   type GroupKey,
   type SortKey,
@@ -205,6 +206,11 @@ export function SpaceControls({
   const [q, setQ] = useState(filters.q);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // False until the first render after landing on this page. Navigating
+  // within it, which is what clicking a tab does, is not an arrival, so
+  // these stay true and stop the restore from overriding a fresh choice.
+  const arrived = useRef(false);
+  const groupArrived = useRef(false);
 
   // The URL is the source of truth, so a Back navigation or a Clear all has
   // to pull the box back into line.
@@ -242,48 +248,69 @@ export function SpaceControls({
   // while a plain visit still feels personal.
   useEffect(() => {
     const key = groupKeyFor(userId, slug);
-    if (groupFromUrl) {
-      try {
-        window.localStorage.setItem(key, filters.group);
-      } catch {
-        // A blocked store just means the choice is not remembered.
-      }
-      return;
-    }
+    const isArrival = !groupArrived.current;
+    groupArrived.current = true;
+
     let stored: string | null = null;
     try {
       stored = window.localStorage.getItem(key);
     } catch {
+      // A blocked store just means the choice is not remembered.
+    }
+    const target = restoreTarget({
+      current: filters.group,
+      stored,
+      explicitInUrl: groupFromUrl,
+      isArrival,
+      choices: GROUP_CHOICES.map((g) => g.value),
+    });
+    if (target) {
+      const qs = buildSpaceQuery({ ...filters, group: target as GroupKey, view });
+      router.replace(qs ? `${base}?${qs}` : base, { scroll: false });
       return;
     }
-    if (!stored || stored === filters.group) return;
-    if (!GROUP_CHOICES.some((g) => g.value === stored)) return;
-    const qs = buildSpaceQuery({ ...filters, group: stored as GroupKey, view });
-    router.replace(qs ? `${base}?${qs}` : base, { scroll: false });
+    // Grouping by list is the default and so is absent from the URL too.
+    // Remembering it here is what stops the next visit bouncing away.
+    try {
+      window.localStorage.setItem(key, filters.group);
+    } catch {
+      // Not remembered, still usable.
+    }
   }, [base, filters, groupFromUrl, router, slug, userId, view]);
 
   // The last view, remembered the same way. List remains the fallback for
   // anyone with nothing stored, so old links behave exactly as before.
   useEffect(() => {
     const key = viewKeyFor(userId, slug);
-    if (viewFromUrl) {
-      try {
-        window.localStorage.setItem(key, view);
-      } catch {
-        // Not remembered, still usable.
-      }
-      return;
-    }
+    const isArrival = !arrived.current;
+    arrived.current = true;
+
     let stored: string | null = null;
     try {
       stored = window.localStorage.getItem(key);
     } catch {
+      // A blocked store just means the choice is not remembered.
+    }
+    const target = restoreTarget({
+      current: view,
+      stored,
+      explicitInUrl: viewFromUrl,
+      isArrival,
+      choices: VIEW_CHOICES,
+    });
+    if (target) {
+      const qs = buildSpaceQuery({ ...filters, view: target });
+      router.replace(qs ? `${base}?${qs}` : base, { scroll: false });
       return;
     }
-    if (!stored || stored === view) return;
-    if (!VIEW_CHOICES.includes(stored as SpaceView)) return;
-    const qs = buildSpaceQuery({ ...filters, view: stored });
-    router.replace(qs ? `${base}?${qs}` : base, { scroll: false });
+    // Nothing to restore, so this is the choice worth remembering. That
+    // includes picking List, which the URL cannot show because it is the
+    // default.
+    try {
+      window.localStorage.setItem(key, view);
+    } catch {
+      // Not remembered, still usable.
+    }
   }, [base, filters, router, slug, userId, view, viewFromUrl]);
 
   const count = activeFilterCount(filters);

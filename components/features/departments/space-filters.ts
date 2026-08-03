@@ -169,6 +169,46 @@ export function hasExplicitView(
   return VIEW_CHOICES.includes(one as SpaceView);
 }
 
+// The view and the grouping are both remembered per person, and both keep
+// their default out of the URL. Those two decisions fight each other, and
+// this is the referee.
+//
+// The bug it exists to stop: List is the default view, so buildSpaceQuery
+// omits it, so clicking the List tab produces a URL with no view at all.
+// Read naively that looks identical to arriving cold with no preference,
+// so the restore would send the person straight back to whatever they had
+// stored. Once anything else was remembered, List became unreachable. The
+// same held for grouping by list.
+//
+// The distinction that fixes it is arrival. Restoring a remembered choice is
+// something you do when someone turns up with no opinion, not every time
+// they click a tab. Returns the value to redirect to, or null to stay put.
+export function restoreTarget({
+  current,
+  stored,
+  explicitInUrl,
+  isArrival,
+  choices,
+}: {
+  current: string;
+  stored: string | null;
+  // Whether the URL named a choice. A default choice is absent by design,
+  // so this is false both for "chose the default" and for "chose nothing".
+  explicitInUrl: boolean;
+  // First render since this page was arrived at, as opposed to a navigation
+  // within it.
+  isArrival: boolean;
+  choices: readonly string[];
+}): string | null {
+  // The URL is authoritative, so a shared link always wins.
+  if (explicitInUrl) return null;
+  // Absent after arrival means the person picked the default on purpose.
+  if (!isArrival) return null;
+  if (!stored || stored === current) return null;
+  if (!choices.includes(stored)) return null;
+  return stored;
+}
+
 export function buildSpaceQuery(
   f: Partial<SpaceFilters> & { view?: string }
 ): string {
