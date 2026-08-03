@@ -225,17 +225,6 @@ export default async function DepartmentPage({
     });
     return qs ? `${base}?${qs}` : base;
   };
-  const tab = (key: string, label: string) => (
-    <Link
-      href={href({ view: key })}
-      className={cn(
-        "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
-        view === key ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
-      )}
-    >
-      {label}
-    </Link>
-  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -302,12 +291,6 @@ export default async function DepartmentPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-0.5 rounded-[9px] border border-border bg-surface p-0.5">
-            {tab("list", "List")}
-            {tab("board", "Board")}
-            {tab("table", "Table")}
-            {tab("calendar", "Calendar")}
-          </div>
           {canAddList ? (
             <>
               <NewFolderForm ws={ws} departmentId={dept.id} slug={slug} />
@@ -343,20 +326,21 @@ export default async function DepartmentPage({
           what the "/" shortcut reaches for. Switching view keeps a
           selection, minus anything the new view does not draw. */}
       <ProjectActionsProvider scope={actionScope} rows={projects}>
-      {/* Sits directly under the header and governs every view alike. */}
-      {allProjects.length > 0 ? (
-        <SpaceControls
-          base={base}
-          view={view}
-          filters={filters}
-          assignees={assigneeOptions}
-          lists={listOptions}
-          userId={ctx.userId}
-          slug={slug}
-          groupFromUrl={hasExplicitGroup(sp)}
-          viewFromUrl={hasExplicitView(sp)}
-        />
-      ) : null}
+      {/* Always rendered: it owns the view tabs now, and an empty space
+          still needs a way to reach Board or Calendar. The filter row inside
+          it is what depends on there being something to filter. */}
+      <SpaceControls
+        base={base}
+        view={view}
+        filters={filters}
+        assignees={assigneeOptions}
+        lists={listOptions}
+        userId={ctx.userId}
+        slug={slug}
+        groupFromUrl={hasExplicitGroup(sp)}
+        viewFromUrl={hasExplicitView(sp)}
+        hasProjects={allProjects.length > 0}
+      />
 
       {filterCount > 0 && matchedCount === 0 ? (
         // The space is not empty, the filter is. Say so, and offer the way

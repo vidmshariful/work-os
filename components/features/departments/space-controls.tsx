@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownUp, Check, Group, ListFilter, Search, X } from "lucide-react";
+import Link from "next/link";
+import { Check, ListFilter, Search, Settings2, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -188,6 +189,7 @@ export function SpaceControls({
   slug,
   groupFromUrl,
   viewFromUrl,
+  hasProjects,
 }: {
   base: string;
   view: SpaceView;
@@ -201,6 +203,9 @@ export function SpaceControls({
   groupFromUrl: boolean;
   // Same contract for the view, so a shared ?view= link is authoritative.
   viewFromUrl: boolean;
+  // The filter row is pointless with nothing to filter, but the view tabs
+  // are not, so the two are gated separately.
+  hasProjects: boolean;
 }) {
   const router = useRouter();
   const [q, setQ] = useState(filters.q);
@@ -357,141 +362,184 @@ export function SpaceControls({
     </>
   );
 
+  // Two rows, and the split is the argument. Row A answers "what shape am I
+  // looking at", row B answers "which rows am I looking at". Nine controls at
+  // one weight gave no reading order; this gives two.
+  //
+  // Row A renders even when the space is empty. The view tabs used to live in
+  // the page header, which only draws them when there are projects, so moving
+  // them here without this would have stranded anyone in an empty space with
+  // no way back to another view except editing the URL.
+  const displayOn =
+    filters.group !== "list" || filters.sort !== "due" || filters.dir === "desc";
+
+  const viewTab = (key: SpaceView, label: string) => {
+    const qs = buildSpaceQuery({ ...filters, view: key });
+    return (
+      <Link
+        key={key}
+        href={qs ? `${base}?${qs}` : base}
+        aria-current={view === key ? "page" : undefined}
+        className={cn(
+          "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
+          view === key ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
+        )}
+      >
+        {label}
+      </Link>
+    );
+  };
+
   return (
-    <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-[11px] border border-border bg-surface px-2.5 py-2">
-      <div className="relative shrink-0">
-        <Search
-          className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3"
-          strokeWidth={1.5}
-        />
-        <input
-          ref={searchRef}
-          value={q}
-          onChange={(e) => onSearch(e.target.value)}
-          onKeyDown={onSearchKey}
-          placeholder="Search projects"
-          aria-label="Search projects by title or code"
-          // How the "/" shortcut finds this box. An attribute rather than an
-          // id, because the bar can be rendered more than once on a page.
-          data-space-search
-          className="h-8 w-[150px] rounded-[9px] border border-border bg-surface pl-7.5 pr-2 text-[12.5px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 xl:w-[200px]"
-        />
+    <div className="rounded-[11px] border border-border bg-surface">
+      {/* Row A: shape */}
+      <div className="flex flex-wrap items-center gap-2 px-2.5 py-2">
+        <div className="inline-flex shrink-0 items-center gap-0.5 rounded-[9px] border border-border p-0.5">
+          {viewTab("list", "List")}
+          {viewTab("board", "Board")}
+          {viewTab("table", "Table")}
+          {viewTab("calendar", "Calendar")}
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {/* The calendar has no grouping and no sort of its own, so it gets
+              no Display control rather than one that does nothing. */}
+          {view !== "calendar" ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" aria-label="Display options">
+                  <span
+                    className={cn(control, displayOn && "border-brand/40 text-text-1")}
+                  >
+                    <Settings2 className="size-3.5" strokeWidth={1.5} />
+                    Display
+                    {displayOn ? (
+                      <span className="ml-0.5 size-1.5 rounded-full bg-brand" />
+                    ) : null}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-52 p-1">
+                {/* Grouping only applies where sections exist. The board draws
+                    its own columns and the table is one flat grid. */}
+                {view === "list" ? (
+                  <>
+                    <p className="px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-text-3">
+                      Group by
+                    </p>
+                    {GROUP_CHOICES.map((g) => (
+                      <button
+                        key={g.value}
+                        type="button"
+                        onClick={() => push({ group: g.value as GroupKey })}
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
+                          filters.group === g.value ? "font-medium text-text-1" : "text-text-2"
+                        )}
+                      >
+                        <span className="w-4">
+                          {filters.group === g.value ? (
+                            <Check className="size-3.5 text-brand" strokeWidth={3} />
+                          ) : null}
+                        </span>
+                        {g.label}
+                      </button>
+                    ))}
+                    <div className="my-1 border-t border-border" />
+                  </>
+                ) : null}
+                <p className="px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-text-3">
+                  {view === "board" ? "Sort within column" : "Sort by"}
+                </p>
+                {SORT_CHOICES.map((so) => (
+                  <button
+                    key={so.value}
+                    type="button"
+                    onClick={() => push({ sort: so.value as SortKey })}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
+                      filters.sort === so.value ? "font-medium text-text-1" : "text-text-2"
+                    )}
+                  >
+                    <span className="w-4">
+                      {filters.sort === so.value ? (
+                        <Check className="size-3.5 text-brand" strokeWidth={3} />
+                      ) : null}
+                    </span>
+                    {so.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => push({ dir: filters.dir === "asc" ? "desc" : "asc" })}
+                  className="mt-1 w-full border-t border-border px-2 py-1.5 text-left text-[12px] font-medium text-text-2 hover:text-text-1"
+                >
+                  {filters.dir === "asc" ? "Ascending" : "Descending"}, click to flip
+                </button>
+              </PopoverContent>
+            </Popover>
+          ) : null}
+          <span className="h-4 w-px bg-border" />
+          <ShortcutsHint />
+        </div>
       </div>
 
-      {/* Inline on wide viewports. */}
-      <div className="hidden shrink-0 items-center gap-2 xl:flex">{filterControls}</div>
+      {/* Row B: subset. Only drawn when there is something to filter. */}
+      {hasProjects ? (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border px-2.5 py-2">
+          <div className="relative shrink-0">
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3"
+              strokeWidth={1.5}
+            />
+            <input
+              ref={searchRef}
+              value={q}
+              onChange={(e) => onSearch(e.target.value)}
+              onKeyDown={onSearchKey}
+              placeholder="Search projects"
+              aria-label="Search projects by title or code"
+              // How the "/" shortcut finds this box. An attribute rather than
+              // an id, because the bar can be rendered more than once.
+              data-space-search
+              className="h-8 w-[170px] rounded-[9px] border border-border bg-surface pl-7.5 pr-2 text-[12.5px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 xl:w-[230px]"
+            />
+          </div>
 
-      {/* One popover on narrow ones, so the bar never wraps to a second row. */}
-      <div className="shrink-0 xl:hidden">
-        <Popover>
-          <PopoverTrigger asChild>
-            <button type="button" aria-label="Filters">
-              <Trigger
-                label="Filter"
-                count={count - (filters.q ? 1 : 0)}
-                icon={<ListFilter className="size-3.5" strokeWidth={1.5} />}
-              />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="flex w-auto flex-col items-start gap-2 p-2">
-            {filterControls}
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <div className="ml-auto flex shrink-0 items-center gap-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <button type="button" aria-label="Group projects">
-              <Trigger
-                label={
-                  filters.group === "list"
-                    ? "Group"
-                    : `By ${GROUP_CHOICES.find((g) => g.value === filters.group)?.label.toLowerCase()}`
-                }
-                count={0}
-                icon={<Group className="size-3.5" strokeWidth={1.5} />}
-              />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-44 p-1">
-            {GROUP_CHOICES.map((g) => (
-              <button
-                key={g.value}
-                type="button"
-                onClick={() => push({ group: g.value as GroupKey })}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
-                  filters.group === g.value ? "font-medium text-text-1" : "text-text-2"
-                )}
-              >
-                <span className="w-4">
-                  {filters.group === g.value ? (
-                    <Check className="size-3.5 text-brand" strokeWidth={3} />
-                  ) : null}
-                </span>
-                {g.label}
+          {/* One Filter control at every width. The bar used to render the
+              four facets inline on wide screens and again inside a popover on
+              narrow ones, which is two sources of truth for one thing. */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button type="button" aria-label="Filter projects">
+                <Trigger
+                  label="Filter"
+                  count={count - (filters.q ? 1 : 0)}
+                  icon={<ListFilter className="size-3.5" strokeWidth={1.5} />}
+                />
               </button>
-            ))}
-          </PopoverContent>
-        </Popover>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="flex w-auto flex-col items-start gap-2 p-2">
+              {filterControls}
+            </PopoverContent>
+          </Popover>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <button type="button" aria-label="Sort projects">
-              <Trigger
-                label={SORT_CHOICES.find((s) => s.value === filters.sort)?.label ?? "Sort"}
-                count={0}
-                icon={<ArrowDownUp className="size-3.5" strokeWidth={1.5} />}
-              />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-48 p-1">
-            {SORT_CHOICES.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => push({ sort: s.value as SortKey })}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
-                  filters.sort === s.value ? "font-medium text-text-1" : "text-text-2"
-                )}
-              >
-                <span className="w-4">
-                  {filters.sort === s.value ? (
-                    <Check className="size-3.5 text-brand" strokeWidth={3} />
-                  ) : null}
-                </span>
-                {s.label}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => push({ dir: filters.dir === "asc" ? "desc" : "asc" })}
-              className="mt-1 w-full border-t border-border px-2 py-1.5 text-left text-[12px] font-medium text-text-2 hover:text-text-1"
+          {count > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="h-8 shrink-0 gap-1 px-2 text-[12.5px] text-text-2 hover:text-text-1"
             >
-              {filters.dir === "asc" ? "Ascending" : "Descending"}, click to flip
-            </button>
-          </PopoverContent>
-        </Popover>
-
-        {count > 0 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearAll}
-            className="h-8 shrink-0 gap-1 px-2 text-[12.5px] text-text-2 hover:text-text-1"
-          >
-            <X className="size-3.5" strokeWidth={2} />
-            Clear all
-            <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-chip-gray px-1 font-mono text-[10px] font-semibold text-text-2 tabular">
-              {count}
-            </span>
-          </Button>
-        ) : null}
-
-        <ShortcutsHint />
-      </div>
+              <X className="size-3.5" strokeWidth={2} />
+              Clear all
+              <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-chip-gray px-1 font-mono text-[10px] font-semibold text-text-2 tabular">
+                {count}
+              </span>
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
