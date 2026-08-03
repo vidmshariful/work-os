@@ -49,14 +49,17 @@ import {
 } from "@/components/features/activity/activity-feed";
 import { ProjectCommentForm } from "@/components/features/projects/project-comments";
 import { listProjectFiles } from "@/lib/actions/projects";
+import { fieldsForSpace } from "@/components/features/projects/types";
 import type {
   ProgressRow,
   ProjectWithOwner,
   TaskWithAssignee,
 } from "@/components/features/projects/types";
+import { ProjectFields } from "@/components/features/projects/project-fields";
 import type {
   Deliverable,
   ProjectCommercials,
+  ProjectField,
   ProjectIntake,
   ProjectPhase,
   VClient,
@@ -95,6 +98,8 @@ export default async function ProjectDetailPage({
     { data: deptRows },
     { data: listRows },
     { data: folderRows },
+    { data: fieldRows },
+    { data: fieldValueRows },
     { data: subProjectRows },
     parentRes,
     { data: commentRows },
@@ -146,6 +151,18 @@ export default async function ProjectDetailPage({
       .select("id, name, department_id, folder_id")
       .order("sort_order"),
     supabase.from("project_folders").select("id, name").order("sort_order"),
+    // Custom fields: the definitions for this workspace, and this project's
+    // values. RLS scopes the values through projects_select, so a value is
+    // readable exactly when its project is.
+    supabase
+      .from("project_fields")
+      .select("*")
+      .eq("workspace_id", ctx.workspace.id)
+      .order("sort_order"),
+    supabase
+      .from("project_field_values")
+      .select("field_id, value")
+      .eq("project_id", id),
     // The family: for a parent, its sub-projects; for a sub-project, its
     // siblings (so any video shows the rest of its series).
     supabase
@@ -247,6 +264,19 @@ export default async function ProjectDetailPage({
     });
   }
   trail.push({ label: project.code });
+
+  // Workspace-wide fields plus any scoped to this project's space, each
+  // paired with its value. A field with no value row renders as Empty.
+  const valueByField = new Map(
+    ((fieldValueRows ?? []) as { field_id: string; value: unknown }[]).map((v) => [
+      v.field_id,
+      v.value,
+    ])
+  );
+  const fields = fieldsForSpace(
+    (fieldRows ?? []) as ProjectField[],
+    project.department_id
+  ).map((f) => ({ field: f, value: valueByField.get(f.id) ?? null }));
   // One source for how this project's due date reads, shared with every row
   // and board card through the same helper.
   const due = dueState(project.due_date, project.status);
@@ -346,6 +376,16 @@ export default async function ProjectDetailPage({
           little more room than a plain meta column would. */}
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
+          {/* The Fields block, which is where the studio's own process
+              lives: production stage, category, script, the Drive and Figma
+              links. Renders nothing when the workspace has defined none. */}
+          <ProjectFields
+            ws={ws}
+            projectId={id}
+            fields={fields}
+            canEdit={canManage}
+          />
+
           {canManage || project.brief ? (
             <Card>
               <CardHeader title="Brief" />

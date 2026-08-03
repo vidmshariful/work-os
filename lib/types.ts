@@ -292,6 +292,46 @@ export interface ProjectList {
   archived_at: string | null;
 }
 
+// Custom fields. The definition lives on the workspace, optionally scoped to
+// one space; the value lives on the project. Value shape follows the kind:
+// string for text, long_text, url and date; number for number; boolean for
+// checkbox; the option's value for select; an array of them for multi_select.
+export type ProjectFieldKind =
+  | "text"
+  | "long_text"
+  | "number"
+  | "date"
+  | "select"
+  | "multi_select"
+  | "url"
+  | "checkbox";
+
+export interface ProjectFieldOption {
+  value: string;
+  label: string;
+  // A TagTone key, or null. Same seven the rest of the app draws with.
+  color: string | null;
+}
+
+export interface ProjectField {
+  id: string;
+  workspace_id: string;
+  // Null means every space shows it.
+  department_id: string | null;
+  name: string;
+  kind: ProjectFieldKind;
+  options: ProjectFieldOption[];
+  sort_order: number;
+  created_at: string;
+}
+
+export type ProjectFieldValue =
+  | string
+  | number
+  | boolean
+  | string[]
+  | null;
+
 export interface ProjectPhase {
   id: string;
   project_id: string;

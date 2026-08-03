@@ -1,6 +1,6 @@
 // Shared shapes for the projects feature. Supabase nested selects type
 // loosely, so pages cast query results into these.
-import type { Project, ProjectStatus, Task } from "@/lib/types";
+import type { Project, ProjectField, ProjectStatus, Task } from "@/lib/types";
 
 export interface OwnerRef {
   id: string;
@@ -64,3 +64,15 @@ export const PROJECT_STATUS_OPTIONS: { value: ProjectStatus; label: string }[] =
     { value: "delivered", label: "Delivered" },
     { value: "archived", label: "Archived" },
   ];
+
+// Which custom fields apply to a project: the workspace-wide ones plus any
+// scoped to its space, in sort order. A plain module so the server page and
+// the client editor cannot disagree about the answer.
+export function fieldsForSpace(
+  fields: ProjectField[],
+  departmentId: string | null
+): ProjectField[] {
+  return fields
+    .filter((f) => f.department_id === null || f.department_id === departmentId)
+    .sort((a, b) => a.sort_order - b.sort_order);
+}
