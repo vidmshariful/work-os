@@ -54,6 +54,7 @@ import {
 } from "@/lib/actions/departments";
 import { cn } from "@/lib/utils";
 import { SpaceGlyph } from "./space-glyph";
+import { SPACE_ICONS, SPACE_ICON_NAMES } from "./space-icons";
 import type { Archetype } from "@/lib/types";
 
 // Re-exported: it used to live here, and half the app imports it from
@@ -378,28 +379,57 @@ function GeneralTab({ ws, space }: { ws: string; space: SpaceSettingsSpace }) {
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      <div className="flex items-end gap-3">
+      <div className="flex items-center gap-3">
         <SpaceGlyph name={name || "?"} icon={icon || null} color={color} size={44} />
-        <div className="flex-1">
-          <Field label="Icon" hint="One emoji. Leave it empty to use the first letter.">
-            <div className="flex items-center gap-2">
-              <input
-                value={icon}
-                maxLength={8}
-                onChange={(e) => setIcon(e.target.value)}
-                placeholder={name.slice(0, 1)}
-                aria-label="Space icon"
-                className={cn(inputClass, "w-20 text-center text-[16px]")}
-              />
-              {icon ? (
-                <Button variant="ghost" size="sm" onClick={() => setIcon("")}>
-                  Use letter
-                </Button>
-              ) : null}
-            </div>
-          </Field>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-medium text-text-1">{name || "New space"}</div>
+          <div className="text-[11.5px] text-text-3">
+            {icon ? "Pick another icon below, or clear it." : "No icon yet, so the first letter shows."}
+          </div>
         </div>
+        {icon ? (
+          <Button variant="ghost" size="sm" onClick={() => setIcon("")}>
+            Use letter
+          </Button>
+        ) : null}
       </div>
+
+      {/* A grid of real icons, because the old control was a text box asking
+          for an emoji and nobody ever typed one, which is why every space in
+          the sidebar was a monogram. */}
+      <Field label="Icon" hint="Or paste an emoji instead, if you would rather.">
+        <div className="flex flex-wrap gap-1">
+          {SPACE_ICON_NAMES.map((n) => {
+            const Ico = SPACE_ICONS[n];
+            const on = icon === n;
+            return (
+              <button
+                key={n}
+                type="button"
+                aria-label={`Icon ${n}`}
+                aria-pressed={on}
+                onClick={() => setIcon(n)}
+                className={cn(
+                  "flex size-8 items-center justify-center rounded-[9px] border transition-colors",
+                  on
+                    ? "border-brand bg-brand-soft text-brand"
+                    : "border-border text-text-2 hover:border-border-strong hover:text-text-1"
+                )}
+              >
+                <Ico className="size-4" strokeWidth={2} />
+              </button>
+            );
+          })}
+        </div>
+        <input
+          value={SPACE_ICONS[icon] ? "" : icon}
+          maxLength={8}
+          onChange={(e) => setIcon(e.target.value)}
+          placeholder="Emoji"
+          aria-label="Space emoji"
+          className={cn(inputClass, "mt-2 w-24 text-center text-[16px]")}
+        />
+      </Field>
 
       <Field label="Name">
         <input

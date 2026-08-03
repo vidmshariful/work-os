@@ -22,6 +22,15 @@ const APPLY = process.argv.includes("--apply");
 // name, colour, then the folders and the loose lists. A list marked archived
 // is created already archived: it is history that should stay reachable
 // without competing for attention.
+// The icon each space wears in the sidebar and on the index. A lucide name
+// from SPACE_ICONS, not an emoji, so it renders as a real icon.
+const ICONS = {
+  marketing: "megaphone",
+  sales: "handshake",
+  production: "clapperboard",
+  administration: "building-2",
+};
+
 const PLAN = {
   marketing: {
     folders: [
@@ -176,7 +185,19 @@ try {
     for (const name of plan.archived) await place(name, null, order++, true);
   }
 
-  // 4. Drop the space name prefixes if any survive, and re-order the spaces.
+  // 4. Give each space its icon, if it has none. Never overwrites a choice
+  //    someone made in the settings panel.
+  for (const [slug, name] of Object.entries(ICONS)) {
+    const s2 = spaces.find((x) => x.slug === slug);
+    if (!s2) continue;
+    const { rows } = await c.query("select icon from departments where id=$1", [s2.id]);
+    if (rows[0].icon) continue;
+    log.push(`\n   icon    ${s2.name} -> ${name}`);
+    changes++;
+    if (APPLY) await c.query("update departments set icon=$1 where id=$2", [name, s2.id]);
+  }
+
+  // 5. Drop the space name prefixes if any survive, and re-order the spaces.
   const ORDER = ["marketing", "sales", "production", "administration"];
   for (let i = 0; i < ORDER.length; i++) {
     const s = spaces.find((x) => x.slug === ORDER[i]);

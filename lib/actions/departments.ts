@@ -161,8 +161,9 @@ export async function updateDepartment(
 
   if (patch.icon !== undefined) {
     const icon = patch.icon?.trim() ?? "";
-    // The column caps this too. Anything longer is a paste, not an icon.
-    if (icon.length > 8) return { error: "An icon is one character or emoji." };
+    // Either a named icon from the picker or a single emoji. The column caps
+    // this too, at the same 40, so a paste cannot land here.
+    if (icon.length > 40) return { error: "That is not an icon." };
     clean.icon = icon || null;
   }
 

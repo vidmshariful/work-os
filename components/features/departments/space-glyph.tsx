@@ -1,10 +1,17 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { spaceIconFor } from "./space-icons";
 
-// The letter avatar every surface already draws, with the icon taking its
-// place when one is set. Kept here so the panel's preview and the real thing
-// cannot drift.
+// The space's picture, in its own colour. Three cases, in order:
+//
+//   a named icon   the value matches SPACE_ICONS, so draw that icon
+//   an emoji       any other non-empty value, drawn as text
+//   nothing        the first letter of the name
+//
+// The letter is a fallback, not the intended state. Before the icon picker
+// existed it was the only thing anyone ever saw, which made every space in
+// the sidebar a monogram.
 export function SpaceGlyph({
   name,
   icon,
@@ -22,6 +29,7 @@ export function SpaceGlyph({
   fontScale?: number;
   className?: string;
 }) {
+  const Icon = spaceIconFor(icon);
   return (
     <span
       aria-hidden
@@ -37,7 +45,15 @@ export function SpaceGlyph({
         fontSize: size * (fontScale ?? (icon ? 0.5 : 0.4)),
       }}
     >
-      {icon || name.slice(0, 1)}
+      {Icon ? (
+        <Icon
+          style={{ width: size * 0.55, height: size * 0.55 }}
+          strokeWidth={2}
+          aria-hidden
+        />
+      ) : (
+        icon || name.slice(0, 1)
+      )}
     </span>
   );
 }
