@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
+  Compass,
   Layers,
   ListChecks,
   MessageSquare,
@@ -28,6 +28,7 @@ import { clientLabel, isConfidential, isUnmasked } from "@/lib/wall";
 import { ProjectStatusSelect } from "@/components/features/projects/status-select";
 import { DeliverableToggle } from "@/components/features/projects/deliverable-toggle";
 import { ProjectFiles } from "@/components/features/projects/project-files";
+import { ProjectMissing, ProjectModal } from "@/components/features/projects/project-modal";
 import {
   EditProjectDialog,
   ProjectBrief,
@@ -61,11 +62,45 @@ import type {
   VClient,
 } from "@/lib/types";
 
+// The full page's answer for a project that is not there. Deliberately the
+// same words the workspace not-found page uses, so the two do not read as
+// different problems, and deliberately not a lock or a redaction hint: below
+// the wall this covers "deleted" and "not yours to see" alike.
+function ProjectGone() {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full bg-surface-2 text-text-3">
+        <Compass className="size-6" strokeWidth={1.5} />
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold text-text-1">Not found</h2>
+        <p className="mt-1 text-sm text-text-2">
+          This project does not exist, or it is not available to you.
+        </p>
+      </div>
+      <Button variant="outline" asChild>
+        <Link href="/dashboard">Back to dashboard</Link>
+      </Button>
+    </div>
+  );
+}
+
 // The project detail body, shared by two routes. /[ws]/projects/[id] renders
 // it as a page; the @modal slot renders the same component inside a floating
 // panel when you arrive from somewhere in the app. One component, so the two
 // can never show different things.
-export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
+export async function ProjectDetail({
+  ws,
+  id,
+  shell = "page",
+}: {
+  ws: string;
+  id: string;
+  // Which frame the body goes in. The panel owns its own frame rather than
+  // being wrapped by the route, because only this component knows whether the
+  // project is there, and the two answers need different frames.
+  shell?: "page" | "panel";
+}) {
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
@@ -154,7 +189,29 @@ export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
     .eq("id", id)
     .eq("workspace_id", ctx.workspace.id)
     .maybeSingle();
-  if (!projectRow) notFound();
+  // A project that will not load: deleted since the list was drawn, or in a
+  // space this person cannot see.
+  //
+  // NOTHING HERE MAY CALL notFound(), and that is not a style choice.
+  //
+  // Opening the panel is one request that renders two things: the @modal slot
+  // with this component in it, and the page for the same URL underneath.
+  // notFound() thrown by either one marks the whole segment as not found, so
+  // Next answers with the workspace not-found page and drops the slot it had
+  // already rendered. The result on screen was the list, the filters and the
+  // scroll position all replaced by a 404, from one click on one dead row.
+  //
+  // Verified on the running app in that order: a not-found boundary inside
+  // the slot rendered in the panel and the page underneath was still
+  // replaced, because the throw came from the page rendering beside it. Only
+  // when neither one throws does the panel open over an intact list.
+  //
+  // The cost is that a direct visit to a project that is gone answers 200
+  // with this body rather than a 404. For an internal tool behind a login
+  // that is a fair trade for the panel working at all.
+  if (!projectRow) {
+    return shell === "panel" ? <ProjectMissing /> : <ProjectGone />;
+  }
   const project = projectRow as unknown as ProjectWithOwner;
 
   // The three that need a column off the project row start the moment it
@@ -322,7 +379,7 @@ export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
     taskGroups.push({ key: "general", name: "General", tasks: unphased });
   }
 
-  return (
+  const body = (
     <div className="flex flex-col gap-5">
       {/* The trail people already read in ClickUp: space, folder, list, then
           the project. Each part is only shown when the project actually has
@@ -673,5 +730,11 @@ export async function ProjectDetail({ ws, id }: { ws: string; id: string }) {
         </div>
       </div>
     </div>
+  );
+
+  return shell === "panel" ? (
+    <ProjectModal href={`/${ws}/projects/${id}`}>{body}</ProjectModal>
+  ) : (
+    body
   );
 }

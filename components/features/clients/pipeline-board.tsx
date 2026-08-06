@@ -201,6 +201,7 @@ export function PipelineBoard({
 
   return (
     <DndContext
+      id="client-pipeline"
       sensors={sensors}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}

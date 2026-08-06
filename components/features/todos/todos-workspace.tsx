@@ -247,6 +247,7 @@ export function TodosWorkspace({
         </div>
       ) : view === "board" ? (
         <DndContext
+          id="todos-board"
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={(e: DragStartEvent) => setActiveId(String(e.active.id))}

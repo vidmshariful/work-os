@@ -163,6 +163,7 @@ export function TeamBoard({ ws, tasks }: { ws: string; tasks: BoardTask[] }) {
 
   return (
     <DndContext
+      id="team-board"
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={onDragStart}

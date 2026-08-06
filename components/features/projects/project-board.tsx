@@ -213,6 +213,9 @@ export function ProjectBoard({
 
   return (
     <DndContext
+      // Stable, so the drag handle ids match between the server render and
+      // the browser. See space-grouped-list.tsx for the full reason.
+      id="project-board"
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={onDragStart}

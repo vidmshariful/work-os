@@ -260,6 +260,12 @@ export function SpaceGroupedList({
 
   return (
     <DndContext
+      // A stable id, because dnd-kit otherwise numbers its contexts from a
+      // module counter that has already been running on the server and starts
+      // again at zero in the browser. The aria-describedby it hands to every
+      // drag handle then differs between the two, React reports a hydration
+      // mismatch and throws the server's markup away for this whole tree.
+      id="space-grouped-list"
       sensors={sensors}
       collisionDetection={preferInnermost}
       onDragStart={onDragStart}

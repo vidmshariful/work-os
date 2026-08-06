@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Maximize2, X } from "lucide-react";
+import { Compass, Maximize2, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +80,65 @@ export function ProjectModal({
 
           {/* The body scrolls, the header does not. */}
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+  );
+}
+
+// The same panel, sized for a sentence rather than a document. Shown when
+// the panel cannot open the project, so the failure stays inside the panel
+// instead of replacing the page behind it.
+//
+// It names nothing: below the wall the same words have to cover "deleted"
+// and "not yours to see" without telling the reader which one it was.
+//
+// No "open full" link here. The full page would say the same thing, and
+// offering it reads as though trying again might work.
+export function ProjectMissing() {
+  const router = useRouter();
+
+  return (
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(next) => {
+        if (!next) router.back();
+      }}
+    >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay
+          className={cn(
+            "fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]",
+            "data-open:animate-in data-open:fade-in-0",
+            "data-closed:animate-out data-closed:fade-out-0"
+          )}
+        />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className={cn(
+            "fixed left-1/2 top-1/2 z-50 w-[min(420px,calc(100vw-3rem))]",
+            "-translate-x-1/2 -translate-y-1/2",
+            "rounded-[16px] border border-border bg-canvas p-6",
+            "shadow-[var(--shadow-pop)] outline-none",
+            "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[0.98]",
+            "data-closed:animate-out data-closed:fade-out-0"
+          )}
+        >
+          <DialogPrimitive.Title className="sr-only">Project not found</DialogPrimitive.Title>
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-surface-2 text-text-3">
+              <Compass className="size-6" strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-text-1">Not found</h2>
+              <p className="mt-1 text-sm text-text-2">
+                This project does not exist, or it is not available to you.
+              </p>
+            </div>
+            <DialogPrimitive.Close className="rounded-[9px] border border-border px-3 py-1.5 text-sm text-text-1 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40">
+              Close
+            </DialogPrimitive.Close>
+          </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
