@@ -46,6 +46,7 @@ export function FolderBlock({
   folder,
   listCount,
   canEdit,
+  startCollapsed = false,
   children,
 }: {
   ws?: string;
@@ -53,10 +54,16 @@ export function FolderBlock({
   folder: FolderRow | null;
   listCount?: number;
   canEdit?: boolean;
+  // A folder holding no work at all starts shut. Production reads in
+  // pipeline order, so pre-production sits above the animation that pays for
+  // the studio, and three empty lists at the top would push the real work
+  // off the first screen every morning. One click opens it, and it stays
+  // open once anything is filed there.
+  startCollapsed?: boolean;
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(!startCollapsed);
   const [renaming, setRenaming] = useState(false);
   // Set when Rename is chosen, read when the menu closes.
   const renameWanted = useRef(false);

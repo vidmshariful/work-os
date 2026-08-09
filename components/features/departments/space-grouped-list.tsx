@@ -280,6 +280,13 @@ export function SpaceGroupedList({
             folder={block.folder}
             listCount={block.groups.length}
             canEdit={canReorderLists}
+            // Only when nothing is filtered: with a filter on, an empty
+            // folder means "nothing matched here", and shutting it would
+            // hide that answer.
+            startCollapsed={
+              !filterActive &&
+              block.groups.every(({ g }) => g.items.length === 0)
+            }
           >
         {block.groups.map(({ g, i }) => {
           const alwaysShow = group === "list" && g.key === NO_LIST;

@@ -1,5 +1,20 @@
-// Builds the Vidiosa space structure: folders and lists, matching the
-// ClickUp workspace with its workarounds removed.
+// Builds the Vidiosa space structure: folders and lists.
+//
+// SHAPED FOR AN ANIMATION STUDIO. Production is the studio floor, so it
+// comes first in the sidebar and its folders are the three parts of an
+// animation pipeline: pre-production, animation, post-production. The three
+// support spaces follow it.
+//
+// The stages themselves are NOT lists. Active Prod. Stage already carries
+// brief, script, concept and design, animation, edit, review, delivered on
+// every project, so a list per stage would be the same fact recorded twice
+// and would mean dragging a project from list to list as it moves. Lists
+// stay what they are here: streams of work. The folder says which part of
+// the pipeline the stream belongs to, the field says where one project has
+// got to, and the board groups by it.
+//
+// List names are left exactly as the studio types them. Only the folders,
+// which this file introduced, are named for the pipeline.
 //
 // What is deliberately NOT copied, and why:
 //   the "1." "2." "3." "4." name prefixes  ->  sort_order does that job
@@ -18,6 +33,10 @@
 import { connect } from "./db.mjs";
 
 const APPLY = process.argv.includes("--apply");
+
+// Stands for a folder this run intends to create. Only ever seen in a dry
+// run, where nothing has an id yet.
+const PLANNED = Symbol("planned folder");
 
 // name, colour, then the folders and the loose lists. A list marked archived
 // is created already archived: it is history that should stay reachable
@@ -50,10 +69,17 @@ const PLAN = {
   },
   production: {
     folders: [
-      { name: "Video Editing", color: "teal", lists: ["Edit pipeline", "Internal edits"] },
-      { name: "Animation Studios", color: "amber", lists: ["Studio Pipeline", "Custom Production", "Pre-Made Production"] },
+      // Everything before a frame is animated. Scripting and RND were loose
+      // at the space root, which put the earliest work in the least
+      // prominent place. Concept and design is new: stage 3 of the studio's
+      // own pipeline had nowhere to queue.
+      { name: "Pre-production", color: "violet", lists: ["Scripting", "Concept and design", "RND"] },
+      // The floor. Custom is bespoke client work, Pre-Made is template work,
+      // and both keep the names the studio already uses for them.
+      { name: "Animation", color: "amber", lists: ["Custom Production", "Pre-Made Production", "Studio Pipeline"] },
+      { name: "Post-production", color: "teal", lists: ["Edit pipeline", "Internal edits"] },
     ],
-    lists: ["RND", "Scripting"],
+    lists: [],
     archived: ["Template Order List", "GHLV New Template Order List", "Vidiosa Studio", "Planner"],
   },
   administration: {
@@ -64,6 +90,15 @@ const PLAN = {
     ],
     lists: ["Company backlog", "Writing Tasks", "Ideas inbox"],
     archived: [],
+  },
+};
+
+// Folders renamed in place. Without this the plan would create the new name
+// and leave the old folder behind, empty.
+const FOLDER_RENAME = {
+  production: {
+    "Animation Studios": "Animation",
+    "Video Editing": "Post-production",
   },
 };
 
@@ -111,16 +146,67 @@ try {
       }
     }
 
-    // 2. Folders, in order.
+    // 2. Folders. Renames first, so a folder that is only changing its name
+    //    keeps its lists and its id instead of being replaced by an empty
+    //    one beside it.
+    // new name -> the id it already has, so the plan below does not think it
+    // has to create one. Without this the dry run promises a folder that the
+    // apply would never create, which makes it useless for reading before
+    // writing.
+    const renamed = {};
+    for (const [from, to] of Object.entries(FOLDER_RENAME[space.slug] ?? {})) {
+      const { rows } = await c.query(
+        `select id from project_folders where department_id=$1 and name=$2`,
+        [space.id, from]
+      );
+      if (rows.length === 0) continue;
+      const { rows: taken } = await c.query(
+        `select id from project_folders where department_id=$1 and name=$2`,
+        [space.id, to]
+      );
+      if (taken.length > 0) continue;
+      const { rows: held } = await c.query(
+        `select count(*)::int n from project_lists where folder_id=$1`,
+        [rows[0].id]
+      );
+      log.push(`   folder  ${from} -> ${to}  (${held[0].n} lists stay put)`);
+      changes++;
+      renamed[to] = rows[0].id;
+      if (APPLY) {
+        await c.query(`update project_folders set name=$1 where id=$2`, [to, rows[0].id]);
+      }
+    }
+
     const folderIds = {};
     for (let i = 0; i < plan.folders.length; i++) {
       const f = plan.folders[i];
+      // A folder that already exists still has to sit where the plan puts
+      // it. Renaming one left it at the position its old name held, which
+      // is how Production first came back reading post, pre, animation.
+      const settle = async (id, current) => {
+        folderIds[f.name] = id;
+        if (current === i) return;
+        log.push(`   order   ${f.name} to position ${i}`);
+        changes++;
+        if (APPLY) {
+          await c.query(`update project_folders set sort_order=$1 where id=$2`, [i, id]);
+        }
+      };
+
+      if (renamed[f.name]) {
+        const { rows: r0 } = await c.query(
+          `select sort_order from project_folders where id=$1`,
+          [renamed[f.name]]
+        );
+        await settle(renamed[f.name], r0[0]?.sort_order);
+        continue;
+      }
       const { rows } = await c.query(
-        `select id from project_folders where department_id=$1 and name=$2`,
+        `select id, sort_order from project_folders where department_id=$1 and name=$2`,
         [space.id, f.name]
       );
       if (rows.length > 0) {
-        folderIds[f.name] = rows[0].id;
+        await settle(rows[0].id, rows[0].sort_order);
         continue;
       }
       log.push(`   folder  ${f.name}`);
@@ -133,25 +219,37 @@ try {
         );
         folderIds[f.name] = made[0].id;
       } else {
-        folderIds[f.name] = null;
+        // Not written yet, but the lists below still belong in it, and a dry
+        // run has to say so.
+        folderIds[f.name] = PLANNED;
       }
     }
 
     // 3. Lists, into their folder or loose, then the archived ones.
     const place = async (name, folderName, order, archived) => {
       const { rows } = await c.query(
-        `select id, folder_id, archived_at from project_lists
+        `select id, folder_id, archived_at, sort_order from project_lists
          where department_id=$1 and name=$2`,
         [space.id, name]
       );
       const folderId = folderName ? folderIds[folderName] : null;
       if (rows.length > 0) {
         const row = rows[0];
-        const needsFolder = (row.folder_id ?? null) !== (folderId ?? null);
+        const needsFolder =
+          folderId === PLANNED
+            ? true
+            : (row.folder_id ?? null) !== (folderId ?? null);
         const needsArchive = Boolean(row.archived_at) !== archived;
-        if (!needsFolder && !needsArchive) return;
+        // Position is part of the plan too. Without this a list already in
+        // the right folder kept whatever order it had, which is how an empty
+        // Studio Pipeline ended up above the nine live Custom Production
+        // projects.
+        const needsOrder = row.sort_order !== order;
+        if (!needsFolder && !needsArchive && !needsOrder) return;
         log.push(
-          `   place   ${name}${folderName ? `  into ${folderName}` : "  at space root"}${archived ? "  [archived]" : ""}`
+          `   place   ${name}${folderName ? `  into ${folderName}` : "  at space root"}` +
+            `${needsOrder && !needsFolder ? `  position ${order}` : ""}` +
+            `${archived ? "  [archived]" : ""}`
         );
         changes++;
         if (APPLY) {
@@ -159,7 +257,7 @@ try {
             `update project_lists
                set folder_id=$1, sort_order=$2, archived_at=$3
              where id=$4`,
-            [folderId, order, archived ? new Date().toISOString() : null, row.id]
+            [folderId === PLANNED ? null : folderId, order, archived ? new Date().toISOString() : null, row.id]
           );
         }
         return;
@@ -172,7 +270,7 @@ try {
         await c.query(
           `insert into project_lists (department_id, folder_id, name, sort_order, archived_at)
            values ($1,$2,$3,$4,$5)`,
-          [space.id, folderId, name, order, archived ? new Date().toISOString() : null]
+          [space.id, folderId === PLANNED ? null : folderId, name, order, archived ? new Date().toISOString() : null]
         );
       }
     };
@@ -198,7 +296,8 @@ try {
   }
 
   // 5. Drop the space name prefixes if any survive, and re-order the spaces.
-  const ORDER = ["marketing", "sales", "production", "administration"];
+  // A studio reads its own floor first. The three support spaces follow.
+  const ORDER = ["production", "marketing", "sales", "administration"];
   for (let i = 0; i < ORDER.length; i++) {
     const s = spaces.find((x) => x.slug === ORDER[i]);
     if (!s) continue;
