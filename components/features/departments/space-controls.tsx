@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { Check, ListFilter, Search, Settings2, X } from "lucide-react";
 import {
   Popover,
@@ -103,6 +103,11 @@ function MultiSelect({
                 <button
                   key={o.value}
                   type="button"
+                  // The tick is drawn, not announced, so the state has to be
+                  // said out loud as well. Without this a screen reader reads
+                  // four filter buttons and cannot tell which are on.
+                  role="checkbox"
+                  aria-checked={on}
                   onClick={() => toggle(o.value)}
                   className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] text-text-1 transition-colors hover:bg-surface-2"
                 >
@@ -160,6 +165,8 @@ function SingleSelect({
           <button
             key={o.value}
             type="button"
+            role="menuitemradio"
+            aria-checked={selected === o.value}
             onClick={() => onChange(selected === o.value ? null : o.value)}
             className={cn(
               "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
@@ -176,6 +183,23 @@ function SingleSelect({
         ))}
       </PopoverContent>
     </Popover>
+  );
+}
+
+// The workspace used to have a loading.tsx, which showed a skeleton the
+// moment you clicked. It had to go: any Suspense boundary above this page
+// stopped a search param navigation from ever committing, so the view tabs
+// and the filters did nothing at all. Verified by removing it and watching
+// the tabs start working.
+//
+// Feedback still has to exist though, because this page takes a second or
+// two to come back. useLinkStatus reports the pending state of the link it
+// sits inside, which needs no boundary, so the tab you pressed dims until
+// its view arrives.
+function TabLabel({ label }: { label: string }) {
+  const { pending } = useLinkStatus();
+  return (
+    <span className={cn("transition-opacity", pending && "opacity-50")}>{label}</span>
   );
 }
 
@@ -385,7 +409,7 @@ export function SpaceControls({
           view === key ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
         )}
       >
-        {label}
+        <TabLabel label={label} />
       </Link>
     );
   };
@@ -431,6 +455,11 @@ export function SpaceControls({
                       <button
                         key={g.value}
                         type="button"
+                        // One of a set, and the tick is the only sign of
+                        // which. Said out loud here for the same reason the
+                        // filter checkboxes are.
+                        role="menuitemradio"
+                        aria-checked={filters.group === g.value}
                         onClick={() => push({ group: g.value as GroupKey })}
                         className={cn(
                           "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
@@ -455,6 +484,8 @@ export function SpaceControls({
                   <button
                     key={so.value}
                     type="button"
+                    role="menuitemradio"
+                    aria-checked={filters.sort === so.value}
                     onClick={() => push({ sort: so.value as SortKey })}
                     className={cn(
                       "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",

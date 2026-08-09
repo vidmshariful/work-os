@@ -58,6 +58,8 @@ export function FolderBlock({
   const router = useRouter();
   const [open, setOpen] = useState(true);
   const [renaming, setRenaming] = useState(false);
+  // Set when Rename is chosen, read when the menu closes.
+  const renameWanted = useRef(false);
   const [draft, setDraft] = useState(folder?.name ?? "");
   const [confirming, setConfirming] = useState(false);
   const [pending, start] = useTransition();
@@ -164,8 +166,24 @@ export function FolderBlock({
                   <MoreHorizontal className="size-4" strokeWidth={1.5} />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onSelect={() => setRenaming(true)}>
+              <DropdownMenuContent
+                align="end"
+                className="w-48"
+                // Same as the list menu: the rename input focuses itself, and
+                // the menu restoring focus to this trigger would take it away
+                // again.
+                onCloseAutoFocus={(e) => {
+                  if (!renameWanted.current) return;
+                  renameWanted.current = false;
+                  e.preventDefault();
+                }}
+              >
+                <DropdownMenuItem
+                  onSelect={() => {
+                    renameWanted.current = true;
+                    setRenaming(true);
+                  }}
+                >
                   <Pencil strokeWidth={1.5} />
                   Rename
                 </DropdownMenuItem>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Archive,
@@ -237,6 +237,8 @@ export function ListSectionMenu({
   onDuplicate: (withProjects: boolean) => void;
   onDelete: () => void;
 }) {
+  // Set when Rename is chosen, read when the menu closes.
+  const renameWanted = useRef(false);
   const [confirming, setConfirming] = useState(false);
   const elsewhere = spaces.filter((s) => s.id !== currentSpaceId);
 
@@ -252,8 +254,25 @@ export function ListSectionMenu({
             <MoreHorizontal className="size-4" strokeWidth={1.5} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem onSelect={onStartRename}>
+        <DropdownMenuContent
+          align="end"
+          className="w-52"
+          // Rename shows an input that focuses itself. The menu closing
+          // afterwards would put focus back on this trigger, on top of it,
+          // and the first thing typed would go nowhere. Verified in a
+          // browser: without this, focus after Rename is the menu button.
+          onCloseAutoFocus={(e) => {
+            if (!renameWanted.current) return;
+            renameWanted.current = false;
+            e.preventDefault();
+          }}
+        >
+          <DropdownMenuItem
+            onSelect={() => {
+              renameWanted.current = true;
+              onStartRename();
+            }}
+          >
             <Pencil strokeWidth={1.5} />
             Rename
           </DropdownMenuItem>
