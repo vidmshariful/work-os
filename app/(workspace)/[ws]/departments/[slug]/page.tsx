@@ -5,6 +5,7 @@ import { Archive, FolderKanban, Layers, Plus, Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { loadCardFields, loadSpaceDirectory } from "@/lib/data/spaces";
+import { loadRowMeta } from "@/lib/data/row-meta";
 import {
   SpaceGlyph,
   SpaceSettingsMenu,
@@ -97,7 +98,7 @@ export default async function DepartmentPage({
         .order("sort_order"),
       supabase
         .from("projects")
-        .select("*, owner:profiles(id, full_name, avatar_url)")
+        .select("*, owner:profiles!projects_owner_id_fkey(id, full_name, avatar_url)")
         .eq("department_id", dept.id)
         .neq("status", "archived")
         .order("created_at", { ascending: false }),
@@ -141,6 +142,9 @@ export default async function DepartmentPage({
   const listFolder: Record<string, string | null> = {};
   for (const l of lists) listFolder[l.id] = l.folder_id;
   const allProjects = (projectRows ?? []) as unknown as ProjectWithOwner[];
+  // The people and attachment counts for the rows on this page, in two reads
+  // for the whole page rather than two per row.
+  const rowMeta = await loadRowMeta(allProjects.map((p) => p.id));
   const completion = completionFrom(progressRows);
 
   // Counted over everything in the space, so the pill does not change when
@@ -448,6 +452,7 @@ export default async function DepartmentPage({
         />
       ) : (
         <SpaceGroupedList
+          rowMeta={rowMeta}
           ws={ws}
           slug={slug}
           userId={ctx.userId}

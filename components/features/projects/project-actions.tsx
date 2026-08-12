@@ -19,6 +19,7 @@ import {
   Copy,
   CornerDownRight,
   ExternalLink,
+  Flag,
   Hash,
   Link2,
   MoreHorizontal,
@@ -75,9 +76,10 @@ import {
   setProjectList,
   setProjectOwner,
   setProjectParent,
+  setProjectPriority,
   updateProjectStatus,
 } from "@/lib/actions/projects";
-import { PROJECT_STATUS_OPTIONS } from "./types";
+import { PRIORITY_OPTIONS, PROJECT_STATUS_OPTIONS } from "./types";
 import type { CompletionMap, MemberOption, ProjectWithOwner } from "./types";
 import type { ProjectStatus } from "@/lib/types";
 
@@ -139,6 +141,7 @@ interface ProjectActionsValue extends ProjectActionsScope {
 
   // Single-row actions, shared by the context menu and the overflow button.
   setStatus: (p: ProjectWithOwner, status: ProjectStatus) => void;
+  setPriority: (p: ProjectWithOwner, priority: number) => void;
   setOwner: (p: ProjectWithOwner, ownerId: string | null) => void;
   setList: (p: ProjectWithOwner, listId: string | null) => void;
   setSpace: (p: ProjectWithOwner, departmentId: string) => void;
@@ -469,6 +472,14 @@ export function ProjectActionsProvider({
     [run, scope.ws]
   );
 
+  const setPriority = useCallback(
+    (p: ProjectWithOwner, priority: number) => {
+      if ((p.priority ?? 0) === priority) return;
+      run(p.id, { patch: { priority } }, () => setProjectPriority(scope.ws, p.id, priority));
+    },
+    [run, scope.ws]
+  );
+
   const setOwner = useCallback(
     (p: ProjectWithOwner, ownerId: string | null) => {
       if (p.owner_id === ownerId) return;
@@ -668,6 +679,7 @@ export function ProjectActionsProvider({
     focusRow,
     showShortcuts: () => setHelpOpen(true),
     setStatus,
+    setPriority,
     setOwner,
     setList,
     setSpace,
@@ -937,6 +949,23 @@ function ProjectMenuItems({
                     className={cn(project.status !== s.value && "opacity-0")}
                   />
                   {s.label}
+                </Item>
+              ))}
+            </SubContent>
+          </Sub>
+          <Sub>
+            <SubTrigger>
+              <Flag strokeWidth={1.5} />
+              Set priority
+            </SubTrigger>
+            <SubContent>
+              {PRIORITY_OPTIONS.map((o) => (
+                <Item key={o.value} onSelect={() => a.setPriority(project, o.value)}>
+                  <Check
+                    strokeWidth={2}
+                    className={cn((project.priority ?? 0) !== o.value && "opacity-0")}
+                  />
+                  {o.label}
                 </Item>
               ))}
             </SubContent>

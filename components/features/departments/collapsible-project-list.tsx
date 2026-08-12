@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarPlus, ChevronRight, CornerDownRight, Layers } from "lucide-react";
+import { AlignLeft, CalendarPlus, ChevronRight, CornerDownRight, Flag, Layers, Paperclip } from "lucide-react";
 import { Card } from "@/components/primitives/card";
 import { ListRow } from "@/components/primitives/list-row";
 import { PROJECT_STATUS_TONE, ProjectStatusChip, toneDotClass } from "@/components/primitives/tag";
 import type { ProjectStatus } from "@/lib/types";
-import { PersonAvatar } from "@/components/primitives/avatar";
+import { AvatarStack } from "@/components/primitives/avatar";
 import { ProgressRing } from "@/components/primitives/progress";
 import { CodeLabel, CountBadge, DragHandle } from "@/components/primitives/misc";
 import { DueDate } from "@/components/features/projects/due-date";
@@ -22,6 +22,7 @@ import { Draggable, Droppable } from "./space-dnd";
 import type {
   CompletionMap,
   ProjectWithOwner,
+  RowMetaMap,
 } from "@/components/features/projects/types";
 
 // Wraps a row in exactly as much drag machinery as it needs. With drag off it
@@ -116,6 +117,55 @@ const storageKeyFor = (userId: string) => `workos:subprojects:collapsed:${userId
 // header at all.
 // The same rounded corners a Card gives, without the border and background,
 // for a list that is already inside one.
+// Priority as a flag rather than a word, because it is a column read down
+// rather than across. Normal is an outline, so the column still says the
+// field exists on every row.
+const PRIORITY = [
+  { label: "Normal", className: "text-text-3" },
+  { label: "High", className: "text-tag-violet" },
+  { label: "Urgent", className: "text-tag-rose" },
+] as const;
+
+// The quiet marks a ClickUp row carries after the name: a brief was written,
+// files are attached. Both are absences most of the time, so neither takes a
+// column of its own.
+function RowMarks({
+  project,
+  meta,
+}: {
+  project: ProjectWithOwner;
+  meta?: { files: number };
+}) {
+  const files = meta?.files ?? 0;
+  const brief = Boolean(project.brief && project.brief.trim());
+  if (!brief && files === 0) return null;
+  return (
+    <span className="flex shrink-0 items-center gap-1.5 text-text-3">
+      {brief ? (
+        <AlignLeft className="size-3.5" strokeWidth={1.5} aria-label="Has a brief" />
+      ) : null}
+      {files > 0 ? (
+        <span className="flex items-center gap-0.5" aria-label={`${files} attached`}>
+          <Paperclip className="size-3.5" strokeWidth={1.5} />
+          <span className="font-mono text-[10.5px] tabular">{files}</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function PriorityFlag({ priority }: { priority: number }) {
+  const p = PRIORITY[priority] ?? PRIORITY[0];
+  return (
+    <Flag
+      className={cn("size-3.5", p.className)}
+      strokeWidth={1.5}
+      fill={priority > 0 ? "currentColor" : "none"}
+      aria-label={`Priority ${p.label.toLowerCase()}`}
+    />
+  );
+}
+
 // The coloured dot every ClickUp row starts with. It repeats the group when
 // the list is grouped by status, and carries the only status a row shows when
 // it is grouped by anything else.
@@ -141,6 +191,7 @@ const COL = {
   // runs into a title on a row that has an arrow.
   lead: "w-[74px]",
   progress: "w-[20px]",
+  priority: "w-[28px]",
   assignee: "w-[104px]",
   due: "w-[104px]",
   status: "w-[104px]",
@@ -162,6 +213,7 @@ export function ProjectListHeader({
       <span className={COL.progress} aria-hidden />
       <span className={COL.assignee}>Assignee</span>
       <span className={COL.due}>Due date</span>
+      <span className={COL.priority}>Priority</span>
       {showStatus ? <span className={COL.status}>Status</span> : null}
       {/* Matches the width of the row's hover actions, so the four labels sit
           over their columns rather than one notch to the right. */}
@@ -192,6 +244,9 @@ export function CollapsibleProjectList({
   // False when the section header is already the status, where a Status
   // column would repeat the same word on every row.
   showStatus = true,
+  // The people and file counts for these rows. Absent on a surface that has
+  // not loaded them, where the row simply draws the owner and no paperclip.
+  rowMeta,
 }: {
   ws: string;
   userId: string;
@@ -224,6 +279,7 @@ export function CollapsibleProjectList({
   footer?: React.ReactNode;
   boxed?: boolean;
   showStatus?: boolean;
+  rowMeta?: RowMetaMap;
 }) {
   // Pending menu and drag changes are folded in here, so a row reflects the
   // action the instant it is taken. Without a provider this is the identity.
@@ -286,15 +342,24 @@ export function CollapsibleProjectList({
           ) : null}
         </span>
         <span className={cn(COL.assignee, "flex items-center")}>
-          {p.owner ? (
-            <PersonAvatar
-              name={p.owner.full_name}
-              src={p.owner.avatar_url}
-              size={sub ? 20 : 22}
-            />
-          ) : (
-            <span className="text-[12.5px] text-text-3">Unassigned</span>
-          )}
+          {(() => {
+            // The owner first, then everyone else on it. One column, one
+            // stack, the way a task row shows its people.
+            const people = [
+              ...(p.owner ? [p.owner] : []),
+              ...(rowMeta?.[p.id]?.assignees ?? []),
+            ];
+            if (people.length === 0) {
+              return <span className="text-[12.5px] text-text-3">Unassigned</span>;
+            }
+            return (
+              <AvatarStack
+                people={people.map((x) => ({ name: x.full_name, src: x.avatar_url }))}
+                size={sub ? 20 : 22}
+                max={3}
+              />
+            );
+          })()}
         </span>
         <span className={cn(COL.due, "flex items-center")}>
           {p.due_date ? (
@@ -309,6 +374,9 @@ export function CollapsibleProjectList({
               aria-label="No due date"
             />
           )}
+        </span>
+        <span className={cn(COL.priority, "flex items-center")}>
+          <PriorityFlag priority={p.priority ?? 0} />
         </span>
         {showStatus ? (
           <span className={cn(COL.status, "flex items-center")}>
@@ -433,6 +501,7 @@ export function CollapsibleProjectList({
                           <CountBadge count={subs.length} className="ml-0" />
                         </span>
                       ) : null}
+                      <RowMarks project={p} meta={rowMeta?.[p.id]} />
                     </span>
                   }
                   meta={meta(p, false)}
@@ -498,6 +567,7 @@ export function CollapsibleProjectList({
                                   {s.title}
                                 </Link>
                                 <CodeLabel code={s.code} className="shrink-0" />
+                                <RowMarks project={s} meta={rowMeta?.[s.id]} />
                               </span>
                             }
                             meta={meta(s, true)}

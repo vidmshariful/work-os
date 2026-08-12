@@ -5,7 +5,7 @@ import { CollapsibleProjectList } from "@/components/features/departments/collap
 import { ProjectStatusChip } from "@/components/primitives/tag";
 import { QuickAddProject } from "@/components/features/departments/quick-add-project";
 import { BOARD_COLUMNS } from "@/components/features/projects/types";
-import type { CompletionMap, ProjectWithOwner } from "@/components/features/projects/types";
+import type { CompletionMap, ProjectWithOwner, RowMetaMap } from "@/components/features/projects/types";
 
 // A list page, grouped by status, which is how the studio reads one in
 // ClickUp: a coloured pill per status, its own column header underneath, the
@@ -28,6 +28,7 @@ export function StatusGroupedList({
   listName,
   projects,
   completion,
+  rowMeta,
   canManage,
 }: {
   ws: string;
@@ -38,6 +39,7 @@ export function StatusGroupedList({
   listName: string;
   projects: ProjectWithOwner[];
   completion: CompletionMap;
+  rowMeta?: RowMetaMap;
   canManage: boolean;
 }) {
   const groups = BOARD_COLUMNS.map((col) => ({
@@ -59,6 +61,7 @@ export function StatusGroupedList({
             userId={userId}
             projects={g.items}
             completion={completion}
+            rowMeta={rowMeta}
             // The heading is the status, so a column repeating it on every
             // row would be the same word nine times.
             showStatus={false}

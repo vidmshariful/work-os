@@ -43,7 +43,7 @@ export default async function ProjectsPage({
 
   let query = supabase
     .from("projects")
-    .select("*, owner:profiles(id, full_name, avatar_url)")
+    .select("*, owner:profiles!projects_owner_id_fkey(id, full_name, avatar_url)")
     .eq("workspace_id", ctx.workspace.id)
     .order("created_at", { ascending: false });
   // Archived projects stay out of the default view. They appear only when

@@ -227,6 +227,8 @@ export interface Project {
   department_id: string | null;
   list_id: string | null;
   parent_project_id: string | null;
+  // 0 normal, 1 high, 2 urgent, the same scale tasks.priority uses.
+  priority: number;
   code: string;
   title: string;
   type: string | null;

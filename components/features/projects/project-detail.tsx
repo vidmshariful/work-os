@@ -185,7 +185,7 @@ export async function ProjectDetail({
 
   const { data: projectRow } = await supabase
     .from("projects")
-    .select("*, owner:profiles(id, full_name, avatar_url)")
+    .select("*, owner:profiles!projects_owner_id_fkey(id, full_name, avatar_url)")
     .eq("id", id)
     .eq("workspace_id", ctx.workspace.id)
     .maybeSingle();
@@ -227,7 +227,7 @@ export async function ProjectDetail({
     // siblings (so any video shows the rest of its series).
     supabase
       .from("projects")
-      .select("*, owner:profiles(id, full_name, avatar_url)")
+      .select("*, owner:profiles!projects_owner_id_fkey(id, full_name, avatar_url)")
       .eq("parent_project_id", project.parent_project_id ?? id)
       .order("created_at"),
     project.parent_project_id

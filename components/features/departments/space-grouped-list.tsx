@@ -14,6 +14,7 @@ import { DragHandle } from "@/components/primitives/misc";
 import { useProjectActionsRequired } from "@/components/features/projects/project-actions";
 import { reorderLists } from "@/lib/actions/departments";
 import { ProjectStatusChip } from "@/components/primitives/tag";
+import type { RowMetaMap } from "@/components/features/projects/types";
 import { cn } from "@/lib/utils";
 import { CollapsibleProjectList, visualOrder } from "./collapsible-project-list";
 import { FolderBlock } from "./folder-block";
@@ -58,6 +59,7 @@ export function SpaceGroupedList({
   spaces,
   sectionActions,
   emptyNote,
+  rowMeta,
 }: {
   ws: string;
   slug: string;
@@ -88,6 +90,8 @@ export function SpaceGroupedList({
   // Rendered by the server for list groups: New project, Delete list.
   sectionActions?: Record<string, React.ReactNode>;
   emptyNote?: Record<string, string>;
+  // The people and attachment counts for these rows, loaded once by the page.
+  rowMeta?: RowMetaMap;
 }) {
   // Optimistic state, permissions, and every mutation live in the provider,
   // so a drop and a menu item take exactly the same path.
@@ -335,6 +339,7 @@ export function SpaceGroupedList({
                 <CollapsibleProjectList
                   boxed={block.folder === null}
                   showStatus={group !== "status"}
+                  rowMeta={rowMeta}
                   ws={ws}
                   userId={userId}
                   projects={g.items}

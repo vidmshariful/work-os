@@ -293,6 +293,35 @@ export async function createSubProject(
 
 // ---- status and archive ----
 
+// Priority, on the same 0 to 2 scale tasks use. Manager or owner, the same
+// rule every other project write takes; RLS says the same thing.
+export async function setProjectPriority(
+  ws: string,
+  projectId: string,
+  priority: number
+): Promise<{ error: string | null }> {
+  const ctx = await getWorkspaceContext(ws);
+  if (!Number.isInteger(priority) || priority < 0 || priority > 2) {
+    return { error: "That is not a priority." };
+  }
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ priority })
+    .eq("id", projectId)
+    .eq("workspace_id", ctx.workspace.id)
+    .select("id");
+  if (error) return { error: "Could not set the priority. Try again." };
+  if (!data || data.length === 0) {
+    return { error: "Only managers or the project owner can set priority." };
+  }
+
+  revalidatePath(`/${ws}/projects/${projectId}`);
+  revalidatePath(`/${ws}/departments`, "layout");
+  return { error: null };
+}
+
 export async function updateProjectStatus(
   ws: string,
   projectId: string,

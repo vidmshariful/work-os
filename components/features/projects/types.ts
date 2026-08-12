@@ -10,7 +10,26 @@ export interface OwnerRef {
 
 export type ProjectWithOwner = Project & { owner: OwnerRef | null };
 
+// What a row shows beyond the project itself: the people on it besides the
+// owner, and whether anything is written or attached. Loaded per surface and
+// looked up by project id, so a view that does not need it passes nothing and
+// draws nothing.
+export interface RowMeta {
+  assignees: OwnerRef[];
+  files: number;
+}
+
+export type RowMetaMap = Record<string, RowMeta>;
+
 export type TaskWithAssignee = Task & { assignee: OwnerRef | null };
+
+// The same three steps tasks.priority uses, named once so the menu, the flag
+// and the server action cannot drift.
+export const PRIORITY_OPTIONS = [
+  { value: 0, label: "Normal" },
+  { value: 1, label: "High" },
+  { value: 2, label: "Urgent" },
+] as const;
 
 export interface MemberOption {
   id: string;

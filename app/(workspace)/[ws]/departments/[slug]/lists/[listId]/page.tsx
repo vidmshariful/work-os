@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FolderKanban, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { loadCardFields } from "@/lib/data/spaces";
+import { loadRowMeta } from "@/lib/data/row-meta";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { Card } from "@/components/primitives/card";
 import { Breadcrumbs } from "@/components/primitives/misc";
@@ -65,7 +66,7 @@ export default async function ListPage({
   ] = await Promise.all([
     supabase
       .from("projects")
-      .select("*, owner:profiles(id, full_name, avatar_url)")
+      .select("*, owner:profiles!projects_owner_id_fkey(id, full_name, avatar_url)")
       .eq("department_id", dept.id)
       .eq("list_id", listId)
       .neq("status", "archived")
@@ -96,6 +97,7 @@ export default async function ListPage({
   ]);
 
   const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
+  const rowMeta = await loadRowMeta(projects.map((p) => p.id));
   const completion = completionFrom(progressRows);
   const canManage = ctx.capabilities.canCreateProjects;
   const actionScope = {
@@ -192,6 +194,7 @@ export default async function ListPage({
         <ProjectCalendar ws={ws} base={`${base}?view=calendar`} month={month} projects={projects} />
       ) : (
         <StatusGroupedList
+          rowMeta={rowMeta}
           ws={ws}
           slug={slug}
           userId={ctx.userId}
