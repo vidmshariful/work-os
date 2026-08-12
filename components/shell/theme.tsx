@@ -39,13 +39,20 @@ const OPTIONS = [
 // Three states, not two. A plain on/off switch cannot express "follow the
 // machine", which is what most people actually want and what the default is.
 export function ThemeToggle({ className }: { className?: string }) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
-  // Before the provider has read localStorage, theme is undefined. Drawing
-  // the sun then swapping to the moon is worse than drawing the icon the
-  // page is already painted in, which resolvedTheme gives us.
-  const Icon = (resolvedTheme === "dark" ? Moon : Sun);
-
+  // THE ICON IS CHOSEN BY CSS, NOT BY JAVASCRIPT, and that is not a style
+  // preference. resolvedTheme is undefined while the server renders, so
+  // picking the icon from it drew a sun into the HTML and a moon into the
+  // browser on every dark mode page. React called that a hydration
+  // mismatch, threw the server's markup away for the whole tree and
+  // re-rendered on the client, which is the "1 Issue" that has been sitting
+  // in the corner of every screen in dark mode.
+  //
+  // next-themes writes the class onto <html> before first paint, so the
+  // class is already right when the CSS runs. Rendering both icons and
+  // letting the class hide one is correct at the first frame and cannot
+  // disagree with itself.
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -57,7 +64,8 @@ export function ThemeToggle({ className }: { className?: string }) {
             className
           )}
         >
-          <Icon className="size-[18px]" strokeWidth={1.5} />
+          <Sun className="size-[18px] dark:hidden" strokeWidth={1.5} />
+          <Moon className="hidden size-[18px] dark:block" strokeWidth={1.5} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">

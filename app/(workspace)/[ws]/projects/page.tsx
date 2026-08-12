@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ViewToggle } from "@/components/features/projects/view-toggle";
 import { ProjectFilters } from "@/components/features/projects/project-filters";
 import { ProjectBoard } from "@/components/features/projects/project-board";
+import { loadCardFields } from "@/lib/data/spaces";
 import { DueDate } from "@/components/features/projects/due-date";
 import { ProjectRowActions } from "@/components/features/projects/project-row-actions";
 import { completionFrom } from "@/components/features/projects/types";
@@ -51,7 +52,7 @@ export default async function ProjectsPage({
   else query = query.neq("status", "archived");
   if (owner) query = query.eq("owner_id", owner);
 
-  const [{ data: projectRows }, { data: progressRows }, { data: memberRows }] =
+  const [{ data: projectRows }, { data: progressRows }, { data: memberRows }, cardFields] =
     await Promise.all([
       query,
       // Rolled-up progress from the view, so a parent row reflects its
@@ -62,6 +63,8 @@ export default async function ProjectsPage({
         .select("profile:profiles!profile_id!inner(id, full_name)")
         .eq("workspace_id", ctx.workspace.id)
         .eq("is_active", true),
+      // This page spans spaces, so only the workspace-wide fields apply.
+      loadCardFields(supabase, ctx.workspace.id, null),
     ]);
 
   const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
@@ -118,7 +121,13 @@ export default async function ProjectsPage({
           />
         </Card>
       ) : view === "board" ? (
-        <ProjectBoard ws={ws} projects={projects} completion={completion} />
+        <ProjectBoard
+          ws={ws}
+          projects={projects}
+          completion={completion}
+          fields={cardFields.fields}
+          fieldValues={cardFields.values}
+        />
       ) : (
         <Card>
           {projects.map((p) => {

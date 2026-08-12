@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FolderKanban, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { loadCardFields } from "@/lib/data/spaces";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { Card } from "@/components/primitives/card";
 import { Breadcrumbs } from "@/components/primitives/misc";
@@ -60,6 +61,7 @@ export default async function ListPage({
     { data: listRows },
     { data: memberRows },
     { data: spaceRows },
+    cardFields,
   ] = await Promise.all([
     supabase
       .from("projects")
@@ -88,6 +90,9 @@ export default async function ListPage({
       .select("id, name")
       .eq("workspace_id", ctx.workspace.id)
       .order("name"),
+    // Same chips the space board draws. A list is a slice of that board, so
+    // it cannot be the surface where the stages disappear.
+    loadCardFields(supabase, ctx.workspace.id, dept.id),
   ]);
 
   const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
@@ -176,7 +181,13 @@ export default async function ListPage({
           />
         </Card>
       ) : view === "board" ? (
-        <ProjectBoard ws={ws} projects={projects} completion={completion} />
+        <ProjectBoard
+          ws={ws}
+          projects={projects}
+          completion={completion}
+          fields={cardFields.fields}
+          fieldValues={cardFields.values}
+        />
       ) : view === "calendar" ? (
         <ProjectCalendar ws={ws} base={`${base}?view=calendar`} month={month} projects={projects} />
       ) : (

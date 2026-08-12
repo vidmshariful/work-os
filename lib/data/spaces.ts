@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Archetype } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Archetype, ProjectFieldOption } from "@/lib/types";
 import type { SpacePerson } from "@/components/features/departments/space-settings";
 
 export interface SpaceDirectory {
@@ -78,4 +79,65 @@ export async function loadSpaceDirectory(
     executives: everyone.filter((p) => p.archetype === "executive"),
     everyone,
   };
+}
+
+// The choice fields a board card draws, and their values, for one space.
+//
+// Two surfaces show that board, the space page and a list page inside it,
+// and the first version of this wired only the space page, so opening a list
+// lost the stages. Loading it in one place is what stops the next surface
+// from losing them again.
+//
+// Values come back under the reader's own RLS, the same as the projects, so
+// this adds no visibility. At most two fields, the space's own before the
+// workspace-wide ones, because a card is a glance.
+export interface CardFields {
+  fields: { id: string; name: string; options: ProjectFieldOption[] }[];
+  values: Record<string, Record<string, string>>;
+}
+
+export async function loadCardFields(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  // Null on a surface that spans spaces, such as the Projects index. There
+  // only the workspace-wide fields apply, because a field scoped to
+  // Production means nothing on a Marketing card.
+  departmentId: string | null
+): Promise<CardFields> {
+  const [{ data: fieldRows }, { data: valueRows }] = await Promise.all([
+    supabase
+      .from("project_fields")
+      .select("id, name, options, department_id")
+      .eq("workspace_id", workspaceId)
+      .eq("kind", "select")
+      .order("sort_order"),
+    supabase.from("project_field_values").select("project_id, field_id, value"),
+  ]);
+
+  const fields = ((fieldRows ?? []) as {
+    id: string;
+    name: string;
+    options: ProjectFieldOption[] | null;
+    department_id: string | null;
+  }[])
+    .filter((f) =>
+      departmentId === null
+        ? f.department_id === null
+        : f.department_id === null || f.department_id === departmentId
+    )
+    .sort((a, b) => Number(Boolean(b.department_id)) - Number(Boolean(a.department_id)))
+    .slice(0, 2)
+    .map((f) => ({ id: f.id, name: f.name, options: f.options ?? [] }));
+
+  const values: Record<string, Record<string, string>> = {};
+  for (const v of (valueRows ?? []) as {
+    project_id: string;
+    field_id: string;
+    value: unknown;
+  }[]) {
+    if (typeof v.value !== "string") continue;
+    (values[v.project_id] ??= {})[v.field_id] = v.value;
+  }
+
+  return { fields, values };
 }
