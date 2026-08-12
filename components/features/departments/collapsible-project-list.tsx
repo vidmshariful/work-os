@@ -108,6 +108,31 @@ const storageKeyFor = (userId: string) => `workos:subprojects:collapsed:${userId
 // The List view of a set of projects. Top-level projects are rows; a project
 // with sub-projects gets a chevron that collapses its children. Used by both
 // the list page and the space page, so nesting behaves the same in both.
+// The list is a table, so the cells need fixed widths and a header saying
+// what they are. ClickUp puts that header inside every group; so does this.
+// Widths live here once because the header and the rows both read them, and
+// a table whose header does not line up with its body is worse than no
+// header at all.
+const COL = {
+  assignee: "w-[104px]",
+  due: "w-[104px]",
+  status: "w-[104px]",
+};
+
+export function ProjectListHeader({ trailingRoom = true }: { trailingRoom?: boolean }) {
+  return (
+    <div className="flex items-center gap-4 border-b border-border px-5 py-2 text-[11.5px] font-medium uppercase tracking-[0.06em] text-text-3">
+      <span className="min-w-0 flex-1">Name</span>
+      <span className={COL.assignee}>Assignee</span>
+      <span className={COL.due}>Due date</span>
+      <span className={COL.status}>Status</span>
+      {/* Matches the width of the row's hover actions, so the four labels sit
+          over their columns rather than one notch to the right. */}
+      {trailingRoom ? <span className="w-[92px]" aria-hidden /> : null}
+    </div>
+  );
+}
+
 export function CollapsibleProjectList({
   ws,
   userId,
@@ -194,11 +219,23 @@ export function CollapsibleProjectList({
   function meta(p: ProjectWithOwner, sub: boolean) {
     return (
       <>
-        {p.owner ? (
-          <PersonAvatar name={p.owner.full_name} src={p.owner.avatar_url} size={sub ? 20 : 22} />
-        ) : null}
-        <DueDate due={p.due_date} status={p.status} />
-        <ProjectStatusChip status={p.status} />
+        <span className={cn(COL.assignee, "flex items-center")}>
+          {p.owner ? (
+            <PersonAvatar
+              name={p.owner.full_name}
+              src={p.owner.avatar_url}
+              size={sub ? 20 : 22}
+            />
+          ) : (
+            <span className="text-[12.5px] text-text-3">Unassigned</span>
+          )}
+        </span>
+        <span className={cn(COL.due, "flex items-center")}>
+          <DueDate due={p.due_date} status={p.status} />
+        </span>
+        <span className={cn(COL.status, "flex items-center")}>
+          <ProjectStatusChip status={p.status} />
+        </span>
       </>
     );
   }
@@ -219,7 +256,7 @@ export function CollapsibleProjectList({
   // untouched.
   function trailing(p: ProjectWithOwner) {
     return (
-      <span className="flex items-center gap-1">
+      <span className="flex w-[92px] items-center justify-end gap-1">
         <ProjectOverflowButton project={p} />
         {open(p.id)}
       </span>
@@ -228,6 +265,7 @@ export function CollapsibleProjectList({
 
   return (
     <Card>
+      <ProjectListHeader />
       {tops.map((p) => {
         const c = completion[p.id] ?? { done: 0, total: 0 };
         const subs = subsByParent.get(p.id) ?? [];

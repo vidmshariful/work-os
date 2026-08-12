@@ -28,17 +28,28 @@ import {
   ProjectOverflowButton,
   useProjectActions,
 } from "./project-actions";
+import { FieldChip, type ChipField } from "@/components/features/projects/field-chip";
 import type { CompletionMap, ProjectWithOwner } from "./types";
 import { BOARD_COLUMNS } from "./types";
 import type { ProjectStatus } from "@/lib/types";
 
 function CardBody({
+  ws,
   p,
   completion,
+  fields = [],
+  fieldValues = {},
+  canEdit = false,
   withActions = false,
 }: {
+  ws: string;
   p: ProjectWithOwner;
   completion: CompletionMap;
+  // The space's choice fields, drawn on every card so the board says what
+  // stage the work is at, not just who owns it and when it is due.
+  fields?: ChipField[];
+  fieldValues?: Record<string, Record<string, string>>;
+  canEdit?: boolean;
   // Off for the drag overlay, where a menu button would be a target that
   // moves with the pointer.
   withActions?: boolean;
@@ -65,17 +76,39 @@ function CardBody({
         )}
         <ProgressRing value={fraction} size={28} />
       </div>
+      {fields.length > 0 ? (
+        <div className="mt-2.5 flex flex-col items-start gap-1 border-t border-border pt-2.5">
+          {fields.map((f) => (
+            <FieldChip
+              key={f.id}
+              ws={ws}
+              projectId={p.id}
+              field={f}
+              value={fieldValues[p.id]?.[f.id] ?? null}
+              canEdit={canEdit && withActions}
+            />
+          ))}
+        </div>
+      ) : null}
     </Card>
   );
 }
 
 function DraggableCard({
+  ws,
   p,
   completion,
+  fields,
+  fieldValues,
+  canEdit,
   onOpen,
 }: {
+  ws: string;
   p: ProjectWithOwner;
   completion: CompletionMap;
+  fields: ChipField[];
+  fieldValues: Record<string, Record<string, string>>;
+  canEdit: boolean;
   onOpen: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -90,13 +123,24 @@ function DraggableCard({
         style={style}
         {...listeners}
         {...attributes}
+        // The board's counterpart to data-project-row: how a card is found
+        // by id, for the keyboard layer and for tests.
+        data-board-card={p.id}
         onClick={() => onOpen(p.id)}
         className={cn(
           "cursor-grab touch-none rounded-[14px] outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:cursor-grabbing",
           isDragging && "opacity-40"
         )}
       >
-        <CardBody p={p} completion={completion} withActions />
+        <CardBody
+          ws={ws}
+          p={p}
+          completion={completion}
+          fields={fields}
+          fieldValues={fieldValues}
+          canEdit={canEdit}
+          withActions
+        />
       </div>
     </ProjectContextMenu>
   );
@@ -158,10 +202,16 @@ export function ProjectBoard({
   ws,
   projects,
   completion,
+  fields = [],
+  fieldValues = {},
 }: {
   ws: string;
   projects: ProjectWithOwner[];
   completion: CompletionMap;
+  // Absent on the Projects index, which spans spaces and so has no single
+  // set of fields to draw.
+  fields?: ChipField[];
+  fieldValues?: Record<string, Record<string, string>>;
 }) {
   const router = useRouter();
   // Present on the space page, absent on Projects. With it, a card change
@@ -234,8 +284,14 @@ export function ProjectBoard({
               {items.map((p) => (
                 <DraggableCard
                   key={p.id}
+                  ws={ws}
                   p={p}
                   completion={completion}
+                  fields={fields}
+                  fieldValues={fieldValues}
+                  // Per project, not per page: projects_update lets a manager
+                  // edit any of them and an owner edit their own.
+                  canEdit={actions?.canEdit(p) ?? false}
                   onOpen={(id) => router.push(`/${ws}/projects/${id}`)}
                 />
               ))}
@@ -246,7 +302,7 @@ export function ProjectBoard({
       <DragOverlay>
         {active ? (
           <div className="w-[240px] rotate-1 opacity-90">
-            <CardBody p={active} completion={completion} />
+            <CardBody ws={ws} p={active} completion={completion} fields={fields} fieldValues={fieldValues} />
           </div>
         ) : null}
       </DragOverlay>

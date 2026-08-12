@@ -80,6 +80,8 @@ export default async function DepartmentPage({
     { data: memberRows },
     { data: spaceRows },
     directory,
+    { data: fieldRows },
+    { data: fieldValueRows },
   ] = await Promise.all([
       supabase
         .from("project_lists")
@@ -119,6 +121,16 @@ export default async function DepartmentPage({
         .order("name"),
       // Only fetched for an executive: the settings panel is theirs alone.
       loadSpaceDirectory(ctx.workspace.id, ctx.capabilities.canSeeAdmin),
+      // The choice fields this space carries, and their values, so a board
+      // card can show what stage a project is at without opening it. Values
+      // come back under the reader's own RLS, the same as the projects do.
+      supabase
+        .from("project_fields")
+        .select("id, name, kind, options, department_id")
+        .eq("workspace_id", ctx.workspace.id)
+        .eq("kind", "select")
+        .order("sort_order"),
+      supabase.from("project_field_values").select("project_id, field_id, value"),
     ]);
 
   const folders = (folderRows ?? []) as ProjectFolder[];
@@ -194,6 +206,30 @@ export default async function DepartmentPage({
   const isExec = ctx.capabilities.canSeeAdmin;
   // Everything the row menu and the bulk bar need, resolved once here so no
   // client component queries for it.
+  // Two chips at most on a card: the space's own choice fields first, then
+  // the workspace-wide ones. More than that and the card stops being a
+  // glance.
+  const cardFields = ((fieldRows ?? []) as {
+    id: string;
+    name: string;
+    options: { value: string; label: string; color: string | null }[];
+    department_id: string | null;
+  }[])
+    .filter((f) => f.department_id === null || f.department_id === dept.id)
+    .sort((a, b) => Number(Boolean(b.department_id)) - Number(Boolean(a.department_id)))
+    .slice(0, 2)
+    .map((f) => ({ id: f.id, name: f.name, options: f.options ?? [] }));
+
+  const fieldValues: Record<string, Record<string, string>> = {};
+  for (const v of (fieldValueRows ?? []) as {
+    project_id: string;
+    field_id: string;
+    value: unknown;
+  }[]) {
+    if (typeof v.value !== "string") continue;
+    (fieldValues[v.project_id] ??= {})[v.field_id] = v.value;
+  }
+
   const actionScope = {
     ws,
     viewerId: ctx.userId,
@@ -435,6 +471,8 @@ export default async function DepartmentPage({
         // are dropped here: a board has no "beneath", so a non-matching card
         // would read as a result rather than as context.
         <ProjectBoard
+          fields={cardFields}
+          fieldValues={fieldValues}
           ws={ws}
           projects={projects.filter((p) => !contextIds.has(p.id))}
           completion={completion}
