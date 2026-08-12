@@ -6,6 +6,7 @@ export type NavKey =
   | "home"
   | "tasks"
   | "todos"
+  | "messages"
   | "departments"
   | "clients"
   | "projects"
@@ -25,7 +26,7 @@ export interface NavGroup {
 const ALL_GROUPS: NavGroup[] = [
   // My Zone is the personal layer every member gets: their overview, their
   // assigned work, and their private checklist.
-  { label: "My Zone", items: ["home", "tasks", "todos"] },
+  { label: "My Zone", items: ["home", "tasks", "todos", "messages"] },
   { label: "Work", items: ["departments", "clients", "projects", "database"] },
   { label: "People", items: ["team", "hr"] },
   // Growth and Skills is Phase 9. Hidden in v1.
@@ -38,6 +39,7 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
     "home",
     "tasks",
     "todos",
+    "messages",
     "departments",
     "clients",
     "projects",
@@ -52,6 +54,7 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
     "home",
     "tasks",
     "todos",
+    "messages",
     "departments",
     "clients",
     "projects",
@@ -65,6 +68,7 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
     "home",
     "tasks",
     "todos",
+    "messages",
     "departments",
     "clients",
     "projects",
@@ -78,6 +82,7 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
     "home",
     "tasks",
     "todos",
+    "messages",
     "departments",
     "clients",
     "projects",
@@ -91,6 +96,7 @@ const NAV_BY_ARCHETYPE: Record<Archetype, NavKey[]> = {
     "home",
     "tasks",
     "todos",
+    "messages",
     "departments",
     "clients",
     "projects",

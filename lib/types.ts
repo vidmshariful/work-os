@@ -617,3 +617,22 @@ export interface Announcement {
   created_by: string | null;
   created_at: string;
 }
+
+export interface DirectMessage {
+  id: string;
+  workspace_id: string;
+  sender_id: string;
+  recipient_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+}
+
+// One row per person you can talk to, whether or not anything has been said.
+// The list is the team, not a history, so a first message is one click away
+// rather than behind a "new conversation" step.
+export interface DirectThread {
+  person: { id: string; full_name: string; avatar_url: string | null; role: string | null };
+  last: { body: string; created_at: string; mine: boolean } | null;
+  unread: number;
+}

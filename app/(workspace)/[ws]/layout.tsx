@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
+import { unreadMessageCount } from "@/lib/data/messages";
 import { WorkspaceRail } from "@/components/shell/workspace-rail";
 import { Sidebar, ROLE_LABELS } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
@@ -23,6 +24,7 @@ export default async function WorkspaceLayout({
   const [
     { count: myTaskCount },
     { count: unreadCount },
+    unreadMessages,
     { data: deptRows },
     { data: listRows },
     { data: folderRows },
@@ -42,6 +44,7 @@ export default async function WorkspaceLayout({
       .eq("profile_id", ctx.userId)
       .eq("workspace_id", ctx.workspace.id)
       .eq("is_read", false),
+    unreadMessageCount(ctx.workspace.id, ctx.userId),
     supabase
       .from("departments")
       .select("id, name, slug, accent_color, icon")
@@ -121,6 +124,7 @@ export default async function WorkspaceLayout({
           roleLabel={roleLabel}
           navGroups={ctx.navGroups}
           myTaskCount={myTaskCount ?? 0}
+          unreadMessages={unreadMessages}
           departments={departments}
         />
       </div>
@@ -132,6 +136,7 @@ export default async function WorkspaceLayout({
           capabilities={ctx.capabilities}
           navGroups={ctx.navGroups}
           myTaskCount={myTaskCount ?? 0}
+          unreadMessages={unreadMessages}
           unreadCount={unreadCount ?? 0}
           userId={ctx.userId}
           departments={departments}

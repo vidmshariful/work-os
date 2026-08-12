@@ -16,6 +16,7 @@ export function Topbar({
   capabilities,
   navGroups,
   myTaskCount,
+  unreadMessages,
   unreadCount,
   userId,
   departments,
@@ -26,6 +27,7 @@ export function Topbar({
   capabilities: Capabilities;
   navGroups: NavGroup[];
   myTaskCount: number;
+  unreadMessages: number;
   unreadCount: number;
   userId: string;
   departments: DeptTreeItem[];
@@ -38,6 +40,7 @@ export function Topbar({
         roleLabel={roleLabel}
         navGroups={navGroups}
         myTaskCount={myTaskCount}
+        unreadMessages={unreadMessages}
         departments={departments}
       />
       <div className="flex-1">

@@ -22,6 +22,7 @@ export const TOGGLEABLE_FEATURES = [
   "performance",
   "calendar",
   "todos",
+  "messages",
 ] as const;
 
 export type FeatureKey = (typeof TOGGLEABLE_FEATURES)[number];
@@ -54,6 +55,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   performance: "Performance",
   calendar: "Calendar",
   todos: "My to-dos",
+  messages: "Messages",
 };
 
 // Falls back to the seeded defaults rather than throwing, so a screen never

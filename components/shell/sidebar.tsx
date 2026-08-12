@@ -7,6 +7,7 @@ import {
   FolderKanban,
   LayoutDashboard,
   ListTodo,
+  MessageSquare,
   Plane,
   Settings2,
   SquareCheckBig,
@@ -27,6 +28,7 @@ const NAV_META: Record<
   database: { label: "Database", path: "database", icon: <Database /> },
   tasks: { label: "My Tasks", path: "tasks", icon: <SquareCheckBig /> },
   todos: { label: "My To-dos", path: "todos", icon: <ListTodo /> },
+  messages: { label: "Messages", path: "messages", icon: <MessageSquare /> },
   departments: { label: "Spaces", path: "departments", icon: <Building2 /> },
   team: { label: "Team", path: "team", icon: <Users /> },
   hr: { label: "HR and Leave", path: "hr", icon: <Plane /> },
@@ -40,6 +42,7 @@ export function Sidebar({
   workspace,
   navGroups,
   myTaskCount,
+  unreadMessages,
   departments,
 }: {
   workspace: Workspace;
@@ -47,6 +50,9 @@ export function Sidebar({
   roleLabel: string;
   navGroups: NavGroup[];
   myTaskCount: number;
+  // Unread direct messages. Without it, a message that arrives while you are
+  // on another page is invisible until you happen to open Messages.
+  unreadMessages: number;
   departments: DeptTreeItem[];
 }) {
   // Settings moves to the bottom, pinned; it stays executive-only.
@@ -82,7 +88,13 @@ export function Sidebar({
                       href={`/${workspace.slug}/${meta.path}`}
                       label={meta.label}
                       icon={meta.icon}
-                      badge={key === "tasks" ? myTaskCount : undefined}
+                      badge={
+                        key === "tasks"
+                          ? myTaskCount
+                          : key === "messages"
+                            ? unreadMessages
+                            : undefined
+                      }
                     />
                   );
                 })}

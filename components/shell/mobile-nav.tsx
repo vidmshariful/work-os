@@ -17,6 +17,7 @@ export function MobileNav({
   roleLabel,
   navGroups,
   myTaskCount,
+  unreadMessages,
   departments,
 }: {
   workspace: Workspace;
@@ -24,6 +25,7 @@ export function MobileNav({
   roleLabel: string;
   navGroups: NavGroup[];
   myTaskCount: number;
+  unreadMessages: number;
   departments: DeptTreeItem[];
 }) {
   const [open, setOpen] = useState(false);
@@ -51,6 +53,7 @@ export function MobileNav({
           roleLabel={roleLabel}
           navGroups={navGroups}
           myTaskCount={myTaskCount}
+          unreadMessages={unreadMessages}
           departments={departments}
         />
       </SheetContent>
