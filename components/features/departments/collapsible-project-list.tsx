@@ -113,7 +113,17 @@ const storageKeyFor = (userId: string) => `workos:subprojects:collapsed:${userId
 // Widths live here once because the header and the rows both read them, and
 // a table whose header does not line up with its body is worse than no
 // header at all.
+// The same rounded corners a Card gives, without the border and background,
+// for a list that is already inside one.
+function PlainFrame({ children }: { children: React.ReactNode }) {
+  return <div className="overflow-hidden rounded-[10px]">{children}</div>;
+}
+
 const COL = {
+  // The select box, the drag handle and the expand arrow, at a fixed width so
+  // the Name header sits over the titles instead of 68px to their left.
+  lead: "w-[58px]",
+  progress: "w-[20px]",
   assignee: "w-[104px]",
   due: "w-[104px]",
   status: "w-[104px]",
@@ -121,8 +131,12 @@ const COL = {
 
 export function ProjectListHeader({ trailingRoom = true }: { trailingRoom?: boolean }) {
   return (
-    <div className="flex items-center gap-4 border-b border-border px-5 py-2 text-[11.5px] font-medium uppercase tracking-[0.06em] text-text-3">
+    // Same gaps and padding as a dense row, or the labels drift from the
+    // columns they name by the difference between the two.
+    <div className="flex items-center gap-3 border-b border-border px-4 py-2 text-[11.5px] font-medium uppercase tracking-[0.06em] text-text-3">
+      <span className={COL.lead} aria-hidden />
       <span className="min-w-0 flex-1">Name</span>
+      <span className={COL.progress} aria-hidden />
       <span className={COL.assignee}>Assignee</span>
       <span className={COL.due}>Due date</span>
       <span className={COL.status}>Status</span>
@@ -133,6 +147,10 @@ export function ProjectListHeader({ trailingRoom = true }: { trailingRoom?: bool
   );
 }
 
+// A list inside a folder is already inside a bordered box, so it does not
+// draw a second one around itself. Three nested boxes around one row, which
+// is what a folder plus a section plus a card came to, reads as clutter
+// rather than as structure.
 export function CollapsibleProjectList({
   ws,
   userId,
@@ -146,6 +164,8 @@ export function CollapsibleProjectList({
   canDrag,
   rowDroppable = false,
   footer,
+  // False inside a folder, which supplies the border already.
+  boxed = true,
 }: {
   ws: string;
   userId: string;
@@ -176,6 +196,7 @@ export function CollapsibleProjectList({
   // Rendered as the last thing inside the card, which is where the quick add
   // row lives so it reads as the next row rather than as a separate control.
   footer?: React.ReactNode;
+  boxed?: boolean;
 }) {
   // Pending menu and drag changes are folded in here, so a row reflects the
   // action the instant it is taken. Without a provider this is the identity.
@@ -217,8 +238,26 @@ export function CollapsibleProjectList({
     });
 
   function meta(p: ProjectWithOwner, sub: boolean) {
+    const c = completion[p.id] ?? { done: 0, total: 0 };
     return (
       <>
+        {/* Progress is a column, not the first thing in the row. A 32px ring
+            in front of every title set the row height on its own and was the
+            loudest thing on a screen of fifteen. Only drawn when the project
+            actually has tasks. */}
+        <span className={cn(COL.progress, "flex items-center")}>
+          {c.total > 0 ? (
+            // A quiet arc, no digits. At this size the number inside was two
+            // characters of noise beside every avatar, and the exact figure
+            // already lives on the project page and in the table view.
+            <ProgressRing
+              value={c.done / c.total}
+              size={sub ? 14 : 16}
+              strokeWidth={2.5}
+              showLabel={false}
+            />
+          ) : null}
+        </span>
         <span className={cn(COL.assignee, "flex items-center")}>
           {p.owner ? (
             <PersonAvatar
@@ -263,11 +302,11 @@ export function CollapsibleProjectList({
     );
   }
 
+  const Frame = boxed ? Card : PlainFrame;
   return (
-    <Card>
+    <Frame>
       <ProjectListHeader />
       {tops.map((p) => {
-        const c = completion[p.id] ?? { done: 0, total: 0 };
         const subs = subsByParent.get(p.id) ?? [];
         const hasSubs = subs.length > 0;
         const expanded = forceExpanded || !collapsed.has(p.id);
@@ -294,7 +333,7 @@ export function CollapsibleProjectList({
                 <ListRow
                   className={cn(isContext && "opacity-55", selected && "bg-brand-soft/40")}
                   leading={
-                    <div className="flex items-center gap-1">
+                    <div className={cn(COL.lead, "flex items-center gap-1")}>
                       <SelectBox project={p} />
                       {dragEnabled ? (
                         <span
@@ -319,17 +358,21 @@ export function CollapsibleProjectList({
                       ) : (
                         <span className="w-5" />
                       )}
-                      <ProgressRing value={c.total > 0 ? c.done / c.total : 0} size={32} />
                     </div>
                   }
+                  dense
                   title={
-                    <Link href={`/${ws}/projects/${p.id}`} className="hover:underline">
-                      {p.title}
-                    </Link>
-                  }
-                  subtitle={
-                    <span className="flex items-center gap-2">
-                      <CodeLabel code={p.code} />
+                    <span className="flex min-w-0 items-baseline gap-2">
+                      <Link
+                        href={`/${ws}/projects/${p.id}`}
+                        className="min-w-0 truncate hover:underline"
+                      >
+                        {p.title}
+                      </Link>
+                      {/* The code rides with the title rather than below it.
+                          A second line doubled every row's height, which put
+                          six projects on a screen that should hold fifteen. */}
+                      <CodeLabel code={p.code} className="shrink-0" />
                       {/* In flat mode a child has no parent above it, so it says
                           where it belongs. */}
                       {!nested && p.parent_project_id && parentOf?.get(p.parent_project_id) ? (
@@ -363,7 +406,6 @@ export function CollapsibleProjectList({
         const children =
           hasSubs && expanded
             ? subs.map((s) => {
-                const sc = completion[s.id] ?? { done: 0, total: 0 };
                 const childDraggable = dragEnabled && (canDrag?.(s) ?? false);
                 const childSelected = actions?.selected.has(s.id) ?? false;
                 const childFocused = actions?.focusedId === s.id;
@@ -399,18 +441,20 @@ export function CollapsibleProjectList({
                                     <DragHandle />
                                   </span>
                                 ) : null}
-                                <ProgressRing
-                                  value={sc.total > 0 ? sc.done / sc.total : 0}
-                                  size={26}
-                                />
                               </span>
                             }
+                            dense
                             title={
-                              <Link href={`/${ws}/projects/${s.id}`} className="hover:underline">
-                                {s.title}
-                              </Link>
+                              <span className="flex min-w-0 items-baseline gap-2">
+                                <Link
+                                  href={`/${ws}/projects/${s.id}`}
+                                  className="min-w-0 truncate hover:underline"
+                                >
+                                  {s.title}
+                                </Link>
+                                <CodeLabel code={s.code} className="shrink-0" />
+                              </span>
                             }
-                            subtitle={<CodeLabel code={s.code} />}
                             meta={meta(s, true)}
                             trailing={trailing(s)}
                           />
@@ -430,6 +474,6 @@ export function CollapsibleProjectList({
         );
       })}
       {footer}
-    </Card>
+    </Frame>
   );
 }

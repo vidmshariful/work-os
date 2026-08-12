@@ -13,6 +13,7 @@ import { Card } from "@/components/primitives/card";
 import { DragHandle } from "@/components/primitives/misc";
 import { useProjectActionsRequired } from "@/components/features/projects/project-actions";
 import { reorderLists } from "@/lib/actions/departments";
+import { cn } from "@/lib/utils";
 import { CollapsibleProjectList, visualOrder } from "./collapsible-project-list";
 import { FolderBlock } from "./folder-block";
 import { ListSectionMenu, useListEdits } from "./list-controls";
@@ -320,7 +321,7 @@ export function SpaceGroupedList({
                 // standing empty, so it gets a line and the quick add row
                 // rather than a full empty state. The action is right there:
                 // type a title into the row below.
-                <Card>
+                <Card className={cn(block.folder !== null && "border-0 bg-transparent shadow-none")}>
                   <p className="px-5 py-4 text-[12.5px] text-text-3">
                     {emptyNote?.[g.key] ??
                       (quickAdd
@@ -331,6 +332,7 @@ export function SpaceGroupedList({
                 </Card>
               ) : (
                 <CollapsibleProjectList
+                  boxed={block.folder === null}
                   ws={ws}
                   userId={userId}
                   projects={g.items}
