@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, CornerDownRight, Layers } from "lucide-react";
+import { CalendarPlus, ChevronRight, CornerDownRight, Layers } from "lucide-react";
 import { Card } from "@/components/primitives/card";
 import { ListRow } from "@/components/primitives/list-row";
-import { ProjectStatusChip } from "@/components/primitives/tag";
+import { PROJECT_STATUS_TONE, ProjectStatusChip, toneDotClass } from "@/components/primitives/tag";
+import type { ProjectStatus } from "@/lib/types";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { ProgressRing } from "@/components/primitives/progress";
 import { CodeLabel, CountBadge, DragHandle } from "@/components/primitives/misc";
@@ -115,21 +116,43 @@ const storageKeyFor = (userId: string) => `workos:subprojects:collapsed:${userId
 // header at all.
 // The same rounded corners a Card gives, without the border and background,
 // for a list that is already inside one.
+// The coloured dot every ClickUp row starts with. It repeats the group when
+// the list is grouped by status, and carries the only status a row shows when
+// it is grouped by anything else.
+function StatusDot({ status }: { status: ProjectStatus }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "size-2.5 shrink-0 rounded-full",
+        toneDotClass(PROJECT_STATUS_TONE[status])
+      )}
+    />
+  );
+}
+
 function PlainFrame({ children }: { children: React.ReactNode }) {
   return <div className="overflow-hidden rounded-[10px]">{children}</div>;
 }
 
 const COL = {
-  // The select box, the drag handle and the expand arrow, at a fixed width so
-  // the Name header sits over the titles instead of 68px to their left.
-  lead: "w-[58px]",
+  // The select box, the drag handle, the expand arrow and the status dot, at
+  // a fixed width so the Name header sits over the titles and the dot never
+  // runs into a title on a row that has an arrow.
+  lead: "w-[74px]",
   progress: "w-[20px]",
   assignee: "w-[104px]",
   due: "w-[104px]",
   status: "w-[104px]",
 };
 
-export function ProjectListHeader({ trailingRoom = true }: { trailingRoom?: boolean }) {
+export function ProjectListHeader({
+  showStatus = true,
+  trailingRoom = true,
+}: {
+  showStatus?: boolean;
+  trailingRoom?: boolean;
+}) {
   return (
     // Same gaps and padding as a dense row, or the labels drift from the
     // columns they name by the difference between the two.
@@ -139,7 +162,7 @@ export function ProjectListHeader({ trailingRoom = true }: { trailingRoom?: bool
       <span className={COL.progress} aria-hidden />
       <span className={COL.assignee}>Assignee</span>
       <span className={COL.due}>Due date</span>
-      <span className={COL.status}>Status</span>
+      {showStatus ? <span className={COL.status}>Status</span> : null}
       {/* Matches the width of the row's hover actions, so the four labels sit
           over their columns rather than one notch to the right. */}
       {trailingRoom ? <span className="w-[92px]" aria-hidden /> : null}
@@ -166,6 +189,9 @@ export function CollapsibleProjectList({
   footer,
   // False inside a folder, which supplies the border already.
   boxed = true,
+  // False when the section header is already the status, where a Status
+  // column would repeat the same word on every row.
+  showStatus = true,
 }: {
   ws: string;
   userId: string;
@@ -197,6 +223,7 @@ export function CollapsibleProjectList({
   // row lives so it reads as the next row rather than as a separate control.
   footer?: React.ReactNode;
   boxed?: boolean;
+  showStatus?: boolean;
 }) {
   // Pending menu and drag changes are folded in here, so a row reflects the
   // action the instant it is taken. Without a provider this is the identity.
@@ -270,11 +297,24 @@ export function CollapsibleProjectList({
           )}
         </span>
         <span className={cn(COL.due, "flex items-center")}>
-          <DueDate due={p.due_date} status={p.status} />
+          {p.due_date ? (
+            <DueDate due={p.due_date} status={p.status} />
+          ) : (
+            // An empty cell reads as a rendering fault. The outline says the
+            // field exists and is unset, which is what the calendar glyph
+            // does in ClickUp.
+            <CalendarPlus
+              className="size-3.5 text-text-3"
+              strokeWidth={1.5}
+              aria-label="No due date"
+            />
+          )}
         </span>
-        <span className={cn(COL.status, "flex items-center")}>
-          <ProjectStatusChip status={p.status} />
-        </span>
+        {showStatus ? (
+          <span className={cn(COL.status, "flex items-center")}>
+            <ProjectStatusChip status={p.status} />
+          </span>
+        ) : null}
       </>
     );
   }
@@ -305,7 +345,7 @@ export function CollapsibleProjectList({
   const Frame = boxed ? Card : PlainFrame;
   return (
     <Frame>
-      <ProjectListHeader />
+      <ProjectListHeader showStatus={showStatus} />
       {tops.map((p) => {
         const subs = subsByParent.get(p.id) ?? [];
         const hasSubs = subs.length > 0;
@@ -358,6 +398,7 @@ export function CollapsibleProjectList({
                       ) : (
                         <span className="w-5" />
                       )}
+                      <StatusDot status={p.status} />
                     </div>
                   }
                   dense
@@ -427,7 +468,10 @@ export function CollapsibleProjectList({
                               childSelected && "bg-brand-soft/40"
                             )}
                             leading={
-                              <span className="flex items-center gap-1">
+                              // The same leading width as a top level row, so
+                              // the indent comes from the padding rather than
+                              // from the cells being a few pixels narrower.
+                              <span className={cn(COL.lead, "flex items-center gap-1")}>
                                 <SelectBox project={s} />
                                 {dragEnabled ? (
                                   <span
@@ -441,6 +485,7 @@ export function CollapsibleProjectList({
                                     <DragHandle />
                                   </span>
                                 ) : null}
+                                <StatusDot status={s.status} />
                               </span>
                             }
                             dense

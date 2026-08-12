@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProjectBoard } from "@/components/features/projects/project-board";
 import { ProjectCalendar } from "@/components/features/departments/project-calendar";
-import { CollapsibleProjectList } from "@/components/features/departments/collapsible-project-list";
+import { StatusGroupedList } from "@/components/features/departments/status-grouped-list";
 import { ProjectActionsProvider } from "@/components/features/projects/project-actions";
 import type { Department, ProjectList } from "@/lib/types";
 import { completionFrom } from "@/components/features/projects/types";
@@ -191,11 +191,16 @@ export default async function ListPage({
       ) : view === "calendar" ? (
         <ProjectCalendar ws={ws} base={`${base}?view=calendar`} month={month} projects={projects} />
       ) : (
-        <CollapsibleProjectList
+        <StatusGroupedList
           ws={ws}
+          slug={slug}
           userId={ctx.userId}
+          departmentId={dept.id}
+          listId={listId}
+          listName={list.name}
           projects={projects}
           completion={completion}
+          canManage={canManage}
         />
       )}
       </ProjectActionsProvider>

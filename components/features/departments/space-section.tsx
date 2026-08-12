@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 export function SpaceSection({
   anchorId,
   label,
+  chip,
   count,
   color,
   renaming = false,
@@ -22,6 +23,10 @@ export function SpaceSection({
 }: {
   anchorId?: string;
   label: string;
+  // Drawn instead of the plain name. A status group is a coloured pill in
+  // ClickUp, not a line of small caps, and the pill is what makes a stack of
+  // groups scannable.
+  chip?: React.ReactNode;
   count: number;
   // A TagTone key. Only list sections carry one; a status or assignee group
   // has no colour of its own to show.
@@ -78,8 +83,12 @@ export function SpaceSection({
               inside a button is not a thing a browser can do. */}
           {renaming ? null : (
             <span className="flex items-center gap-1.5">
-              {dot}
-              <span className="group-label">{label}</span>
+              {chip ?? (
+                <>
+                  {dot}
+                  <span className="group-label">{label}</span>
+                </>
+              )}
             </span>
           )}
         </button>

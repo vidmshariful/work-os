@@ -13,6 +13,7 @@ import { Card } from "@/components/primitives/card";
 import { DragHandle } from "@/components/primitives/misc";
 import { useProjectActionsRequired } from "@/components/features/projects/project-actions";
 import { reorderLists } from "@/lib/actions/departments";
+import { ProjectStatusChip } from "@/components/primitives/tag";
 import { cn } from "@/lib/utils";
 import { CollapsibleProjectList, visualOrder } from "./collapsible-project-list";
 import { FolderBlock } from "./folder-block";
@@ -333,6 +334,7 @@ export function SpaceGroupedList({
               ) : (
                 <CollapsibleProjectList
                   boxed={block.folder === null}
+                  showStatus={group !== "status"}
                   ws={ws}
                   userId={userId}
                   projects={g.items}
@@ -367,6 +369,14 @@ export function SpaceGroupedList({
             <SpaceSection
               anchorId={g.listId ? `list-${g.listId}` : undefined}
               label={g.label}
+              // Grouped by status, the header is the status itself, so it is
+              // drawn as the same chip the rows would carry rather than as a
+              // heading that happens to read "In progress".
+              chip={
+                group === "status" ? (
+                  <ProjectStatusChip status={g.key as ProjectStatus} />
+                ) : undefined
+              }
               count={g.items.length}
               color={listRow?.color}
               renaming={Boolean(listRow) && listEdits.renamingId === listRow!.id}

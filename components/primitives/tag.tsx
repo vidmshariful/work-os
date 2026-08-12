@@ -137,6 +137,13 @@ export function TaskStatusChip({ status }: { status: TaskStatus }) {
   return <Tag tone={s.tone}>{s.label}</Tag>;
 }
 
+// The tone each status wears, so a row can draw a dot in the same colour the
+// chip would be without rebuilding the mapping beside it.
+export const PROJECT_STATUS_TONE: Record<ProjectStatus, TagTone> = Object.
+  fromEntries(
+    Object.entries(PROJECT_STATUS).map(([k, v]) => [k, v.tone])
+  ) as Record<ProjectStatus, TagTone>;
+
 export function ProjectStatusChip({ status }: { status: ProjectStatus }) {
   const s = PROJECT_STATUS[status];
   return <Tag tone={s.tone}>{s.label}</Tag>;
