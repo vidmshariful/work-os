@@ -9,6 +9,7 @@ import { ProgressBar } from "@/components/primitives/progress";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { fmtDate } from "@/lib/format";
 import {
+  AllowanceEditor,
   ApprovalButtons,
   CancelLeaveButton,
   LeaveRequestForm,
@@ -39,8 +40,17 @@ export default async function HrPage({
   const year = new Date().getFullYear();
   const isExec = ctx.membership.archetype === "executive";
 
-  const [{ data: balanceRow }, { data: myRequests }, { data: visibleRequests }] =
-    await Promise.all([
+  const today = new Date().toISOString().slice(0, 10);
+  const horizon = new Date(Date.now() + 14 * 86400_000).toISOString().slice(0, 10);
+
+  const [
+    { data: balanceRow },
+    { data: myRequests },
+    { data: visibleRequests },
+    { data: outRows },
+    { data: memberRows },
+    { data: balanceRows },
+  ] = await Promise.all([
       supabase
         .from("leave_balances")
         .select("*")
@@ -64,6 +74,34 @@ export default async function HrPage({
             .neq("profile_id", ctx.userId)
             .order("created_at")
         : Promise.resolve({ data: [] }),
+      // Who is away in the next two weeks. RLS trims this to what each
+      // reader may know: their own leave, their reports' for a lead, all of
+      // it for an executive. The card renders whatever comes back.
+      supabase
+        .from("leave_requests")
+        .select(
+          "id, start_date, end_date, type, person:profiles!leave_requests_profile_id_fkey(id, full_name, avatar_url)"
+        )
+        .eq("workspace_id", ctx.workspace.id)
+        .eq("status", "approved")
+        .lte("start_date", horizon)
+        .gte("end_date", today)
+        .order("start_date"),
+      // The allowance editor, executives only.
+      isExec
+        ? supabase
+            .from("memberships")
+            .select("profile:profiles!profile_id!inner(id, full_name)")
+            .eq("workspace_id", ctx.workspace.id)
+            .eq("is_active", true)
+        : Promise.resolve({ data: [] }),
+      isExec
+        ? supabase
+            .from("leave_balances")
+            .select("profile_id, total_days, used_days")
+            .eq("workspace_id", ctx.workspace.id)
+            .eq("year", year)
+        : Promise.resolve({ data: [] }),
     ]);
 
   const balance = (balanceRow ?? null) as LeaveBalance | null;
@@ -77,6 +115,31 @@ export default async function HrPage({
   const finalGate = pending.filter((r) => r.lead_approved_at);
   const leadQueue = isExec ? [] : needsEndorsement;
   const execQueue = isExec ? [...finalGate, ...needsEndorsement] : [];
+
+  const out = (outRows ?? []) as unknown as {
+    id: string;
+    start_date: string;
+    end_date: string;
+    type: string;
+    person: { id: string; full_name: string; avatar_url: string | null } | null;
+  }[];
+
+  const balanceByPerson = new Map(
+    ((balanceRows ?? []) as { profile_id: string; total_days: number; used_days: number }[]).map(
+      (b) => [b.profile_id, b]
+    )
+  );
+  const allowancePeople = ((memberRows ?? []) as unknown as {
+    profile: { id: string; full_name: string };
+  }[])
+    .filter((m) => m.profile)
+    .map((m) => ({
+      id: m.profile.id,
+      full_name: m.profile.full_name,
+      total: Number(balanceByPerson.get(m.profile.id)?.total_days ?? 20),
+      used: Number(balanceByPerson.get(m.profile.id)?.used_days ?? 0),
+    }))
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
   const remaining = balance
     ? Number(balance.total_days) - Number(balance.used_days)
@@ -169,6 +232,11 @@ export default async function HrPage({
                         Endorsed, waiting on the final gate.
                       </p>
                     ) : null}
+                    {r.status === "rejected" && r.decision_note ? (
+                      <p className="mt-0.5 text-[12.5px] text-danger">
+                        {r.decision_note}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2">
                     <LeaveStatusChip status={r.status} />
@@ -222,6 +290,44 @@ export default async function HrPage({
               <LeaveRequestForm ws={ws} />
             </CardBody>
           </Card>
+
+          {out.length > 0 ? (
+            <Card>
+              <CardHeader title="Out in the next two weeks" />
+              <div>
+                {out.map((o) => (
+                  <div
+                    key={o.id}
+                    className="flex items-center gap-2.5 border-b border-border px-5 py-2.5 last:border-b-0"
+                  >
+                    <PersonAvatar
+                      name={o.person?.full_name}
+                      src={o.person?.avatar_url}
+                      size={24}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-text-1">
+                      {o.person?.full_name ?? "Teammate"}
+                    </span>
+                    <span className="font-mono text-[12px] text-text-2 tabular">
+                      {fmtDate(o.start_date)} to {fmtDate(o.end_date)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+
+          {isExec ? (
+            <Card>
+              <CardHeader
+                title={`Allowances, ${year}`}
+                action={
+                  <span className="text-[11.5px] text-text-3">days per year</span>
+                }
+              />
+              <AllowanceEditor ws={ws} year={year} people={allowancePeople} />
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>

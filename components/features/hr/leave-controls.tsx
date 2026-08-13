@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/primitives/field";
@@ -9,6 +9,7 @@ import {
   createLeaveRequest,
   decideLeave,
   endorseLeave,
+  setLeaveAllowance,
   type LeaveActionState,
 } from "@/lib/actions/leave";
 
@@ -111,36 +112,115 @@ export function ApprovalButtons({
       else toast.success(res.success ?? "Done.");
     });
 
-  if (mode === "endorse") {
+  // Rejecting asks for a word first. The first press shows the note box, the
+  // second sends, so a no can carry its reason without a dialog in the way.
+  const [rejecting, setRejecting] = useState(false);
+  const [note, setNote] = useState("");
+
+  if (rejecting) {
     return (
       <div className="flex items-center gap-1.5">
-        <Button size="sm" disabled={pending} onClick={() => run(() => endorseLeave(ws, requestId))}>
-          Endorse
-        </Button>
+        <input
+          autoFocus
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Why, in a line. Optional"
+          aria-label="Reason for rejecting"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setRejecting(false);
+            if (e.key === "Enter")
+              run(() => decideLeave(ws, requestId, "rejected", note));
+          }}
+          className="h-8 w-44 rounded-[8px] border border-border bg-surface px-2 text-[12.5px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
+        />
         <Button
           variant="destructive"
           size="sm"
           disabled={pending}
-          onClick={() => run(() => decideLeave(ws, requestId, "rejected"))}
+          onClick={() => run(() => decideLeave(ws, requestId, "rejected", note))}
         >
           Reject
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => setRejecting(false)}>
+          Keep
         </Button>
       </div>
     );
   }
+
   return (
     <div className="flex items-center gap-1.5">
-      <Button size="sm" disabled={pending} onClick={() => run(() => decideLeave(ws, requestId, "approved"))}>
-        Approve
-      </Button>
-      <Button
-        variant="destructive"
-        size="sm"
-        disabled={pending}
-        onClick={() => run(() => decideLeave(ws, requestId, "rejected"))}
-      >
+      {mode === "endorse" ? (
+        <Button size="sm" disabled={pending} onClick={() => run(() => endorseLeave(ws, requestId))}>
+          Endorse
+        </Button>
+      ) : (
+        <Button size="sm" disabled={pending} onClick={() => run(() => decideLeave(ws, requestId, "approved"))}>
+          Approve
+        </Button>
+      )}
+      <Button variant="destructive" size="sm" disabled={pending} onClick={() => setRejecting(true)}>
         Reject
       </Button>
+    </div>
+  );
+}
+
+// The yearly allowance per person, edited where the executive reads it.
+// Commit on blur or Enter, revert on Escape, the same contract as every
+// other inline edit in the app.
+export function AllowanceEditor({
+  ws,
+  year,
+  people,
+}: {
+  ws: string;
+  year: number;
+  people: { id: string; full_name: string; total: number; used: number }[];
+}) {
+  const [pending, startTransition] = useTransition();
+
+  const save = (profileId: string, raw: string, before: number) => {
+    const next = Number(raw);
+    if (!Number.isFinite(next) || next === before) return;
+    startTransition(async () => {
+      const res = await setLeaveAllowance(ws, profileId, year, next);
+      if (res.error) toast.error(res.error);
+      else toast.success(res.success ?? "Saved.");
+    });
+  };
+
+  return (
+    <div className={pending ? "opacity-60" : undefined}>
+      {people.map((p) => (
+        <div
+          key={p.id}
+          className="flex items-center gap-3 border-b border-border px-5 py-2 last:border-b-0"
+        >
+          <span className="min-w-0 flex-1 truncate text-[13px] text-text-1">
+            {p.full_name}
+          </span>
+          <span className="font-mono text-[12px] text-text-3 tabular">
+            {p.used} used
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={365}
+            defaultValue={p.total}
+            aria-label={`Annual allowance for ${p.full_name}`}
+            onBlur={(e) => save(p.id, e.target.value, p.total)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") {
+                e.currentTarget.value = String(p.total);
+                e.currentTarget.blur();
+              }
+            }}
+            className="h-8 w-16 rounded-[8px] border border-border bg-surface px-2 text-right font-mono text-[13px] text-text-1 tabular outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+          />
+        </div>
+      ))}
     </div>
   );
 }

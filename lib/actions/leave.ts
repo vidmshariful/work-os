@@ -51,6 +51,61 @@ export async function createLeaveRequest(
   if (days <= 0) return { error: "The range contains no working days." };
 
   const supabase = await createClient();
+
+  // Two checks before the row exists, so the person hears it now rather
+  // than as a rejection a day later. RLS scopes both reads to their own
+  // requests, and the same facts get re-read by whoever approves.
+  const [{ data: overlapping }, { data: balance }, { data: pendingAnnual }] =
+    await Promise.all([
+      supabase
+        .from("leave_requests")
+        .select("start_date, end_date")
+        .eq("workspace_id", ctx.workspace.id)
+        .eq("profile_id", ctx.userId)
+        .in("status", ["pending", "approved"])
+        .lte("start_date", endRaw)
+        .gte("end_date", startRaw)
+        .limit(1),
+      supabase
+        .from("leave_balances")
+        .select("total_days, used_days")
+        .eq("workspace_id", ctx.workspace.id)
+        .eq("profile_id", ctx.userId)
+        .eq("year", start.getFullYear())
+        .maybeSingle(),
+      supabase
+        .from("leave_requests")
+        .select("days")
+        .eq("workspace_id", ctx.workspace.id)
+        .eq("profile_id", ctx.userId)
+        .eq("type", "annual")
+        .eq("status", "pending"),
+    ]);
+
+  if ((overlapping ?? []).length > 0) {
+    return {
+      error:
+        "Those dates overlap a request you already have. Cancel it first if the plan changed.",
+    };
+  }
+
+  // Only annual spends the allowance, so only annual is capped by it.
+  // Pending annual days count as committed: two requests that each fit the
+  // balance should not be able to overdraw it together.
+  if (type === "annual" && balance) {
+    const committed = (pendingAnnual ?? []).reduce((sum, r) => sum + Number(r.days), 0);
+    const remaining =
+      Number(balance.total_days) - Number(balance.used_days) - committed;
+    if (days > remaining) {
+      return {
+        error:
+          remaining <= 0
+            ? "No annual days left this year. Ask an executive about the allowance."
+            : `Only ${remaining} annual day${remaining === 1 ? "" : "s"} left this year, and this asks for ${days}.`,
+      };
+    }
+  }
+
   const { error } = await supabase.from("leave_requests").insert({
     workspace_id: ctx.workspace.id,
     profile_id: ctx.userId,
@@ -103,6 +158,8 @@ export async function decideLeave(
   ws: string,
   requestId: string,
   decision: "approved" | "rejected",
+  // Shown to the requester in their list and in the notification, so a
+  // rejection arrives with its reason instead of as a bare no.
   note?: string
 ): Promise<LeaveActionState> {
   await getWorkspaceContext(ws);
@@ -122,4 +179,44 @@ export async function decideLeave(
     error: null,
     success: decision === "approved" ? "Leave approved." : "Leave rejected.",
   };
+}
+
+// The yearly allowance, set by an executive. RLS enforces the same rule, so
+// this check only buys the sentence.
+export async function setLeaveAllowance(
+  ws: string,
+  profileId: string,
+  year: number,
+  totalDays: number
+): Promise<LeaveActionState> {
+  const ctx = await getWorkspaceContext(ws);
+  if (ctx.membership.archetype !== "executive") {
+    return { error: "Only executives set allowances." };
+  }
+  if (!Number.isFinite(totalDays) || totalDays < 0 || totalDays > 365) {
+    return { error: "Allowances run from 0 to 365 days." };
+  }
+  if (!Number.isInteger(year) || year < 2020 || year > 2100) {
+    return { error: "That is not a year." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leave_balances")
+    .upsert(
+      {
+        workspace_id: ctx.workspace.id,
+        profile_id: profileId,
+        year,
+        total_days: totalDays,
+      },
+      { onConflict: "workspace_id,profile_id,year" }
+    )
+    .select("id");
+  if (error || !data || data.length === 0) {
+    return { error: "The allowance could not be saved." };
+  }
+
+  revalidatePath(`/${ws}/hr`);
+  return { error: null, success: "Allowance saved." };
 }
