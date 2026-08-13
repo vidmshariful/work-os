@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { Building2, ChevronRight, Folder, FolderOpen, List } from "lucide-react";
 import { isTagTone, toneTextClass } from "@/components/primitives/tag";
@@ -131,15 +131,17 @@ function DeptRow({
             active ? "text-text-1" : "text-text-2 group-hover:text-text-1"
           )}
         >
-          <SpaceGlyph
-            name={dept.name}
-            icon={dept.icon}
-            color={dept.accent_color}
-            size={20}
-            fontScale={0.55}
-            className="rounded-[6px]"
-          />
-          <span className="truncate">{dept.name}</span>
+          <TreePending>
+            <SpaceGlyph
+              name={dept.name}
+              icon={dept.icon}
+              color={dept.accent_color}
+              size={20}
+              fontScale={0.55}
+              className="rounded-[6px]"
+            />
+            <span className="truncate">{dept.name}</span>
+          </TreePending>
         </Link>
       </div>
 
@@ -154,6 +156,23 @@ function DeptRow({
         </div>
       ) : null}
     </div>
+  );
+}
+
+// Dim while the navigation is in flight. The space and list pages cannot
+// show a skeleton (see page-skeleton.tsx), so the clicked name answering
+// immediately is their loading state.
+function TreePending({ children }: { children: React.ReactNode }) {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      className={cn(
+        "flex min-w-0 flex-1 items-center gap-2 transition-opacity",
+        pending && "animate-pulse opacity-60"
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -244,11 +263,13 @@ function ListLink({
           : "text-text-2 hover:bg-surface-2 hover:text-text-1"
       )}
     >
-      <List
-        className={cn("size-3.5 shrink-0", active ? "text-brand" : "text-text-3")}
-        strokeWidth={1.5}
-      />
-      <span className="truncate">{name}</span>
+      <TreePending>
+        <List
+          className={cn("size-3.5 shrink-0", active ? "text-brand" : "text-text-3")}
+          strokeWidth={1.5}
+        />
+        <span className="truncate">{name}</span>
+      </TreePending>
     </Link>
   );
 }
