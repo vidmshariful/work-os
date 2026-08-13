@@ -5,7 +5,7 @@ import { Archive, FolderKanban, Layers, Plus, Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { loadCardFields, loadSpaceDirectory } from "@/lib/data/spaces";
-import { loadRowMeta } from "@/lib/data/row-meta";
+import { loadSpaceRowMeta } from "@/lib/data/row-meta";
 import {
   SpaceGlyph,
   SpaceSettingsMenu,
@@ -82,6 +82,7 @@ export default async function DepartmentPage({
     { data: spaceRows },
     directory,
     cardFields,
+    rowMeta,
   ] = await Promise.all([
       supabase
         .from("project_lists")
@@ -125,6 +126,8 @@ export default async function DepartmentPage({
       // card can show what stage a project is at without opening it. Values
       // come back under the reader's own RLS, the same as the projects do.
       loadCardFields(supabase, ctx.workspace.id, dept.id),
+      // In the same breath as the projects, not a round trip after them.
+      loadSpaceRowMeta(dept.id),
     ]);
 
   const folders = (folderRows ?? []) as ProjectFolder[];
@@ -142,9 +145,6 @@ export default async function DepartmentPage({
   const listFolder: Record<string, string | null> = {};
   for (const l of lists) listFolder[l.id] = l.folder_id;
   const allProjects = (projectRows ?? []) as unknown as ProjectWithOwner[];
-  // The people and attachment counts for the rows on this page, in two reads
-  // for the whole page rather than two per row.
-  const rowMeta = await loadRowMeta(allProjects.map((p) => p.id));
   const completion = completionFrom(progressRows);
 
   // Counted over everything in the space, so the pill does not change when

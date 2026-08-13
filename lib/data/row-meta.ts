@@ -9,19 +9,48 @@ import type { OwnerRef, RowMetaMap } from "@/components/features/projects/types"
 // EXISTS, and project_file_counts repeats the same visibility rule inside
 // itself because storage.objects is not readable by anyone but the definer.
 export async function loadRowMeta(projectIds: string[]): Promise<RowMetaMap> {
-  const meta: RowMetaMap = {};
-  if (projectIds.length === 0) return meta;
-
+  if (projectIds.length === 0) return {};
   const supabase = await createClient();
-  const [{ data: assigneeRows }, { data: fileRows }] = await Promise.all([
-    supabase
-      .from("project_assignees")
-      .select("project_id, profile:profiles!profile_id!inner(id, full_name, avatar_url)")
-      .in("project_id", projectIds),
-    supabase.rpc("project_file_counts", { ids: projectIds }),
-  ]);
+  return buildMeta(
+    await Promise.all([
+      supabase
+        .from("project_assignees")
+        .select("project_id, profile:profiles!profile_id!inner(id, full_name, avatar_url)")
+        .in("project_id", projectIds),
+      supabase.rpc("project_file_counts", { ids: projectIds }),
+    ])
+  );
+}
 
-  for (const id of projectIds) meta[id] = { assignees: [], files: 0 };
+// The same map for every project in one space, without knowing the ids up
+// front. This is what lets a page ask for it in the same round trip as its
+// projects instead of one round trip after them, which is the difference the
+// user feels on a 140ms connection. Assignees inherit projects_select
+// through the inner join; the counts function repeats the same visibility
+// rule inside itself.
+export async function loadSpaceRowMeta(departmentId: string): Promise<RowMetaMap> {
+  const supabase = await createClient();
+  return buildMeta(
+    await Promise.all([
+      supabase
+        .from("project_assignees")
+        .select(
+          "project_id, profile:profiles!profile_id!inner(id, full_name, avatar_url), project:projects!inner(department_id)"
+        )
+        .eq("project.department_id", departmentId),
+      supabase.rpc("project_space_file_counts", { dept: departmentId }),
+    ])
+  );
+}
+
+function buildMeta([
+  { data: assigneeRows },
+  { data: fileRows },
+]: [
+  { data: unknown[] | null },
+  { data: unknown[] | null },
+]): RowMetaMap {
+  const meta: RowMetaMap = {};
 
   for (const row of (assigneeRows ?? []) as unknown as {
     project_id: string;

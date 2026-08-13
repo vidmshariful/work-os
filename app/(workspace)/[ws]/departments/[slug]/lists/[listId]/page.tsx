@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { FolderKanban, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { loadCardFields } from "@/lib/data/spaces";
-import { loadRowMeta } from "@/lib/data/row-meta";
+import { loadSpaceRowMeta } from "@/lib/data/row-meta";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { Card } from "@/components/primitives/card";
 import { Breadcrumbs } from "@/components/primitives/misc";
@@ -38,21 +38,25 @@ export default async function ListPage({
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
-  const { data: deptRow } = await supabase
-    .from("departments")
-    .select("*")
-    .eq("workspace_id", ctx.workspace.id)
-    .eq("slug", slug)
-    .maybeSingle();
+  // One round trip, not two. The list is fetched by its id alone and the
+  // pairing with the space is checked after both are in hand: a list id from
+  // another space still 404s, it just does not cost a second wave to find
+  // out. Each wave is ~140ms from here to the database, which is why.
+  const [{ data: deptRow }, { data: listRowRaw }] = await Promise.all([
+    supabase
+      .from("departments")
+      .select("*")
+      .eq("workspace_id", ctx.workspace.id)
+      .eq("slug", slug)
+      .maybeSingle(),
+    supabase.from("project_lists").select("*").eq("id", listId).maybeSingle(),
+  ]);
   if (!deptRow) notFound();
   const dept = deptRow as Department;
-
-  const { data: listRow } = await supabase
-    .from("project_lists")
-    .select("*")
-    .eq("id", listId)
-    .eq("department_id", dept.id)
-    .maybeSingle();
+  const listRow =
+    listRowRaw && (listRowRaw as ProjectList).department_id === dept.id
+      ? listRowRaw
+      : null;
   if (!listRow) notFound();
   const list = listRow as ProjectList;
 
@@ -63,6 +67,7 @@ export default async function ListPage({
     { data: memberRows },
     { data: spaceRows },
     cardFields,
+    rowMeta,
   ] = await Promise.all([
     supabase
       .from("projects")
@@ -94,10 +99,11 @@ export default async function ListPage({
     // Same chips the space board draws. A list is a slice of that board, so
     // it cannot be the surface where the stages disappear.
     loadCardFields(supabase, ctx.workspace.id, dept.id),
+    // The whole space's map; this list's projects are a subset of its keys.
+    loadSpaceRowMeta(dept.id),
   ]);
 
   const projects = (projectRows ?? []) as unknown as ProjectWithOwner[];
-  const rowMeta = await loadRowMeta(projects.map((p) => p.id));
   const completion = completionFrom(progressRows);
   const canManage = ctx.capabilities.canCreateProjects;
   const actionScope = {

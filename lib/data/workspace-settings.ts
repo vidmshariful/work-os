@@ -72,6 +72,30 @@ const FALLBACK: Omit<WorkspaceSettings, "workspace_id"> = {
   updated_at: new Date(0).toISOString(),
 };
 
+// The same resolution getWorkspaceSettings does, over rows something else
+// already fetched. getWorkspaceContext reads settings and features in the
+// same round trip as the session instead of after it, so it holds the rows
+// and picks here. RLS has already scoped them; the filter keeps the code
+// honest if a user ever belongs to two workspaces.
+export function pickSettings(
+  rows: unknown[] | null,
+  workspaceId: string
+): WorkspaceSettings {
+  const hit = ((rows ?? []) as WorkspaceSettings[]).find(
+    (r) => r.workspace_id === workspaceId
+  );
+  return hit ?? { workspace_id: workspaceId, ...FALLBACK };
+}
+
+export function pickFeatures(
+  rows: unknown[] | null,
+  workspaceId: string
+): WorkspaceFeature[] {
+  return ((rows ?? []) as WorkspaceFeature[]).filter(
+    (f) => f.workspace_id === workspaceId && !STRUCTURAL_KEYS.has(f.feature_key)
+  );
+}
+
 export const getWorkspaceSettings = cache(
   async (workspaceId: string): Promise<WorkspaceSettings> => {
     const supabase = await createClient();
