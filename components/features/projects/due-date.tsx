@@ -1,5 +1,4 @@
 import { daysUntil, fmtDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import type { ProjectStatus } from "@/lib/types";
 
 // A shipped project is not late. Only Delivered ends the clock; Review stays
@@ -52,29 +51,13 @@ export function isOverdue(
 
 // An absolute date keeps the mono tabular treatment so date columns still
 // line up. A relative phrase is prose, so it is not forced into mono.
-const TONE_CLASS: Record<DueTone, string> = {
+export const DUE_TONE_CLASS: Record<DueTone, string> = {
   overdue: "font-medium text-danger",
   soon: "font-medium text-warning",
   neutral: "font-mono text-text-2 tabular",
 };
 
-export function DueDate({
-  due,
-  status,
-  className,
-}: {
-  due: string | null | undefined;
-  status: ProjectStatus;
-  className?: string;
-}) {
-  const state = dueState(due, status);
-  if (!state) return null;
-  return (
-    <span
-      className={cn("text-[12px]", TONE_CLASS[state.tone], className)}
-      title={due ? fmtDate(due) : undefined}
-    >
-      {state.label}
-    </span>
-  );
-}
+// The component lives in its own client module. This file must stay a plain
+// module, because the space page and the filters call dueState and isOverdue
+// during a server render, and a "use client" file cannot be called from one.
+export { DueDate } from "./due-date-live";

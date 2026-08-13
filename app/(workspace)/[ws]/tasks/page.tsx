@@ -45,7 +45,6 @@ export default async function TasksPage({
   const ctx = await getWorkspaceContext(ws);
   const isBoard = sp.tab === "board" && ctx.capabilities.canAssignTasks;
   const groupBy = sp.group === "due" ? "due" : "status";
-  const supabase = await createClient();
 
   return (
     <div className="flex flex-col gap-5">
