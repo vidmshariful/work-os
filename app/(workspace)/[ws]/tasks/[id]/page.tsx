@@ -8,7 +8,7 @@ import { Card, CardBody, CardHeader } from "@/components/primitives/card";
 import { TaskStatusChip } from "@/components/primitives/tag";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { Breadcrumbs, CodeLabel } from "@/components/primitives/misc";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import { TaskStatusSelect } from "@/components/features/tasks/task-status-select";
 import {
   PriorityTag,
@@ -267,7 +267,7 @@ export default async function TaskDetailPage({
                           <span className="font-medium text-text-1">
                             {rev.requester?.full_name ?? "Someone"}
                           </span>{" "}
-                          <span className="text-text-3">{fmtTimeAgo(rev.created_at)}</span>
+                          <span className="text-text-3"><TimeAgo at={rev.created_at} /></span>
                         </p>
                         {rev.note ? (
                           <p className="mt-0.5 text-sm text-text-2">{rev.note}</p>
@@ -340,12 +340,12 @@ export default async function TaskDetailPage({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-2">Created</span>
-                <span className="text-text-1">{fmtTimeAgo(task.created_at)}</span>
+                <span className="text-text-1"><TimeAgo at={task.created_at} /></span>
               </div>
               {task.completed_at ? (
                 <div className="flex items-center justify-between">
                   <span className="text-text-2">Completed</span>
-                  <span className="text-text-1">{fmtTimeAgo(task.completed_at)}</span>
+                  <span className="text-text-1"><TimeAgo at={task.completed_at} /></span>
                 </div>
               ) : null}
             </div>

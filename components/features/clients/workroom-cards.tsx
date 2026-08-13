@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PersonAvatar } from "@/components/primitives/avatar";
 import { Tag } from "@/components/primitives/tag";
-import { fmtDate, fmtMoney, fmtTimeAgo } from "@/lib/format";
+import { fmtDate, fmtMoney } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import { cn } from "@/lib/utils";
 import {
   addContact,
@@ -131,7 +132,7 @@ export function PaymentsCard({
               </p>
               <p className="text-[11.5px] text-text-3">
                 {p.paid_at
-                  ? `Paid ${fmtTimeAgo(p.paid_at)}`
+                  ? <>Paid <TimeAgo at={p.paid_at} /></>
                   : p.due_date
                     ? `${overdue ? "Overdue, was due" : "Due"} ${fmtDate(p.due_date)}`
                     : "No due date"}
@@ -447,7 +448,7 @@ export function NotesCard({
             </p>
             <p className="mt-1 flex items-center justify-between text-[11px] text-text-3">
               <span>
-                {author?.full_name ?? "Someone"}, {fmtTimeAgo(n.created_at)}
+                {author?.full_name ?? "Someone"}, <TimeAgo at={n.created_at} />
               </span>
               {n.author_id === userId ? (
                 <button

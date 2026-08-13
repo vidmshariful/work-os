@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PersonAvatar } from "@/components/primitives/avatar";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import { postClientMessage, type WorkroomState } from "@/lib/actions/client-work";
 import type { ClientActivity } from "@/lib/types";
 
@@ -91,7 +91,7 @@ export function ActivityThread({
                   </span>
                   <p className="text-[12.5px] text-text-2">
                     {item.body}{" "}
-                    <span className="text-text-3">{fmtTimeAgo(item.created_at)}</span>
+                    <span className="text-text-3"><TimeAgo at={item.created_at} /></span>
                   </p>
                 </div>
               );
@@ -109,7 +109,7 @@ export function ActivityThread({
                     <span className="font-medium text-text-1">
                       {author?.full_name ?? "Someone"}
                     </span>{" "}
-                    <span className="text-text-3">{fmtTimeAgo(item.created_at)}</span>
+                    <span className="text-text-3"><TimeAgo at={item.created_at} /></span>
                   </p>
                   <p className="mt-0.5 whitespace-pre-wrap text-sm leading-relaxed text-text-1">
                     {item.body}

@@ -10,7 +10,7 @@ import {
   deleteProjectFile,
   type FileFormState,
 } from "@/lib/actions/projects";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import type { ProjectFile } from "./types";
 
 const initialState: FileFormState = { error: null, success: null, stamp: 0 };
@@ -84,7 +84,7 @@ export function ProjectFiles({
               </p>
               <p className="text-[11px] text-text-3">
                 {fmtSize(f.size)}
-                {f.createdAt ? ` · ${fmtTimeAgo(f.createdAt)}` : ""}
+                {f.createdAt ? <> · <TimeAgo at={f.createdAt} /></> : null}
               </p>
             </div>
             <button

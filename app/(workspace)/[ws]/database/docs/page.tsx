@@ -7,7 +7,7 @@ import { Card } from "@/components/primitives/card";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { NewDocDialog } from "@/components/features/database/doc-controls";
 import { DbTabs } from "@/components/features/database/db-tabs";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import type { Doc } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Docs" };
@@ -55,7 +55,7 @@ export default async function DocsPage({
                 <div className="min-w-0">
                   <div className="truncate text-[14.5px] font-semibold text-text-1">{d.title}</div>
                   <div className="mt-0.5 text-[12px] text-text-3">
-                    {label} · updated {fmtTimeAgo(d.updated_at)}
+                    {label} · updated <TimeAgo at={d.updated_at} />
                   </div>
                 </div>
               </div>

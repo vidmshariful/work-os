@@ -1,5 +1,5 @@
 import { PersonAvatar } from "@/components/primitives/avatar";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import { describeActivity, type ActivityItem } from "./activity-panel";
 
 export interface FeedComment {
@@ -68,7 +68,7 @@ export function ActivityFeed({
                       {entry.comment.author?.full_name ?? "Someone"}
                     </span>{" "}
                     <span className="text-text-3">
-                      {fmtTimeAgo(entry.comment.created_at)}
+                      <TimeAgo at={entry.comment.created_at} />
                     </span>
                   </p>
                   <p className="mt-1 whitespace-pre-wrap rounded-[9px] bg-surface-2 px-2.5 py-1.5 text-[13px] leading-relaxed text-text-1">
@@ -93,7 +93,7 @@ export function ActivityFeed({
                     </span>
                   </p>
                   <p className="mt-0.5 text-[11.5px] text-text-3">
-                    {fmtTimeAgo(entry.activity.created_at)}
+                    <TimeAgo at={entry.activity.created_at} />
                   </p>
                 </div>
               </div>

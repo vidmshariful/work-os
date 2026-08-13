@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Tag } from "@/components/primitives/tag";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import { notificationHref } from "@/lib/notifications";
 import { markNotificationRead } from "@/lib/actions/notifications";
 import type { Notification } from "@/lib/types";
@@ -48,7 +48,7 @@ export function NotificationHubList({
               {n.body ? (
                 <p className="mt-0.5 text-[12.5px] text-text-2">{n.body}</p>
               ) : null}
-              <p className="mt-1 text-[11.5px] text-text-3">{fmtTimeAgo(n.created_at)}</p>
+              <p className="mt-1 text-[11.5px] text-text-3"><TimeAgo at={n.created_at} /></p>
             </div>
           </>
         );

@@ -6,7 +6,7 @@ import { Check, ExternalLink, Pencil, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/primitives/tag";
 import { cn } from "@/lib/utils";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import {
   markProjectIntakeSent,
   markProjectIntakeReceived,
@@ -151,7 +151,7 @@ export function ProjectIntakePanel({
     return (
       <div className="flex flex-col gap-2">
         <p className="text-[12.5px] text-text-2">
-          Sent {intake.sent_at ? fmtTimeAgo(intake.sent_at) : ""}.
+          Sent {intake.sent_at ? <TimeAgo at={intake.sent_at} /> : null}.
           {intake.form_url ? (
             <>
               {" "}
@@ -193,7 +193,7 @@ export function ProjectIntakePanel({
           </p>
         )}
         <div className="mt-1.5 flex items-center justify-between text-[11.5px] text-text-3">
-          <span>Received {intake.received_at ? fmtTimeAgo(intake.received_at) : ""}</span>
+          <span>Received {intake.received_at ? <TimeAgo at={intake.received_at} /> : null}</span>
           {intake.response_url ? (
             <a
               href={intake.response_url}

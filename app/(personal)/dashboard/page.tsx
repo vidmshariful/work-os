@@ -9,7 +9,8 @@ import { Tag, TaskStatusChip } from "@/components/primitives/tag";
 import { CodeLabel } from "@/components/primitives/misc";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ROLE_LABELS } from "@/components/shell/sidebar";
-import { fmtDate, fmtTimeAgo } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import type { TaskStatus } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -163,7 +164,7 @@ export default async function PersonalDashboard() {
                       <p className="text-[13px] font-medium text-text-1">{n.title}</p>
                       <p className="mt-0.5 flex items-center gap-2 text-[11.5px] text-text-3">
                         {ws ? <span>{ws.name}</span> : null}
-                        <span>{fmtTimeAgo(n.created_at)}</span>
+                        <span><TimeAgo at={n.created_at} /></span>
                       </p>
                     </div>
                   </div>

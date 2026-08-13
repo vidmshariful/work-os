@@ -18,7 +18,8 @@ import { TaskStatusChip } from "@/components/primitives/tag";
 import { CodeLabel } from "@/components/primitives/misc";
 import { RightRailPanel } from "@/components/primitives/right-rail";
 import { EmptyState } from "@/components/primitives/empty-state";
-import { fmtDate, fmtTimeAgo } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import type { Announcement, Notification, TaskStatus } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -158,7 +159,7 @@ export default async function WorkspaceHome({
                     {a.body ? (
                       <p className="mt-1.5 text-[12.5px] leading-relaxed text-text-2">{a.body}</p>
                     ) : null}
-                    <p className="mt-1.5 text-[11.5px] text-text-3">{fmtTimeAgo(a.created_at)}</p>
+                    <p className="mt-1.5 text-[11.5px] text-text-3"><TimeAgo at={a.created_at} /></p>
                   </div>
                 ))}
               </div>
@@ -182,7 +183,7 @@ export default async function WorkspaceHome({
                     <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${n.is_read ? "bg-transparent" : "bg-brand"}`} />
                     <div className="min-w-0">
                       <p className="truncate text-[12.5px] font-medium text-text-1">{n.title}</p>
-                      <p className="text-[11px] text-text-3">{fmtTimeAgo(n.created_at)}</p>
+                      <p className="text-[11px] text-text-3"><TimeAgo at={n.created_at} /></p>
                     </div>
                   </div>
                 ))}

@@ -21,7 +21,7 @@ import {
   SelectBox,
   useProjectActionsRequired,
 } from "@/components/features/projects/project-actions";
-import { fmtTimeAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/primitives/local-time";
 import { cn } from "@/lib/utils";
 import type {
   CompletionMap,
@@ -392,7 +392,7 @@ export function SpaceTable({
                       case "updated":
                         return (
                           <td key={col.key} className={base}>
-                            {fmtTimeAgo(p.updated_at)}
+                            <TimeAgo at={p.updated_at} />
                           </td>
                         );
                       default:
