@@ -190,6 +190,13 @@ const COL = {
   // a fixed width so the Name header sits over the titles and the dot never
   // runs into a title on a row that has an arrow.
   lead: "w-[74px]",
+  // A sub-project's leading, one indent step wider. The indent lives here
+  // rather than in the row's padding so that a child keeps every cell in the
+  // parent's grid: its dot lands in the dot column and its title starts the
+  // same distance after that dot, just one step to the right. Padding on the
+  // row moved the title without moving the dot, which left the dot stranded
+  // in the middle of the gap and made a sub-project look like a stray row.
+  leadChild: "w-[98px]",
   progress: "w-[20px]",
   priority: "w-[28px]",
   assignee: "w-[104px]",
@@ -532,15 +539,15 @@ export function CollapsibleProjectList({
                           )}
                         >
                           <ListRow
-                            className={cn(
-                              "border-l-2 border-l-border bg-surface-2/40 pl-8",
-                              childSelected && "bg-brand-soft/40"
-                            )}
+                            className={cn(childSelected && "bg-brand-soft/40")}
                             leading={
-                              // The same leading width as a top level row, so
-                              // the indent comes from the padding rather than
-                              // from the cells being a few pixels narrower.
-                              <span className={cn(COL.lead, "flex items-center gap-1")}>
+                              <span className={cn(COL.leadChild, "flex items-center gap-1")}>
+                                {/* The indent step, and the whole of it. A
+                                    sub-project is marked by sitting under a
+                                    row that has an arrow and a count, the way
+                                    it is in the tools people come here from,
+                                    not by a rule drawn down the margin. */}
+                                <span className="w-5" aria-hidden />
                                 <SelectBox project={s} />
                                 {dragEnabled ? (
                                   <span
@@ -554,6 +561,10 @@ export function CollapsibleProjectList({
                                     <DragHandle />
                                   </span>
                                 ) : null}
+                                {/* The slot a parent's expand arrow sits in.
+                                    Without it the dot climbed back out of the
+                                    dot column. */}
+                                <span className="w-5" aria-hidden />
                                 <StatusDot status={s.status} />
                               </span>
                             }
