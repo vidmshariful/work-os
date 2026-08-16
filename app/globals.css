@@ -112,29 +112,39 @@
        h3     section headings inside a page
        h2     the number on a stat card, a sub page heading
        h1     the page title, once per screen
+
+     A step sets a size and a line height and nothing else. Letter spacing is
+     NOT part of the small steps: micro and label carried tracking at first,
+     which was right for the ten uppercase column headings and wrong for the
+     ninety-seven ordinary captions, hints and badge numbers that share the
+     size. Spaced-out lowercase text is what "weird" looks like. Tracking now
+     belongs to col-label and group-label, which are uppercase by definition.
+
+     The sizes are calibrated so that nothing in the app got larger. body is
+     13px and meta is 12.5px because those were already the two most used
+     sizes in the product by a wide margin, so the densest surfaces, the
+     lists, keep the exact rhythm they had.
      -------------------------------------------------------------------- */
   --text-micro: 10.5px;
   --text-micro--line-height: 14px;
-  --text-micro--letter-spacing: 0.02em;
   --text-label: 11px;
   --text-label--line-height: 15px;
-  --text-label--letter-spacing: 0.07em;
   --text-meta: 12.5px;
   --text-meta--line-height: 17px;
-  --text-body: 13.5px;
-  --text-body--line-height: 19px;
-  --text-lead: 15px;
-  --text-lead--line-height: 21px;
+  --text-body: 13px;
+  --text-body--line-height: 18px;
+  --text-lead: 14.5px;
+  --text-lead--line-height: 20px;
   --text-lead--letter-spacing: -0.006em;
-  --text-h3: 17px;
-  --text-h3--line-height: 23px;
+  --text-h3: 16px;
+  --text-h3--line-height: 22px;
   --text-h3--letter-spacing: -0.011em;
-  --text-h2: 21px;
-  --text-h2--line-height: 27px;
+  --text-h2: 20px;
+  --text-h2--line-height: 26px;
   --text-h2--letter-spacing: -0.018em;
-  --text-h1: 27px;
-  --text-h1--line-height: 33px;
-  --text-h1--letter-spacing: -0.023em;
+  --text-h1: 26px;
+  --text-h1--line-height: 32px;
+  --text-h1--letter-spacing: -0.022em;
 }
 
 :root {
@@ -376,7 +386,7 @@
   .col-label {
     font-size: var(--text-label);
     line-height: var(--text-label--line-height);
-    letter-spacing: var(--text-label--letter-spacing);
+    letter-spacing: 0.07em;
     font-weight: 600;
     text-transform: uppercase;
     color: var(--text-3);

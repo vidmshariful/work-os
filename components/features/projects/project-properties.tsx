@@ -302,7 +302,7 @@ export function ProjectProperties({
                   }
                   className={cn(propertyInputClass, "w-[132px] font-mono tabular")}
                 />
-                <span className="text-text-3">to</span>
+                <span className="text-meta text-text-3">to</span>
                 <input
                   type="date"
                   value={dueDate ?? ""}
