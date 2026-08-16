@@ -9,7 +9,8 @@ import {
   ShareTableDialog,
   type ShareRow,
 } from "@/components/features/database/table-controls";
-import type { DbField, DbRow, DbTable } from "@/lib/types";
+import { MoveToFolder } from "@/components/features/database/folder-controls";
+import { SECRET_PRESENT, type DbField, type DbRow, type DbTable } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Table" };
 
@@ -37,8 +38,13 @@ export default async function TablePage({
   if (!tableRow) notFound();
   const table = tableRow as DbTable;
 
-  const [{ data: fieldRows }, { data: rowRows }, { data: shareRows }, { data: memberRows }] =
-    await Promise.all([
+  const [
+    { data: fieldRows },
+    { data: rowRows },
+    { data: shareRows },
+    { data: memberRows },
+    { data: folderRows },
+  ] = await Promise.all([
       supabase.from("db_fields").select("*").eq("table_id", tableId).order("sort_order"),
       supabase.from("db_rows").select("*").eq("table_id", tableId).order("sort_order"),
       supabase
@@ -50,10 +56,33 @@ export default async function TablePage({
         .select("profile:profiles!profile_id!inner(id, full_name)")
         .eq("workspace_id", ctx.workspace.id)
         .eq("is_active", true),
+      // Only folders this person can see, so the picker cannot file a table
+      // into a folder they have no business knowing about.
+      supabase
+        .from("db_folders")
+        .select("id, name")
+        .eq("workspace_id", ctx.workspace.id)
+        .order("name"),
     ]);
 
   const fields = (fieldRows ?? []) as DbField[];
-  const rows = (rowRows ?? []) as DbRow[];
+
+  // A secret never travels to the browser, not even as ciphertext. The cell
+  // is replaced by a marker that says only whether something is stored, and
+  // the value itself comes back one at a time through revealSecret, which
+  // checks access and records the reveal. Sending the ciphertext instead
+  // would hand every viewer an offline copy to work on at their leisure.
+  const secretIds = new Set(fields.filter((f) => f.type === "secret").map((f) => f.id));
+  const rows = ((rowRows ?? []) as DbRow[]).map((r) => {
+    if (secretIds.size === 0) return r;
+    const values = { ...r.values };
+    for (const id of secretIds) {
+      if (values[id] !== undefined && values[id] !== null && values[id] !== "") {
+        values[id] = SECRET_PRESENT;
+      }
+    }
+    return { ...r, values };
+  });
   const shares: ShareRow[] = (
     (shareRows ?? []) as unknown as {
       profile_id: string;
@@ -112,15 +141,26 @@ export default async function TablePage({
                 : "Private to you and the people you share it with.")}
           </p>
         </div>
-        <ShareTableDialog
-          ws={ws}
-          tableId={tableId}
-          scope={table.scope}
-          contributed={table.contributed}
-          shares={shares}
-          members={members}
-          canEdit={canEdit}
-        />
+        <div className="flex items-center gap-2">
+          {canEdit ? (
+            <MoveToFolder
+              ws={ws}
+              kind="table"
+              itemId={tableId}
+              folderId={table.folder_id}
+              folders={(folderRows ?? []) as { id: string; name: string }[]}
+            />
+          ) : null}
+          <ShareTableDialog
+            ws={ws}
+            tableId={tableId}
+            scope={table.scope}
+            contributed={table.contributed}
+            shares={shares}
+            members={members}
+            canEdit={canEdit}
+          />
+        </div>
       </div>
 
       <TableGrid

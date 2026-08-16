@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ArrowDownUp, Plus, Search, Trash2, X } from "lucide-react";
+import { ArrowDownUp, KeyRound, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover,
@@ -14,11 +14,13 @@ import { cn } from "@/lib/utils";
 import {
   addField,
   addRow,
+  convertFieldToSecret,
   deleteField,
   deleteRow,
   renameField,
   updateCell,
 } from "@/lib/actions/database";
+import { SecretCell } from "./secret-cell";
 import type { DbField, DbFieldType, DbRow } from "@/lib/types";
 
 export interface MemberRef {
@@ -38,6 +40,7 @@ const TYPE_LABELS: Record<DbFieldType, string> = {
   email: "Email",
   phone: "Phone",
   person: "Person",
+  secret: "Password",
 };
 
 const HAS_CHOICES = (t: DbFieldType) => t === "select" || t === "multi_select";
@@ -46,12 +49,15 @@ function asArray(v: unknown): string[] {
   return Array.isArray(v) ? (v as string[]) : [];
 }
 
-// Everything a row holds, flattened to text so search can scan it.
+// Everything a row holds, flattened to text so search can scan it. A secret
+// contributes nothing: the value is not here to search, and a search that
+// could match one would be a way to guess at it a character at a time.
 function rowText(row: DbRow, fields: DbField[], members: MemberRef[]) {
   return fields
     .map((f) => {
       const v = row.values?.[f.id];
       if (v == null) return "";
+      if (f.type === "secret") return "";
       if (f.type === "person") return members.find((m) => m.id === v)?.full_name ?? "";
       if (Array.isArray(v)) return v.join(" ");
       return String(v);
@@ -166,6 +172,23 @@ export function TableGrid({
 
   function Cell({ row, field }: { row: DbRow; field: DbField }) {
     const v = valueOf(row, field.id);
+
+    // Ahead of the read-only branch, because revealing is not editing: a
+    // person who may read the table may read the credential in it, and every
+    // reveal is recorded either way.
+    if (field.type === "secret") {
+      return (
+        <SecretCell
+          ws={ws}
+          tableId={tableId}
+          rowId={row.id}
+          fieldId={field.id}
+          fieldName={field.name}
+          value={v}
+          canEdit={canEdit}
+        />
+      );
+    }
 
     if (!canEdit) {
       if (field.type === "checkbox") {
@@ -589,6 +612,22 @@ function FieldHeader({
             onChange={(e) => setName(e.target.value)}
             className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand"
           />
+          {/* The way out of a password sitting in plain text. Every value in
+              the column is encrypted first, and the column only becomes a
+              password field once that has worked. */}
+          {field.type !== "secret" ? (
+            <button
+              type="button"
+              onClick={() => {
+                onRun(() => convertFieldToSecret(ws, tableId, field.id));
+                setOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-[8px] px-1 py-1.5 text-left text-[12.5px] text-text-2 hover:bg-nav-active hover:text-text-1"
+            >
+              <KeyRound className="size-3.5 shrink-0" strokeWidth={1.5} />
+              Turn into a password field
+            </button>
+          ) : null}
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"

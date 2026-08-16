@@ -520,7 +520,33 @@ export type DbFieldType =
   | "url"
   | "email"
   | "phone"
-  | "person";
+  | "person"
+  // A stored credential. Encrypted before it reaches the database, masked in
+  // the grid, and revealed one value at a time. See lib/secrets.ts.
+  | "secret";
+
+// What a secret cell looks like once the server has stripped it. The grid
+// renders dots for this and asks for the real value only when someone clicks
+// reveal. It lives here rather than in lib/secrets.ts because that module is
+// server only and the grid is a client component.
+export const SECRET_PRESENT = " secret";
+
+export interface DbFolder {
+  id: string;
+  workspace_id: string;
+  owner_id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  scope: DbScope;
+  created_at: string;
+}
+
+export interface DbFolderShare {
+  folder_id: string;
+  profile_id: string;
+  can_edit: boolean;
+}
 
 export interface DbTable {
   id: string;
@@ -531,6 +557,7 @@ export interface DbTable {
   color: string;
   scope: DbScope;
   contributed: boolean;
+  folder_id: string | null;
   created_at: string;
 }
 
@@ -579,6 +606,7 @@ export interface Doc {
   color: string;
   scope: DbScope;
   contributed: boolean;
+  folder_id: string | null;
   created_at: string;
   updated_at: string;
 }

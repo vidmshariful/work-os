@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FileText, Link2, Upload, Users } from "lucide-react";
+import { FileText, FolderOpen, Link2, Upload, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/data/context";
 import { Card } from "@/components/primitives/card";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { NewDocDialog } from "@/components/features/database/doc-controls";
 import { DbTabs } from "@/components/features/database/db-tabs";
@@ -34,9 +35,14 @@ export default async function DocsPage({
     .order("updated_at", { ascending: false });
   const docs = (data ?? []) as Doc[];
 
-  const company = docs.filter((d) => d.scope === "company");
-  const mine = docs.filter((d) => d.scope === "personal" && d.owner_id === ctx.userId);
-  const shared = docs.filter((d) => d.scope === "personal" && d.owner_id !== ctx.userId);
+  // A document filed in a folder is listed on that folder's page. The same
+  // rule the tables tab follows, so moving something into a folder puts it in
+  // one place rather than two.
+  const loose = docs.filter((d) => !d.folder_id);
+  const filed = docs.length - loose.length;
+  const company = loose.filter((d) => d.scope === "company");
+  const mine = loose.filter((d) => d.scope === "personal" && d.owner_id === ctx.userId);
+  const shared = loose.filter((d) => d.scope === "personal" && d.owner_id !== ctx.userId);
 
   const Grid = ({ items }: { items: Doc[] }) => (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -103,6 +109,18 @@ export default async function DocsPage({
           <EmptyState
             icon={<FileText />}
             title="No docs yet. Write a page, upload a file, or link one."
+          />
+        </Card>
+      ) : loose.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<FolderOpen />}
+            title={`Every document is filed in a folder. Open the folder to find ${filed === 1 ? "it" : "them"}.`}
+            action={
+              <Button asChild variant="outline">
+                <Link href={`/${ws}/database`}>Go to folders</Link>
+              </Button>
+            }
           />
         </Card>
       ) : (

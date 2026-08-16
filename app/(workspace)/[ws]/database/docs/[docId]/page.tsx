@@ -8,6 +8,7 @@ import {
   ShareDocDialog,
   type DocShareRow,
 } from "@/components/features/database/doc-controls";
+import { MoveToFolder } from "@/components/features/database/folder-controls";
 import { DocFile, DocLink, DocPage, DocTitle } from "@/components/features/database/doc-body";
 import { getDocFileUrl } from "@/lib/actions/docs";
 import { textPreviewKind } from "@/lib/doc-render";
@@ -39,7 +40,7 @@ export default async function DocDetailPage({
   if (!docRow) notFound();
   const doc = docRow as Doc;
 
-  const [{ data: shareRows }, { data: memberRows }] = await Promise.all([
+  const [{ data: shareRows }, { data: memberRows }, { data: folderRows }] = await Promise.all([
     supabase
       .from("doc_shares")
       .select("profile_id, can_edit, profile:profiles!profile_id(id, full_name, avatar_url)")
@@ -49,6 +50,12 @@ export default async function DocDetailPage({
       .select("profile:profiles!profile_id!inner(id, full_name)")
       .eq("workspace_id", ctx.workspace.id)
       .eq("is_active", true),
+    // Only folders this person can see, the same rule the table page uses.
+    supabase
+      .from("db_folders")
+      .select("id, name")
+      .eq("workspace_id", ctx.workspace.id)
+      .order("name"),
   ]);
 
   const shares: DocShareRow[] = (
@@ -122,15 +129,26 @@ export default async function DocDetailPage({
             ) : null}
           </p>
         </div>
-        <ShareDocDialog
-          ws={ws}
-          docId={docId}
-          scope={doc.scope}
-          contributed={doc.contributed}
-          shares={shares}
-          members={members}
-          canEdit={canEdit}
-        />
+        <div className="flex items-center gap-2">
+          {canEdit ? (
+            <MoveToFolder
+              ws={ws}
+              kind="doc"
+              itemId={docId}
+              folderId={doc.folder_id}
+              folders={(folderRows ?? []) as { id: string; name: string }[]}
+            />
+          ) : null}
+          <ShareDocDialog
+            ws={ws}
+            docId={docId}
+            scope={doc.scope}
+            contributed={doc.contributed}
+            shares={shares}
+            members={members}
+            canEdit={canEdit}
+          />
+        </div>
       </div>
 
       {doc.kind === "page" ? (
