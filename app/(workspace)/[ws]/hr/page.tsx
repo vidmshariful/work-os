@@ -13,6 +13,7 @@ import {
   ApprovalButtons,
   CancelLeaveButton,
   LeaveRequestForm,
+  RecordLeaveForm,
 } from "@/components/features/hr/leave-controls";
 import type { LeaveBalance, LeaveRequest } from "@/lib/types";
 
@@ -50,6 +51,7 @@ export default async function HrPage({
     { data: outRows },
     { data: memberRows },
     { data: balanceRows },
+    { data: settledRows },
   ] = await Promise.all([
       supabase
         .from("leave_balances")
@@ -102,6 +104,18 @@ export default async function HrPage({
             .eq("workspace_id", ctx.workspace.id)
             .eq("year", year)
         : Promise.resolve({ data: [] }),
+      // Everybody's leave, for the admin to manage. Pending rows already have
+      // their own queue above, so this is the settled record: what was
+      // approved, what was rejected, what somebody withdrew.
+      isExec
+        ? supabase
+            .from("leave_requests")
+            .select("*, person:profiles!leave_requests_profile_id_fkey(id, full_name, avatar_url)")
+            .eq("workspace_id", ctx.workspace.id)
+            .neq("status", "pending")
+            .order("start_date", { ascending: false })
+            .limit(40)
+        : Promise.resolve({ data: [] }),
     ]);
 
   const balance = (balanceRow ?? null) as LeaveBalance | null;
@@ -144,6 +158,11 @@ export default async function HrPage({
   const remaining = balance
     ? Number(balance.total_days) - Number(balance.used_days)
     : null;
+
+  const settled = (settledRows ?? []) as unknown as RequestWithPerson[];
+  // Only an active teammate can be filed for, and never yourself: the admin
+  // has the ordinary form for their own leave.
+  const recordFor = allowancePeople.filter((p) => p.id !== ctx.userId);
 
   return (
     <div className="flex flex-col gap-5">
@@ -198,6 +217,70 @@ export default async function HrPage({
                   </div>
                 ))}
               </div>
+            </Card>
+          ) : null}
+
+          {isExec ? (
+            <Card>
+              <CardHeader
+                title="Everyone's leave"
+                action={
+                  <span className="text-[11.5px] text-text-3">
+                    settled records, newest first
+                  </span>
+                }
+              />
+              {settled.length === 0 ? (
+                <EmptyState
+                  icon={<Plane />}
+                  title="Nothing settled yet. Approved and rejected leave shows up here."
+                />
+              ) : (
+                <div>
+                  {settled.map((r) => (
+                    <div
+                      key={r.id}
+                      className="group flex flex-wrap items-center gap-3 border-b border-border px-5 py-3 last:border-b-0"
+                    >
+                      <PersonAvatar
+                        name={r.person?.full_name}
+                        src={r.person?.avatar_url}
+                        size={26}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="flex flex-wrap items-center gap-2 text-[13.5px] font-medium text-text-1">
+                          {r.person?.full_name ?? "Teammate"}
+                          <span className="font-mono text-[12.5px] font-normal text-text-2 tabular">
+                            {fmtDate(r.start_date)} to {fmtDate(r.end_date)}
+                          </span>
+                          <span className="font-mono text-[12px] font-normal text-text-2 tabular">
+                            {r.days}d
+                          </span>
+                          <Tag tone="gray">{TYPE_LABELS[r.type] ?? r.type}</Tag>
+                          <LeaveStatusChip status={r.status} />
+                        </p>
+                        {r.filed_by ? (
+                          <p className="mt-0.5 text-[12px] text-text-3">
+                            Recorded by an admin, not filed by them.
+                          </p>
+                        ) : null}
+                      </div>
+                      {/* Only what is still standing can be taken back. A
+                          rejected or already cancelled row has nothing to
+                          reverse. */}
+                      {r.status === "approved" ? (
+                        <span className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                          <CancelLeaveButton
+                            ws={ws}
+                            requestId={r.id}
+                            confirmWith={`Remove this leave for ${r.person?.full_name ?? "this teammate"}? It will show as cancelled${r.type === "annual" ? `, and ${r.days} day${Number(r.days) === 1 ? "" : "s"} go back to their balance` : ""}.`}
+                          />
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           ) : null}
 
@@ -290,6 +373,18 @@ export default async function HrPage({
               <LeaveRequestForm ws={ws} />
             </CardBody>
           </Card>
+
+          {isExec && recordFor.length > 0 ? (
+            <Card>
+              <CardHeader
+                title="Record leave for someone"
+                action={<span className="text-[11.5px] text-text-3">admin</span>}
+              />
+              <CardBody>
+                <RecordLeaveForm ws={ws} people={recordFor} />
+              </CardBody>
+            </Card>
+          ) : null}
 
           {out.length > 0 ? (
             <Card>

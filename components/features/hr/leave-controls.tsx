@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/primitives/field";
 import {
   cancelLeaveRequest,
+  createLeaveForTeammate,
   createLeaveRequest,
   decideLeave,
   endorseLeave,
@@ -74,23 +75,117 @@ export function LeaveRequestForm({ ws }: { ws: string }) {
   );
 }
 
-export function CancelLeaveButton({ ws, requestId }: { ws: string; requestId: string }) {
+export function CancelLeaveButton({
+  ws,
+  requestId,
+  // Cancelling somebody else's approved leave is not the same gesture as
+  // withdrawing your own pending request, so it asks first and says what it
+  // gives back.
+  confirmWith,
+}: {
+  ws: string;
+  requestId: string;
+  confirmWith?: string;
+}) {
   const [pending, startTransition] = useTransition();
   return (
     <Button
       variant="ghost"
       size="sm"
       disabled={pending}
-      onClick={() =>
+      onClick={() => {
+        if (confirmWith && !window.confirm(confirmWith)) return;
         startTransition(async () => {
           const res = await cancelLeaveRequest(ws, requestId);
           if (res.error) toast.error(res.error);
           else toast.success(res.success ?? "Cancelled.");
-        })
-      }
+        });
+      }}
     >
-      Cancel
+      {confirmWith ? "Remove" : "Cancel"}
     </Button>
+  );
+}
+
+// Recording leave for a teammate. Admin only, and the page only renders it
+// for one, but the action checks the archetype again on the server.
+export function RecordLeaveForm({
+  ws,
+  people,
+}: {
+  ws: string;
+  people: { id: string; full_name: string }[];
+}) {
+  const [state, formAction, pending] = useActionState(
+    createLeaveForTeammate,
+    initialState
+  );
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.success) {
+      toast.success(state.success);
+      formRef.current?.reset();
+    }
+  }, [state]);
+
+  return (
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="ws" value={ws} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Who" htmlFor="rec_person">
+          <select id="rec_person" name="profile_id" required className={inputClass} defaultValue="">
+            <option value="" disabled>
+              Pick a teammate
+            </option>
+            {people.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.full_name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Type" htmlFor="rec_type">
+          <select id="rec_type" name="type" className={inputClass} defaultValue="annual">
+            <option value="annual">Annual</option>
+            <option value="sick">Sick</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="other">Other</option>
+          </select>
+        </Field>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="First day" htmlFor="rec_start">
+          <input id="rec_start" name="start_date" type="date" required className={inputClass} />
+        </Field>
+        <Field label="Last day" htmlFor="rec_end">
+          <input id="rec_end" name="end_date" type="date" required className={inputClass} />
+        </Field>
+      </div>
+      <Field
+        label="Note"
+        htmlFor="rec_reason"
+        hint="Recorded as approved. Annual leave comes off their balance, and they are notified."
+      >
+        <textarea
+          id="rec_reason"
+          name="reason"
+          rows={2}
+          placeholder="Optional"
+          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+        />
+      </Field>
+      {state.error ? (
+        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+          {state.error}
+        </p>
+      ) : null}
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending}>
+          {pending ? "Recording" : "Record leave"}
+        </Button>
+      </div>
+    </form>
   );
 }
 

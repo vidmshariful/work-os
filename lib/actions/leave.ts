@@ -125,16 +125,111 @@ export async function cancelLeaveRequest(
   ws: string,
   requestId: string
 ): Promise<LeaveActionState> {
-  await getWorkspaceContext(ws);
+  const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
   const { error } = await supabase
     .from("leave_requests")
     .update({ status: "cancelled" })
     .eq("id", requestId);
-  if (error) return { error: "Only pending requests can be cancelled." };
+  if (error) {
+    // An executive may cancel anything, including leave already approved, so
+    // the sentence about pending would be wrong for them.
+    return {
+      error:
+        ctx.membership.archetype === "executive"
+          ? "That request could not be cancelled."
+          : "Only pending requests can be cancelled.",
+    };
+  }
 
   revalidatePath(`/${ws}/hr`);
+  revalidatePath(`/${ws}/calendar`);
   return { error: null, success: "Request cancelled." };
+}
+
+// An executive writing down leave that is already settled: somebody was out
+// last Tuesday, or the time off was agreed in a meeting and never filed. The
+// record is created approved, which spends the annual allowance, and it says
+// who filed it so it is never mistaken for something the person submitted.
+export async function createLeaveForTeammate(
+  _prev: LeaveActionState,
+  formData: FormData
+): Promise<LeaveActionState> {
+  const ws = String(formData.get("ws") ?? "");
+  const ctx = await getWorkspaceContext(ws);
+  if (ctx.membership.archetype !== "executive") {
+    return { error: "Only an admin can record leave for someone else." };
+  }
+
+  const profileId = String(formData.get("profile_id") ?? "");
+  const type = String(formData.get("type") ?? "annual");
+  const startRaw = String(formData.get("start_date") ?? "");
+  const endRaw = String(formData.get("end_date") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!profileId) return { error: "Pick who this leave is for." };
+  if (profileId === ctx.userId) {
+    return { error: "Use the form above to file your own leave." };
+  }
+  if (!LEAVE_TYPES.includes(type as LeaveType)) return { error: "Pick a leave type." };
+  const start = new Date(startRaw);
+  const end = new Date(endRaw);
+  if (!startRaw || Number.isNaN(start.getTime())) return { error: "Pick a start date." };
+  if (!endRaw || Number.isNaN(end.getTime())) return { error: "Pick an end date." };
+  if (end < start) return { error: "The end date cannot be before the start." };
+
+  const days = weekdaysBetween(start, end);
+  if (days <= 0) return { error: "The range contains no working days." };
+
+  const supabase = await createClient();
+
+  // They have to be in this workspace. RLS would let an executive write any
+  // profile id, so the membership is checked here rather than assumed.
+  const { data: member } = await supabase
+    .from("memberships")
+    .select("profile_id")
+    .eq("workspace_id", ctx.workspace.id)
+    .eq("profile_id", profileId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!member) return { error: "That person is not in this workspace." };
+
+  // The same overlap check the person would get, so an admin cannot book
+  // somebody into two places at once by accident.
+  const { data: overlapping } = await supabase
+    .from("leave_requests")
+    .select("start_date")
+    .eq("workspace_id", ctx.workspace.id)
+    .eq("profile_id", profileId)
+    .in("status", ["pending", "approved"])
+    .lte("start_date", endRaw)
+    .gte("end_date", startRaw)
+    .limit(1);
+  if ((overlapping ?? []).length > 0) {
+    return { error: "Those dates overlap leave this person already has." };
+  }
+
+  const { error } = await supabase.from("leave_requests").insert({
+    workspace_id: ctx.workspace.id,
+    profile_id: profileId,
+    type: type as LeaveType,
+    start_date: startRaw,
+    end_date: endRaw,
+    days,
+    reason: reason || null,
+    status: "approved",
+    decided_by: ctx.userId,
+    decided_at: new Date().toISOString(),
+    filed_by: ctx.userId,
+  });
+  if (error) return { error: "The leave could not be recorded." };
+
+  revalidatePath(`/${ws}/hr`);
+  revalidatePath(`/${ws}/calendar`);
+  return {
+    error: null,
+    success: `Recorded, ${days} day${days === 1 ? "" : "s"}. They have been notified.`,
+  };
 }
 
 // A lead endorses: the request stays pending and moves to the final gate.

@@ -188,6 +188,135 @@ check(
 await db.query("delete from notifications where entity_id=$1", [sickReq.id]);
 await db.query("delete from leave_requests where id=$1", [sickReq.id]);
 
+// ---- an admin manages someone else's leave --------------------------------
+
+// Filing for a teammate is the executive's alone. A lead cannot, and neither
+// can the person's peer.
+const leadFiles = await tania.client.from("leave_requests").insert({
+  workspace_id: ws, profile_id: rakib.id, type: "annual",
+  start_date: "2026-11-23", end_date: "2026-11-24", days: 2, reason: "leave-test",
+});
+check("a lead still cannot file for someone", Boolean(leadFiles.error), leadFiles.error?.code ?? "allowed");
+
+const usedBeforeAdmin = (
+  await db.query("select used_days::int u from leave_balances where profile_id=$1 and year=2026", [rakib.id])
+).rows[0].u;
+
+// The admin records leave that was already agreed: approved on the spot.
+const { data: recorded, error: recordError } = await shariful.client
+  .from("leave_requests")
+  .insert({
+    workspace_id: ws, profile_id: rakib.id, type: "annual",
+    start_date: "2026-11-23", end_date: "2026-11-24", days: 2, reason: "leave-test",
+    status: "approved", decided_by: shariful.id, decided_at: new Date().toISOString(),
+    filed_by: shariful.id,
+  })
+  .select("id, status")
+  .single();
+check(
+  "an admin can record leave for a teammate",
+  !recordError && recorded?.status === "approved",
+  recordError?.message ?? ""
+);
+
+const usedAfterAdmin = (
+  await db.query("select used_days::int u from leave_balances where profile_id=$1 and year=2026", [rakib.id])
+).rows[0].u;
+check(
+  "recording it spends the allowance",
+  usedAfterAdmin === usedBeforeAdmin + 2,
+  `${usedBeforeAdmin} then ${usedAfterAdmin}`
+);
+
+const { rows: told } = await db.query(
+  "select count(*)::int n from notifications where entity_id=$1 and profile_id=$2",
+  [recorded.id, rakib.id]
+);
+check("the person is told it was recorded", told[0].n >= 1, `${told[0].n} notifications`);
+
+const { rows: filedBy } = await db.query("select filed_by from leave_requests where id=$1", [recorded.id]);
+check("the record says who filed it", filedBy[0].filed_by === shariful.id);
+
+// The person it belongs to still cannot approve or cancel their own approved
+// leave: filing on their behalf did not hand them the executive's powers.
+const selfCancel = await rakib.client
+  .from("leave_requests")
+  .update({ status: "cancelled" })
+  .eq("id", recorded.id)
+  .select("id");
+check(
+  "they still cannot cancel it themselves",
+  Boolean(selfCancel.error) || (selfCancel.data ?? []).length === 0,
+  selfCancel.error?.message?.slice(0, 40) ?? `${(selfCancel.data ?? []).length} rows`
+);
+
+// Removing it: the admin cancels, and the days come back.
+const removed = await shariful.client
+  .from("leave_requests")
+  .update({ status: "cancelled" })
+  .eq("id", recorded.id)
+  .select("status, decided_by");
+check(
+  "an admin can remove approved leave",
+  (removed.data ?? []).length === 1 && removed.data[0].status === "cancelled",
+  removed.error?.message ?? ""
+);
+
+const usedAfterRemove = (
+  await db.query("select used_days::int u from leave_balances where profile_id=$1 and year=2026", [rakib.id])
+).rows[0].u;
+check(
+  "removing it gives the days back",
+  usedAfterRemove === usedBeforeAdmin,
+  `${usedAfterAdmin} then ${usedAfterRemove}`
+);
+
+// Sick leave never touched the balance, so removing it must not credit days
+// that were never spent.
+const { data: sickRec } = await shariful.client
+  .from("leave_requests")
+  .insert({
+    workspace_id: ws, profile_id: rakib.id, type: "sick",
+    start_date: "2026-11-25", end_date: "2026-11-25", days: 1, reason: "leave-test",
+    status: "approved", decided_by: shariful.id, filed_by: shariful.id,
+  })
+  .select("id")
+  .single();
+await shariful.client.from("leave_requests").update({ status: "cancelled" }).eq("id", sickRec.id);
+const afterSickRemove = (
+  await db.query("select used_days::int u from leave_balances where profile_id=$1 and year=2026", [rakib.id])
+).rows[0].u;
+check(
+  "removing sick leave credits nothing",
+  afterSickRemove === usedBeforeAdmin,
+  `${usedAfterRemove} then ${afterSickRemove}`
+);
+await db.query("delete from notifications where entity_id in ($1,$2)", [recorded.id, sickRec.id]);
+await db.query("delete from leave_requests where id in ($1,$2)", [recorded.id, sickRec.id]);
+
+// Nobody may erase a leave record through the application.
+const { data: victim } = await shariful.client
+  .from("leave_requests")
+  .insert({
+    workspace_id: ws, profile_id: rakib.id, type: "unpaid",
+    start_date: "2026-11-26", end_date: "2026-11-26", days: 1, reason: "leave-test",
+    status: "approved", decided_by: shariful.id, filed_by: shariful.id,
+  })
+  .select("id")
+  .single();
+const hardDelete = await shariful.client
+  .from("leave_requests")
+  .delete()
+  .eq("id", victim.id)
+  .select("id");
+check(
+  "not even an admin can delete a record outright",
+  (hardDelete.data ?? []).length === 0,
+  `${(hardDelete.data ?? []).length} rows`
+);
+await db.query("delete from notifications where entity_id=$1", [victim.id]);
+await db.query("delete from leave_requests where id=$1", [victim.id]);
+
 // ---- allowances ----------------------------------------------------------
 const allowance = await shariful.client
   .from("leave_balances")
@@ -213,9 +342,13 @@ check(
 );
 
 // ---- cleanup -------------------------------------------------------------
-await db.query("update leave_balances set total_days=20, used_days=$2 where profile_id=$1 and year=2026", [rakib.id, balanceBefore.u]);
+// Rows first, balance second, and the order matters. Deleting an approved
+// annual request refunds its days now, so restoring the balance before the
+// delete would leave it short by exactly the amount this test approved, every
+// single run.
 await db.query("delete from notifications where entity_id=$1", [req.id]);
 await cleanup();
+await db.query("update leave_balances set total_days=20, used_days=$2 where profile_id=$1 and year=2026", [rakib.id, balanceBefore.u]);
 const { rows: left } = await db.query("select count(*)::int n from leave_requests where start_date=$1", [START]);
 await db.end();
 check("nothing left behind", left[0].n === 0, `${left[0].n} rows`);

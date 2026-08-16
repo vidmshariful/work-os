@@ -435,6 +435,9 @@ export interface LeaveRequest {
   decided_by: string | null;
   decided_at: string | null;
   decision_note: string | null;
+  // Set when an admin wrote the record down for somebody else. Null on
+  // anything a person filed themselves.
+  filed_by: string | null;
   created_at: string;
 }
 
