@@ -145,12 +145,12 @@ export function Conversation({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-2.5 border-b border-border px-5 py-3">
         <PersonAvatar name={other.full_name} src={other.avatar_url} size={28} />
-        <span className="text-sm font-semibold text-text-1">{other.full_name}</span>
+        <span className="text-body font-semibold text-text-1">{other.full_name}</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         {messages.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-text-3">
+          <p className="py-10 text-center text-body text-text-3">
             No messages yet. Say hello to {other.full_name.split(" ")[0]}.
           </p>
         ) : null}
@@ -164,7 +164,7 @@ export function Conversation({
               {newDay ? (
                 <div className="my-4 flex items-center gap-3">
                   <span className="h-px flex-1 bg-border" />
-                  <span className="text-[11.5px] font-medium text-text-3">{day}</span>
+                  <span className="text-label font-medium text-text-3">{day}</span>
                   <span className="h-px flex-1 bg-border" />
                 </div>
               ) : null}
@@ -176,7 +176,7 @@ export function Conversation({
                 ) : null}
                 <div
                   className={cn(
-                    "max-w-[min(560px,72%)] rounded-[14px] px-3 py-2 text-[13.5px] leading-relaxed",
+                    "max-w-[min(560px,72%)] rounded-[14px] px-3 py-2 text-body leading-relaxed",
                     mine
                       ? "bg-brand text-white"
                       : "bg-surface-2 text-text-1"
@@ -186,7 +186,7 @@ export function Conversation({
                   <ClockTime
                     at={m.created_at}
                     className={cn(
-                      "mt-1 block font-mono text-[10.5px] tabular",
+                      "mt-1 block font-mono text-micro tabular",
                       mine ? "text-white/70" : "text-text-3"
                     )}
                   />
@@ -233,7 +233,7 @@ export function Conversation({
                 send();
               }
             }}
-            className="max-h-32 min-h-[24px] flex-1 resize-none bg-transparent text-[13.5px] text-text-1 outline-none placeholder:text-text-3"
+            className="max-h-32 min-h-[24px] flex-1 resize-none bg-transparent text-body text-text-1 outline-none placeholder:text-text-3"
           />
           <button
             type="button"

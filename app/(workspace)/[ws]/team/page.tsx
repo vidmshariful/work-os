@@ -57,7 +57,7 @@ export default async function TeamPage({
       href={v === "directory" ? `/${ws}/team` : `/${ws}/team?view=${v}`}
       aria-current={view === v ? "page" : undefined}
       className={cn(
-        "rounded-[9px] px-3 py-1.5 text-sm font-medium transition-colors",
+        "rounded-[9px] px-3 py-1.5 text-body font-medium transition-colors",
         view === v ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
       )}
     >
@@ -69,8 +69,8 @@ export default async function TeamPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">Team</h1>
-          <p className="mt-1 text-sm text-text-2">
+          <h1 className="page-title">Team</h1>
+          <p className="page-subtitle mt-1">
             {active.length} people, one reporting line that drives access and rollups.
           </p>
         </div>
@@ -114,14 +114,14 @@ export default async function TeamPage({
                     </div>
                   </div>
                   <div className="mt-3">
-                    <div className="text-[15px] font-semibold text-text-1">
+                    <div className="text-lead font-semibold text-text-1">
                       {m.profile.full_name}
                     </div>
-                    <div className="text-[12.5px] text-text-2">
+                    <div className="text-meta text-text-2">
                       {ROLE_LABELS[m.role] ?? m.role}
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-[12px] text-text-3">
+                  <div className="mt-3 flex items-center justify-between text-meta text-text-3">
                     <span>
                       {m.reports_to && nameById.get(m.reports_to)
                         ? `Reports to ${nameById.get(m.reports_to)}`

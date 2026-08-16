@@ -59,14 +59,14 @@ export default async function DocsPage({
                   <Icon className="size-4" strokeWidth={1.75} />
                 </span>
                 <div className="min-w-0">
-                  <div className="truncate text-[14.5px] font-semibold text-text-1">{d.title}</div>
-                  <div className="mt-0.5 text-[12px] text-text-3">
+                  <div className="truncate text-lead font-semibold text-text-1">{d.title}</div>
+                  <div className="mt-0.5 text-meta text-text-3">
                     {label} · updated <TimeAgo at={d.updated_at} />
                   </div>
                 </div>
               </div>
               {d.contributed ? (
-                <div className="mt-4 flex items-center gap-1.5 text-[12px] text-text-2">
+                <div className="mt-4 flex items-center gap-1.5 text-meta text-text-2">
                   <Users className="size-3.5" strokeWidth={1.5} />
                   Shared by team
                 </div>
@@ -82,8 +82,8 @@ export default async function DocsPage({
     items.length === 0 ? null : (
       <section>
         <div className="mb-2">
-          <h2 className="text-[15px] font-semibold text-text-1">{title}</h2>
-          <p className="text-[12.5px] text-text-2">{hint}</p>
+          <h2 className="text-lead font-semibold text-text-1">{title}</h2>
+          <p className="text-meta text-text-2">{hint}</p>
         </div>
         <Grid items={items} />
       </section>
@@ -93,8 +93,8 @@ export default async function DocsPage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">Docs</h1>
-          <p className="mt-1 text-sm text-text-2">
+          <h1 className="page-title">Docs</h1>
+          <p className="page-subtitle mt-1">
             Pages written here, uploaded files, and linked documents.
           </p>
         </div>

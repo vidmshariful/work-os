@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createFolder, createList } from "@/lib/actions/departments";
 
 const inputClass =
-  "h-8 w-44 rounded-[9px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-8 w-44 rounded-[9px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function NewListForm({
   ws,

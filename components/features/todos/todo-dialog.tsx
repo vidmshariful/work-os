@@ -144,7 +144,7 @@ function Body({
           aria-label="Title"
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
-          className="w-full rounded-[9px] border border-transparent bg-transparent px-1 text-[17px] font-semibold text-text-1 outline-none focus-visible:border-border focus-visible:bg-surface"
+          className="w-full rounded-[9px] border border-transparent bg-transparent px-1 text-h3 font-semibold text-text-1 outline-none focus-visible:border-border focus-visible:bg-surface"
         />
 
         <div className="grid grid-cols-3 gap-3">
@@ -200,12 +200,12 @@ function Body({
 
         {/* labels */}
         <div className="flex flex-col gap-2">
-          <span className="text-[12.5px] font-medium text-text-2">Labels</span>
+          <span className="text-meta font-medium text-text-2">Labels</span>
           <div className="flex flex-wrap items-center gap-1.5">
             {todo.labels.map((l) => (
               <span
                 key={l.id}
-                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-medium"
+                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-label font-medium"
                 style={{ backgroundColor: `${l.color}22`, color: l.color }}
               >
                 {l.name}
@@ -226,7 +226,7 @@ function Body({
                   e.target.value &&
                   run(() => setTodoLabel(ws, todo.id, e.target.value, true))
                 }
-                className="h-7 rounded-[8px] border border-dashed border-border bg-surface px-2 text-[12px] text-text-2 outline-none focus-visible:border-brand"
+                className="h-7 rounded-[8px] border border-dashed border-border bg-surface px-2 text-meta text-text-2 outline-none focus-visible:border-brand"
               >
                 <option value="">Add label</option>
                 {available.map((l) => (
@@ -242,7 +242,7 @@ function Body({
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               placeholder="New label"
-              className="h-7 w-32 rounded-[8px] border border-border bg-surface px-2 text-[12px] text-text-1 outline-none focus-visible:border-brand"
+              className="h-7 w-32 rounded-[8px] border border-border bg-surface px-2 text-meta text-text-1 outline-none focus-visible:border-brand"
             />
             {PALETTE.map((c) => (
               <button
@@ -265,10 +265,10 @@ function Body({
 
         {/* checklist */}
         <div className="flex flex-col gap-2">
-          <span className="text-[12.5px] font-medium text-text-2">
+          <span className="text-meta font-medium text-text-2">
             Checklist{" "}
             {todo.checklist.length > 0 ? (
-              <span className="font-mono text-[11.5px] text-text-3 tabular">
+              <span className="font-mono text-label text-text-3 tabular">
                 {checkedCount}/{todo.checklist.length}
               </span>
             ) : null}
@@ -284,7 +284,7 @@ function Body({
                   }
                 />
                 <span
-                  className={`min-w-0 flex-1 truncate text-[13px] ${
+                  className={`min-w-0 flex-1 truncate text-body ${
                     c.is_done ? "text-text-3 line-through" : "text-text-1"
                   }`}
                 >
@@ -314,7 +314,7 @@ function Body({
               value={step}
               onChange={(e) => setStep(e.target.value)}
               placeholder="Add a step"
-              className="h-8 flex-1 rounded-[8px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none focus-visible:border-brand"
+              className="h-8 flex-1 rounded-[8px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none focus-visible:border-brand"
             />
             <Button type="submit" size="sm" variant="outline" disabled={!step.trim()}>
               <Plus />

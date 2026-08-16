@@ -19,7 +19,7 @@ import type { OwnerOption } from "./queries";
 const initialState: ClientFormState = { error: null };
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function EditClientDialog({
   ws,
@@ -107,7 +107,7 @@ export function EditClientDialog({
             </Field>
           ) : null}
           {state.error ? (
-            <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+            <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-meta font-medium text-danger">
               {state.error}
             </p>
           ) : null}

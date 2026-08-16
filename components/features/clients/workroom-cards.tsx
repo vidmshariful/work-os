@@ -48,7 +48,7 @@ import type { ThreadPerson } from "./activity-thread";
 const initialState: WorkroomState = { error: null };
 
 const inputClass =
-  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
+  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
 
 function useResetOnSuccess(state: WorkroomState, close?: () => void) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -98,7 +98,7 @@ export function PaymentsCard({
   return (
     <div className="flex flex-col gap-2.5">
       {payments.length > 0 ? (
-        <div className="flex items-center gap-4 rounded-[10px] bg-surface-2 px-3 py-2 text-[12.5px]">
+        <div className="flex items-center gap-4 rounded-[10px] bg-surface-2 px-3 py-2 text-meta">
           <span className="text-text-2">
             Paid{" "}
             <span className="font-mono font-medium text-success tabular">{fmtMoney(paid)}</span>
@@ -122,15 +122,15 @@ export function PaymentsCard({
               )}
             />
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 truncate text-[13px] font-medium text-text-1">
+              <p className="flex items-center gap-1.5 truncate text-body font-medium text-text-1">
                 {p.label}
                 {p.project_id && projectCodeById.get(p.project_id) ? (
-                  <span className="font-mono text-[10.5px] font-medium text-text-3 tabular">
+                  <span className="font-mono text-micro font-medium text-text-3 tabular">
                     {projectCodeById.get(p.project_id)}
                   </span>
                 ) : null}
               </p>
-              <p className="text-[11.5px] text-text-3">
+              <p className="text-label text-text-3">
                 {p.paid_at
                   ? <>Paid <TimeAgo at={p.paid_at} /></>
                   : p.due_date
@@ -146,7 +146,7 @@ export function PaymentsCard({
                 ) : null}
               </p>
             </div>
-            <span className="font-mono text-[12.5px] font-medium text-text-1 tabular">
+            <span className="font-mono text-meta font-medium text-text-1 tabular">
               {fmtMoney(Number(p.amount))}
             </span>
             {!p.paid_at ? (
@@ -248,8 +248,8 @@ export function DocumentsCard({
         <div key={doc.id} className="group flex items-center gap-2.5 px-0.5">
           <FileText className="size-4 shrink-0 text-text-3" strokeWidth={1.5} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium text-text-1">{doc.title}</p>
-            <p className="flex items-center gap-1.5 text-[11.5px] text-text-3">
+            <p className="truncate text-body font-medium text-text-1">{doc.title}</p>
+            <p className="flex items-center gap-1.5 text-label text-text-3">
               <span className="capitalize">{doc.doc_type}</span>
               {doc.doc_type === "contract" && doc.contract_status !== "none" ? (
                 <Tag tone={doc.contract_status === "signed" ? "green" : "amber"}>
@@ -297,7 +297,7 @@ export function DocumentsCard({
             </select>
           </div>
           <input name="external_url" placeholder="Link, or attach a file below" className={inputClass} />
-          <input name="file" type="file" className="text-[12px] text-text-2 file:mr-2 file:rounded-[7px] file:border-0 file:bg-chip-gray file:px-2.5 file:py-1 file:text-[12px] file:font-medium file:text-text-1" />
+          <input name="file" type="file" className="text-meta text-text-2 file:mr-2 file:rounded-[7px] file:border-0 file:bg-chip-gray file:px-2.5 file:py-1 file:text-meta file:font-medium file:text-text-1" />
           <div className="flex justify-end gap-1.5">
             <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
               Cancel
@@ -357,14 +357,14 @@ export function TodosCard({
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  "truncate text-[13px]",
+                  "truncate text-body",
                   t.is_done ? "text-text-3 line-through" : "font-medium text-text-1"
                 )}
               >
                 {t.title}
               </p>
               {t.due_date && !t.is_done ? (
-                <p className={cn("font-mono text-[11px] tabular", overdue ? "font-medium text-danger" : "text-text-3")}>
+                <p className={cn("font-mono text-label tabular", overdue ? "font-medium text-danger" : "text-text-3")}>
                   {fmtDate(t.due_date)}
                 </p>
               ) : null}
@@ -443,10 +443,10 @@ export function NotesCard({
         const author = personById.get(n.author_id);
         return (
           <div key={n.id} className="group rounded-[10px] bg-wall-soft/50 px-3 py-2">
-            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-text-1">
+            <p className="whitespace-pre-wrap text-body leading-relaxed text-text-1">
               {n.body}
             </p>
-            <p className="mt-1 flex items-center justify-between text-[11px] text-text-3">
+            <p className="mt-1 flex items-center justify-between text-label text-text-3">
               <span>
                 {author?.full_name ?? "Someone"}, <TimeAgo at={n.created_at} />
               </span>
@@ -471,7 +471,7 @@ export function NotesCard({
           rows={2}
           required
           placeholder="Pin a fact the team should not forget."
-          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
+          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
         />
         <div className="flex justify-end">
           <Button type="submit" size="sm" variant="outline" disabled={pending}>
@@ -505,19 +505,19 @@ export function ContactsCard({
         <div key={c.id} className="group flex items-start gap-2.5 px-0.5">
           <PersonAvatar name={c.name} size={26} />
           <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1.5 text-[13px] font-medium text-text-1">
+            <p className="flex items-center gap-1.5 text-body font-medium text-text-1">
               <span className="truncate">{c.name}</span>
               {c.is_primary ? (
                 <Star className="size-3 shrink-0 fill-tag-amber text-tag-amber" />
               ) : null}
             </p>
-            {c.role_label ? <p className="text-[11.5px] text-text-3">{c.role_label}</p> : null}
+            {c.role_label ? <p className="text-label text-text-3">{c.role_label}</p> : null}
             {c.email ? (
-              <a href={`mailto:${c.email}`} className="block truncate text-[12px] text-brand hover:underline">
+              <a href={`mailto:${c.email}`} className="block truncate text-meta text-brand hover:underline">
                 {c.email}
               </a>
             ) : null}
-            {c.phone ? <p className="font-mono text-[12px] text-text-2 tabular">{c.phone}</p> : null}
+            {c.phone ? <p className="font-mono text-meta text-text-2 tabular">{c.phone}</p> : null}
           </div>
           <div className="flex shrink-0 items-center opacity-0 transition-opacity group-hover:opacity-100">
             {!c.is_primary ? (
@@ -549,7 +549,7 @@ export function ContactsCard({
             <input name="email" type="email" placeholder="Email" className={inputClass} />
             <input name="phone" placeholder="Phone" className={inputClass} />
           </div>
-          <label className="flex items-center gap-2 text-[12.5px] text-text-2">
+          <label className="flex items-center gap-2 text-meta text-text-2">
             <input type="checkbox" name="is_primary" className="size-3.5 accent-[var(--brand)]" />
             Primary contact
           </label>

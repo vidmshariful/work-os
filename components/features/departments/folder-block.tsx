@@ -124,7 +124,7 @@ export function FolderBlock({
           {renaming ? null : (
             <span className="flex items-center gap-1.5">
               {dot}
-              <span className="text-[13px] font-semibold text-text-1">{folder.name}</span>
+              <span className="text-body font-semibold text-text-1">{folder.name}</span>
             </span>
           )}
         </button>
@@ -151,12 +151,12 @@ export function FolderBlock({
                   setRenaming(false);
                 }
               }}
-              className="h-6 w-48 rounded-[7px] border border-brand bg-surface px-1.5 text-[13px] font-semibold text-text-1 outline-none ring-2 ring-brand/25"
+              className="h-6 w-48 rounded-[7px] border border-brand bg-surface px-1.5 text-body font-semibold text-text-1 outline-none ring-2 ring-brand/25"
             />
           </span>
         ) : null}
 
-        <span className="font-mono text-[11px] text-text-3 tabular">
+        <span className="font-mono text-label text-text-3 tabular">
           {listCount ?? 0}
         </span>
 

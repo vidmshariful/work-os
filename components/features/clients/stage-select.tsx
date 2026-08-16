@@ -36,7 +36,7 @@ export function StageSelect({
           }
         });
       }}
-      className="h-8 rounded-[9px] border border-border bg-surface px-2.5 text-[12.5px] font-medium text-text-1 outline-none focus-visible:border-brand"
+      className="h-8 rounded-[9px] border border-border bg-surface px-2.5 text-meta font-medium text-text-1 outline-none focus-visible:border-brand"
     >
       {STAGE_ORDER.map((s) => (
         <option key={s} value={s}>

@@ -114,7 +114,7 @@ export function SpaceSection({
                   onRenameCancel?.();
                 }
               }}
-              className="h-6 w-44 rounded-[7px] border border-brand bg-surface px-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-text-1 outline-none ring-2 ring-brand/25"
+              className="h-6 w-44 rounded-[7px] border border-brand bg-surface px-1.5 text-meta font-semibold uppercase tracking-[0.06em] text-text-1 outline-none ring-2 ring-brand/25"
             />
           </span>
         ) : null}
@@ -123,7 +123,7 @@ export function SpaceSection({
         {count > 0 ? (
           <CountBadge count={count} className="ml-0" />
         ) : (
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chip-gray px-1.5 font-mono text-[11px] font-semibold text-text-3 tabular">
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chip-gray px-1.5 font-mono text-label font-semibold text-text-3 tabular">
             0
           </span>
         )}

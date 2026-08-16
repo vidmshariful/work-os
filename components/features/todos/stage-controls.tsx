@@ -69,7 +69,7 @@ export function AddTodo({ ws, stageId }: { ws: string; stageId: string }) {
         name="title"
         placeholder="Add a to-do"
         autoComplete="off"
-        className="h-8 w-full rounded-[8px] border border-transparent bg-transparent px-2 text-[13px] text-text-1 outline-none placeholder:text-text-3 hover:border-border focus-visible:border-brand focus-visible:bg-surface"
+        className="h-8 w-full rounded-[8px] border border-transparent bg-transparent px-2 text-body text-text-1 outline-none placeholder:text-text-3 hover:border-border focus-visible:border-brand focus-visible:bg-surface"
       />
     </form>
   );
@@ -116,7 +116,7 @@ export function NewStage({ ws }: { ws: string }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Stage name"
-            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand"
+            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none focus-visible:border-brand"
           />
           <Swatches value={color} onChange={setColor} />
           <Button type="submit" size="sm" disabled={pending || !name.trim()}>
@@ -172,7 +172,7 @@ export function StageEditor({
 
   const chip = (active: boolean) =>
     cn(
-      "rounded-[7px] border px-2 py-1 text-[12px] font-medium transition-colors",
+      "rounded-[7px] border px-2 py-1 text-meta font-medium transition-colors",
       active
         ? "border-brand bg-brand-soft text-brand"
         : "border-border text-text-2 hover:text-text-1"
@@ -194,7 +194,7 @@ export function StageEditor({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && save()}
-            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand"
+            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none focus-visible:border-brand"
           />
           <Swatches value={c} onChange={setC} />
           <div className="flex items-center gap-1.5">

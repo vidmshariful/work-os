@@ -47,7 +47,7 @@ export function ActivityFeed({
   return (
     <div className="flex flex-col gap-3">
       {feed.length === 0 ? (
-        <p className="py-2 text-center text-[12.5px] text-text-3">
+        <p className="py-2 text-center text-meta text-text-3">
           Nothing here yet. Add the first comment.
         </p>
       ) : (
@@ -63,7 +63,7 @@ export function ActivityFeed({
                   size={24}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12.5px] leading-snug">
+                  <p className="text-meta leading-snug">
                     <span className="font-medium text-text-1">
                       {entry.comment.author?.full_name ?? "Someone"}
                     </span>{" "}
@@ -71,7 +71,7 @@ export function ActivityFeed({
                       <TimeAgo at={entry.comment.created_at} />
                     </span>
                   </p>
-                  <p className="mt-1 whitespace-pre-wrap rounded-[9px] bg-surface-2 px-2.5 py-1.5 text-[13px] leading-relaxed text-text-1">
+                  <p className="mt-1 whitespace-pre-wrap rounded-[9px] bg-surface-2 px-2.5 py-1.5 text-body leading-relaxed text-text-1">
                     {entry.comment.body}
                   </p>
                 </div>
@@ -84,7 +84,7 @@ export function ActivityFeed({
                   size={24}
                 />
                 <div className="min-w-0">
-                  <p className="text-[12.5px] leading-snug text-text-1">
+                  <p className="text-meta leading-snug text-text-1">
                     <span className="font-medium">
                       {entry.activity.actor?.full_name ?? "System"}
                     </span>{" "}
@@ -92,7 +92,7 @@ export function ActivityFeed({
                       {describeActivity(entry.activity.verb, entry.activity.detail)}
                     </span>
                   </p>
-                  <p className="mt-0.5 text-[11.5px] text-text-3">
+                  <p className="mt-0.5 text-label text-text-3">
                     <TimeAgo at={entry.activity.created_at} />
                   </p>
                 </div>

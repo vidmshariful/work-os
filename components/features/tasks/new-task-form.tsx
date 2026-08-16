@@ -20,7 +20,7 @@ export interface MemberOption {
 const initialState: TaskActionState = { error: null };
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function NewTaskForm({
   ws,
@@ -102,7 +102,7 @@ export function NewTaskForm({
           name="description"
           rows={4}
           placeholder="Scope, references, and anything the assignee needs."
-          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
         />
       </Field>
 
@@ -132,7 +132,7 @@ export function NewTaskForm({
       </div>
 
       {state.error ? (
-        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-meta font-medium text-danger">
           {state.error}
         </p>
       ) : null}

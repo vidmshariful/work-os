@@ -50,12 +50,12 @@ function PipelineCard({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <CodeLabel code={client.code} className="text-[11px]" />
-        <span className="font-mono text-[11px] text-text-3 tabular">
+        <CodeLabel code={client.code} className="text-label" />
+        <span className="font-mono text-label text-text-3 tabular">
           {client.daysInStage}d
         </span>
       </div>
-      <p className="mt-1 flex items-center gap-1.5 text-[13.5px] font-medium leading-snug text-text-1">
+      <p className="mt-1 flex items-center gap-1.5 text-body font-medium leading-snug text-text-1">
         <Link
           href={`/${ws}/clients/${client.id}`}
           className="truncate hover:text-brand"
@@ -73,16 +73,16 @@ function PipelineCard({
         {owner ? (
           <PersonAvatar name={owner.full_name} src={owner.avatar_url} size={22} />
         ) : (
-          <span className="text-[11px] text-text-3">Unassigned</span>
+          <span className="text-label text-text-3">Unassigned</span>
         )}
         <span className="flex flex-col items-end">
           {client.contract_value !== null ? (
-            <span className="font-mono text-[11.5px] font-medium text-text-1 tabular">
+            <span className="font-mono text-label font-medium text-text-1 tabular">
               {fmtMoney(client.contract_value)}
             </span>
           ) : null}
           {client.outstanding > 0 ? (
-            <span className="font-mono text-[10.5px] text-wall tabular">
+            <span className="font-mono text-micro text-wall tabular">
               {fmtMoney(client.outstanding)} due
             </span>
           ) : null}
@@ -132,7 +132,7 @@ function StageColumn({
             `bg-tag-${meta.tone}` as string
           )}
         />
-        <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-text-3">
+        <span className="text-label font-semibold uppercase tracking-[0.06em] text-text-3">
           {meta.label}
         </span>
         <CountBadge count={count} className="ml-0" />
@@ -146,7 +146,7 @@ function StageColumn({
       >
         {children}
         {count === 0 ? (
-          <div className="rounded-[12px] border border-dashed border-border px-3 py-8 text-center text-[11.5px] text-text-3">
+          <div className="rounded-[12px] border border-dashed border-border px-3 py-8 text-center text-label text-text-3">
             {meta.hint}
           </div>
         ) : null}

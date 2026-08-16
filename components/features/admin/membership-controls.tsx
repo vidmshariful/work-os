@@ -12,7 +12,7 @@ import { ARCHETYPE_LABELS, ARCHETYPES } from "./shared";
 import type { Archetype, RoleType, WallSide } from "@/lib/types";
 
 const selectClass =
-  "h-8 w-full rounded-[8px] border border-border bg-surface px-2 text-[12.5px] text-text-1 outline-none transition-colors focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 disabled:opacity-50";
+  "h-8 w-full rounded-[8px] border border-border bg-surface px-2 text-meta text-text-1 outline-none transition-colors focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 disabled:opacity-50";
 
 function useSave(ws: string, membershipId: string) {
   const [pending, startTransition] = useTransition();

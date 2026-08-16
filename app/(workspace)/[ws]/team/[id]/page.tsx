@@ -119,13 +119,13 @@ export default async function PersonPage({
           />
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+              <h1 className="page-title">
                 {member.profile.full_name}
               </h1>
               <Tag tone={meta.tone}>{meta.label}</Tag>
               {!member.is_active ? <Tag tone="gray">Inactive</Tag> : null}
             </div>
-            <p className="mt-0.5 text-sm text-text-2">
+            <p className="mt-0.5 text-body text-text-2">
               {ROLE_LABELS[member.role] ?? member.role}
               {manager ? (
                 <>
@@ -136,12 +136,12 @@ export default async function PersonPage({
                 </>
               ) : null}
             </p>
-            <p className="mt-0.5 text-[12.5px] text-text-3">{member.profile.email}</p>
+            <p className="mt-0.5 text-meta text-text-3">{member.profile.email}</p>
           </div>
         </div>
         {isExec && member.is_active && id !== ctx.userId ? (
           <div className="flex items-center gap-2">
-            <span className="text-[12.5px] text-text-2">Reports to</span>
+            <span className="text-meta text-text-2">Reports to</span>
             <ReportsToSelect
               ws={ws}
               profileId={id}
@@ -195,7 +195,7 @@ export default async function PersonPage({
               meta={
                 <>
                   {t.due_date ? (
-                    <span className="font-mono text-[12px] text-text-2 tabular">
+                    <span className="font-mono text-meta text-text-2 tabular">
                       {fmtDate(t.due_date)}
                     </span>
                   ) : null}
@@ -205,7 +205,7 @@ export default async function PersonPage({
               trailing={
                 <Link
                   href={`/${ws}/tasks/${t.id}`}
-                  className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+                  className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
                 >
                   Open
                 </Link>

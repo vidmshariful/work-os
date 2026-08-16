@@ -56,11 +56,11 @@ export function GlobalSearch({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex h-9 w-full max-w-[320px] items-center gap-2 rounded-[9px] border border-border bg-surface px-3 text-sm text-text-3 outline-none transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-brand/40"
+        className="flex h-9 w-full max-w-[320px] items-center gap-2 rounded-[9px] border border-border bg-surface px-3 text-body text-text-3 outline-none transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-brand/40"
       >
         <Search className="size-4" />
         <span className="flex-1 text-left">Search</span>
-        <kbd className="rounded border border-border bg-chip-gray px-1.5 font-mono text-[10.5px] text-text-3">
+        <kbd className="rounded border border-border bg-chip-gray px-1.5 font-mono text-micro text-text-3">
           ⌘K
         </kbd>
       </button>
@@ -84,7 +84,7 @@ export function GlobalSearch({
                     }}
                   >
                     <span className="truncate">{r.label}</span>
-                    <span className="ml-auto font-mono text-[11px] text-text-3">
+                    <span className="ml-auto font-mono text-label text-text-3">
                       {r.sublabel}
                     </span>
                   </CommandItem>

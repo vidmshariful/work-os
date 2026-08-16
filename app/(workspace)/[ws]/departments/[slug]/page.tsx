@@ -245,7 +245,7 @@ export default async function DepartmentPage({
       />
 
       {dept.archived_at ? (
-        <div className="flex items-start gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2.5 text-[12.5px] text-text-2">
+        <div className="flex items-start gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2.5 text-meta text-text-2">
           <Archive className="mt-px size-4 shrink-0 text-text-3" strokeWidth={1.5} />
           <span>
             This space is archived. It is out of the sidebar and the index,
@@ -265,13 +265,13 @@ export default async function DepartmentPage({
             className="rounded-[11px]"
           />
           <div>
-            <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+            <h1 className="page-title">
               {dept.name}
             </h1>
             {dept.description ? (
-              <p className="mt-0.5 text-sm text-text-2">{dept.description}</p>
+              <p className="mt-0.5 text-body text-text-2">{dept.description}</p>
             ) : null}
-            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-text-2">
+            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-body text-text-2">
               <span>
                 {allProjects.length} project{allProjects.length === 1 ? "" : "s"}{" "}
                 across {lists.length} list{lists.length === 1 ? "" : "s"}.
@@ -284,7 +284,7 @@ export default async function DepartmentPage({
                   href={href({ due: filters.due === "overdue" ? null : "overdue" })}
                   aria-pressed={filters.due === "overdue"}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium transition-colors",
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-meta font-medium transition-colors",
                     filters.due === "overdue"
                       ? "bg-danger text-white"
                       : "bg-danger-soft text-danger hover:bg-danger hover:text-white"
@@ -385,7 +385,7 @@ export default async function DepartmentPage({
               canAddList ? (
                 <NewListForm ws={ws} departmentId={dept.id} slug={slug} />
               ) : (
-                <p className="text-[12.5px] text-text-3">
+                <p className="text-meta text-text-3">
                   Ask a team lead or a manager to add one.
                 </p>
               )
@@ -409,7 +409,7 @@ export default async function DepartmentPage({
                   </Link>
                 </Button>
               ) : (
-                <p className="text-[12.5px] text-text-3">
+                <p className="text-meta text-text-3">
                   Ask a manager to start the first one.
                 </p>
               )
@@ -481,7 +481,7 @@ export default async function DepartmentPage({
                 <Link
                   key={l.id}
                   href={`/${ws}/projects/new?department=${dept.id}&list=${l.id}`}
-                  className="rounded-[8px] px-2 py-1 text-[12px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover/section:opacity-100"
+                  className="rounded-[8px] px-2 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover/section:opacity-100"
                 >
                   New with details
                 </Link>

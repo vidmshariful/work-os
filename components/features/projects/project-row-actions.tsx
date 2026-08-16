@@ -48,7 +48,7 @@ export function ProjectRowActions({
     <>
       <Link
         href={`/${ws}/projects/${projectId}`}
-        className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+        className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
       >
         Open
       </Link>

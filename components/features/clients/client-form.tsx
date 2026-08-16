@@ -14,7 +14,7 @@ import type { OwnerOption } from "./queries";
 const initialState: ClientFormState = { error: null };
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 const ORIGIN_OPTIONS = [
   { value: "direct", label: "Direct" },
@@ -275,7 +275,7 @@ export function NewClientForm({
         <input id="intake_form_url" name="intake_form_url" placeholder="forms.gle/..." className={inputClass} />
       </Field>
 
-      <div className="rounded-[10px] bg-brand-soft/60 px-4 py-3 text-[12.5px] leading-relaxed text-text-1">
+      <div className="rounded-[10px] bg-brand-soft/60 px-4 py-3 text-meta leading-relaxed text-text-1">
         <span className="font-semibold">What happens on create:</span>{" "}
         the client lands in Onboard
         {template
@@ -289,7 +289,7 @@ export function NewClientForm({
       </div>
 
       {state.error ? (
-        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-meta font-medium text-danger">
           {state.error}
         </p>
       ) : null}

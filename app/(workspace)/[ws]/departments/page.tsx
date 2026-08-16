@@ -103,28 +103,28 @@ export default async function DepartmentsPage({
           <SpaceGlyph name={d.name} icon={d.icon} color={d.accent_color} size={36} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="truncate text-[15px] font-semibold text-text-1">
+              <span className="truncate text-lead font-semibold text-text-1">
                 {d.name}
               </span>
               {d.is_default ? (
-                <span className="rounded-[6px] bg-brand-soft px-1.5 py-0.5 text-[11px] font-medium text-brand">
+                <span className="rounded-[6px] bg-brand-soft px-1.5 py-0.5 text-label font-medium text-brand">
                   Default
                 </span>
               ) : null}
               {d.archived_at ? (
-                <span className="rounded-[6px] bg-chip-gray px-1.5 py-0.5 text-[11px] font-medium text-text-3">
+                <span className="rounded-[6px] bg-chip-gray px-1.5 py-0.5 text-label font-medium text-text-3">
                   Archived
                 </span>
               ) : null}
             </div>
             {d.description ? (
-              <p className="mt-0.5 line-clamp-2 text-[12.5px] text-text-2">
+              <p className="mt-0.5 line-clamp-2 text-meta text-text-2">
                 {d.description}
               </p>
             ) : null}
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-4 text-[12.5px] text-text-2">
+        <div className="mt-4 flex items-center gap-4 text-meta text-text-2">
           <span className="flex items-center gap-1.5">
             <FolderKanban className="size-4 text-text-3" strokeWidth={1.5} />
             <span className="font-mono tabular">{projectCount.get(d.id) ?? 0}</span>{" "}
@@ -157,10 +157,10 @@ export default async function DepartmentsPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="page-title">
             Spaces
           </h1>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             Each space is an area of the studio. You see the ones you belong to.
           </p>
         </div>
@@ -184,7 +184,7 @@ export default async function DepartmentsPage({
               isExec ? (
                 <NewSpaceButton ws={ws} />
               ) : (
-                <p className="max-w-xs text-[12.5px] text-text-3">
+                <p className="max-w-xs text-meta text-text-3">
                   Ask an executive to add you. In Vidiosa that is{" "}
                   {executiveNames || "whoever runs the workspace"}.
                 </p>
@@ -201,8 +201,8 @@ export default async function DepartmentsPage({
       {archived.length > 0 ? (
         <div className="flex flex-col gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-text-1">Archived</h2>
-            <p className="text-[12.5px] text-text-2">
+            <h2 className="text-body font-semibold text-text-1">Archived</h2>
+            <p className="text-meta text-text-2">
               Out of the sidebar and out of the way. Nothing was deleted, and
               nobody lost access.
             </p>

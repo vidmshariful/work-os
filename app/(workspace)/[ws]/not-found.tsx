@@ -11,8 +11,8 @@ export default function WorkspaceNotFound() {
         <Compass className="size-6" strokeWidth={1.5} />
       </div>
       <div>
-        <h2 className="text-lg font-semibold text-text-1">Not found</h2>
-        <p className="mt-1 text-sm text-text-2">
+        <h2 className="text-h3 font-semibold text-text-1">Not found</h2>
+        <p className="page-subtitle mt-1">
           This page or record does not exist, or it is not available to you.
         </p>
       </div>

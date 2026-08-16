@@ -36,8 +36,8 @@ export interface BoardTask {
 function CardBody({ t }: { t: BoardTask }) {
   return (
     <Card className="p-3 transition-colors hover:border-border-strong">
-      <CodeLabel code={t.project.code} className="text-[11px]" />
-      <p className="mt-1 line-clamp-2 text-[13px] font-medium leading-snug text-text-1">
+      <CodeLabel code={t.project.code} className="text-label" />
+      <p className="mt-1 line-clamp-2 text-body font-medium leading-snug text-text-1">
         {t.title}
       </p>
       <div className="mt-2.5 flex items-center justify-between">
@@ -48,9 +48,9 @@ function CardBody({ t }: { t: BoardTask }) {
             size={22}
           />
         ) : (
-          <span className="text-[11px] text-text-3">Unassigned</span>
+          <span className="text-label text-text-3">Unassigned</span>
         )}
-        <DueDateLabel date={t.due_date} status={t.status} className="text-[11px]" />
+        <DueDateLabel date={t.due_date} status={t.status} className="text-label" />
       </div>
     </Card>
   );
@@ -104,13 +104,13 @@ function Column({
       )}
     >
       <div className="flex items-center gap-2 px-1">
-        <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-text-3">
+        <span className="text-label font-semibold uppercase tracking-[0.06em] text-text-3">
           {STATUS_LABELS[status]}
         </span>
         <CountBadge count={count} className="ml-0" />
       </div>
       {count === 0 ? (
-        <div className="rounded-[12px] border border-dashed border-border px-3 py-6 text-center text-[12px] text-text-3">
+        <div className="rounded-[12px] border border-dashed border-border px-3 py-6 text-center text-meta text-text-3">
           Empty
         </div>
       ) : (

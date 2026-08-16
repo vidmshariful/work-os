@@ -287,7 +287,7 @@ export function ListSectionMenu({
                   <span className={cn("size-2.5 rounded-full", toneDotClass(tone))} />
                   <span className="capitalize">{tone}</span>
                   {list.color === tone ? (
-                    <span className="ml-auto text-[11px] text-text-3">Current</span>
+                    <span className="ml-auto text-label text-text-3">Current</span>
                   ) : null}
                 </DropdownMenuItem>
               ))}
@@ -339,7 +339,7 @@ export function ListSectionMenu({
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem disabled className="text-[11.5px]">
+                <DropdownMenuItem disabled className="text-label">
                   {projectCount === 0
                     ? "Nothing filed here yet"
                     : `${projectCount} project${projectCount === 1 ? "" : "s"} move too`}

@@ -13,7 +13,7 @@ export function CountBadge({
   return (
     <span
       className={cn(
-        "ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chip-gray px-1.5 font-mono text-[11px] font-semibold text-text-2 tabular",
+        "ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chip-gray px-1.5 font-mono text-label font-semibold text-text-2 tabular",
         className
       )}
     >
@@ -28,7 +28,7 @@ export function Breadcrumbs({
   items: { label: string; href?: string }[];
 }) {
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[12.5px]">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-meta">
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1">
           {i > 0 ? <ChevronRight className="size-3.5 text-text-3" /> : null}
@@ -71,7 +71,7 @@ export function CodeLabel({
   return (
     <span
       className={cn(
-        "font-mono text-[12px] font-medium text-text-2 tabular",
+        "font-mono text-meta font-medium text-text-2 tabular",
         className
       )}
     >

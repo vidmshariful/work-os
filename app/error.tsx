@@ -23,8 +23,8 @@ export default function RootError({
         <TriangleAlert className="size-6" strokeWidth={1.5} />
       </div>
       <div>
-        <h2 className="text-lg font-semibold text-text-1">Something went wrong</h2>
-        <p className="mt-1 text-sm text-text-2">
+        <h2 className="text-h3 font-semibold text-text-1">Something went wrong</h2>
+        <p className="page-subtitle mt-1">
           An unexpected error occurred. You can try again.
         </p>
       </div>

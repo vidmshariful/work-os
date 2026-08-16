@@ -79,10 +79,10 @@ export default async function ProjectsPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="page-title">
             Projects
           </h1>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             Every engagement in flight, by list or by board.
           </p>
         </div>
@@ -148,7 +148,7 @@ export default async function ProjectsPage({
                 meta={
                   <>
                     {p.owner ? (
-                      <span className="flex items-center gap-1.5 text-[12.5px] text-text-2">
+                      <span className="flex items-center gap-1.5 text-meta text-text-2">
                         <PersonAvatar
                           name={p.owner.full_name}
                           src={p.owner.avatar_url}

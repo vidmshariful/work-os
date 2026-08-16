@@ -21,7 +21,7 @@ export function WorkspaceRail({
             href={`/${ws.slug}/home`}
             title={ws.name}
             className={cn(
-              "flex size-9 items-center justify-center rounded-[10px] text-[13px] font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-brand/40",
+              "flex size-9 items-center justify-center rounded-[10px] text-body font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-brand/40",
               active
                 ? "ring-2 ring-offset-2 ring-offset-surface"
                 : "opacity-75 hover:opacity-100"

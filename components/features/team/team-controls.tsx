@@ -24,7 +24,7 @@ import { ARCHETYPE_META, ARCHETYPES } from "./labels";
 const initialState: TeamActionState = { error: null };
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function OnboardDialog({
   ws,
@@ -107,7 +107,7 @@ export function OnboardDialog({
             </Field>
           </div>
           {state.error ? (
-            <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+            <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-meta font-medium text-danger">
               {state.error}
             </p>
           ) : null}
@@ -137,7 +137,7 @@ export function ReportsToSelect({
   return (
     <select
       aria-label="Reports to"
-      className="h-8 rounded-[9px] border border-border bg-surface px-2 text-[12.5px] text-text-1 outline-none focus-visible:border-brand"
+      className="h-8 rounded-[9px] border border-border bg-surface px-2 text-meta text-text-1 outline-none focus-visible:border-brand"
       value={reportsTo ?? ""}
       disabled={pending}
       onChange={(e) =>
@@ -183,7 +183,7 @@ export function OffboardButton({
         <DialogHeader>
           <DialogTitle>Offboard {name}?</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-text-2">
+        <p className="text-body text-text-2">
           Their membership is deactivated and they lose access on their next
           request. Their work history stays.
         </p>

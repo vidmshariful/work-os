@@ -78,7 +78,7 @@ export function ActivityThread({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3.5">
         {items.length === 0 ? (
-          <p className="py-3 text-center text-[12.5px] text-text-3">
+          <p className="py-3 text-center text-meta text-text-3">
             The story of this client starts here.
           </p>
         ) : (
@@ -89,7 +89,7 @@ export function ActivityThread({
                   <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-chip-gray">
                     <Zap className="size-3 text-text-3" strokeWidth={1.5} />
                   </span>
-                  <p className="text-[12.5px] text-text-2">
+                  <p className="text-meta text-text-2">
                     {item.body}{" "}
                     <span className="text-text-3"><TimeAgo at={item.created_at} /></span>
                   </p>
@@ -105,13 +105,13 @@ export function ActivityThread({
                   size={28}
                 />
                 <div className="min-w-0 flex-1 rounded-[10px] bg-surface-2 px-3 py-2">
-                  <p className="text-[12px]">
+                  <p className="text-meta">
                     <span className="font-medium text-text-1">
                       {author?.full_name ?? "Someone"}
                     </span>{" "}
                     <span className="text-text-3"><TimeAgo at={item.created_at} /></span>
                   </p>
-                  <p className="mt-0.5 whitespace-pre-wrap text-sm leading-relaxed text-text-1">
+                  <p className="mt-0.5 whitespace-pre-wrap text-body leading-relaxed text-text-1">
                     {item.body}
                   </p>
                 </div>
@@ -132,7 +132,7 @@ export function ActivityThread({
                 key={p.id}
                 type="button"
                 onClick={() => insertMention(p)}
-                className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[13px] text-text-1 hover:bg-surface-2"
+                className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-body text-text-1 hover:bg-surface-2"
               >
                 <PersonAvatar name={p.full_name} src={p.avatar_url} size={20} />
                 {p.full_name}
@@ -147,7 +147,7 @@ export function ActivityThread({
           required
           placeholder="Write to the team. Type @ to mention someone."
           onInput={onInput}
-          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
         />
         <div className="flex justify-end">
           <Button type="submit" size="sm" disabled={pending}>

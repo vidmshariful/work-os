@@ -16,10 +16,10 @@ export default async function AdminLayout({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+        <h1 className="page-title">
           Settings
         </h1>
-        <p className="mt-1 text-sm text-text-2">
+        <p className="page-subtitle mt-1">
           Roles, the wall line, templates, and workspace configuration.
         </p>
       </div>

@@ -11,7 +11,7 @@ export function DbTabs({
 }) {
   const seg = (on: boolean) =>
     cn(
-      "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
+      "rounded-[7px] px-3 py-1 text-body font-medium transition-colors",
       on ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
     );
   return (

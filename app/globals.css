@@ -96,19 +96,62 @@
   --radius-card: 14px;
   --radius-control: 9px;
   --radius-chip: 8px;
+
+  /* ---- The type scale -----------------------------------------------------
+     There were seventeen different font sizes in this app and no rule about
+     which to use where, which is why every screen read as one flat weight:
+     plenty of variation, none of it meaning anything. These seven steps are
+     the whole vocabulary now. Each carries its own line height so density is
+     a property of the step rather than something each screen re-decides.
+
+       micro  overline counts, keyboard hints
+       label  uppercase column and group headings
+       meta   secondary text: dates, counts, the second line of a row
+       body   the default. Row titles, form text, most of the app
+       lead   card titles, an emphasised row, a stat's caption
+       h3     section headings inside a page
+       h2     the number on a stat card, a sub page heading
+       h1     the page title, once per screen
+     -------------------------------------------------------------------- */
+  --text-micro: 10.5px;
+  --text-micro--line-height: 14px;
+  --text-micro--letter-spacing: 0.02em;
+  --text-label: 11px;
+  --text-label--line-height: 15px;
+  --text-label--letter-spacing: 0.07em;
+  --text-meta: 12.5px;
+  --text-meta--line-height: 17px;
+  --text-body: 13.5px;
+  --text-body--line-height: 19px;
+  --text-lead: 15px;
+  --text-lead--line-height: 21px;
+  --text-lead--letter-spacing: -0.006em;
+  --text-h3: 17px;
+  --text-h3--line-height: 23px;
+  --text-h3--letter-spacing: -0.011em;
+  --text-h2: 21px;
+  --text-h2--line-height: 27px;
+  --text-h2--letter-spacing: -0.018em;
+  --text-h1: 27px;
+  --text-h1--line-height: 33px;
+  --text-h1--letter-spacing: -0.023em;
 }
 
 :root {
-  /* Canvas and surface */
-  --bg: #f6f7f9;
+  /* Canvas and surface. The canvas used to sit a hair off white, so a white
+     card on it had almost nothing to stand on and every screen read as one
+     undifferentiated sheet. Dropping the canvas a few steps is what lets a
+     card be a card without needing a shadow to prove it. surface-2 moved for
+     the same reason: a row hover you cannot see is not a hover. */
+  --bg: #f1f3f6;
   --surface: #ffffff;
-  --surface-2: #fbfbfc;
-  --border-strong: #d3d7dd;
+  --surface-2: #f6f7f9;
+  --border-strong: #cdd2da;
 
   /* Text */
-  --text: #1a1d21;
-  --text-2: #6b7280;
-  --text-3: #8b919b;
+  --text: #15181c;
+  --text-2: #666e7a;
+  --text-3: #878e99;
 
   /* Actions */
   --brand: #3b6ff6;
@@ -127,8 +170,8 @@
   --danger-soft: #fce9e9;
 
   /* Neutral fills */
-  --nav-active: #f0f1f3;
-  --chip-gray: #f0f1f3;
+  --nav-active: #e9ecf1;
+  --chip-gray: #eef0f4;
 
   /* Tag palette */
   --tag-blue: #3b6ff6;
@@ -153,9 +196,12 @@
   --tag-teal-text: #0b7570;
   --tag-gray-text: #5d6675;
 
-  /* Depth. Light leans on a hairline shadow, dark leans on the border. */
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow-pop: 0 4px 12px rgba(16, 24, 40, 0.08);
+  /* Depth. A card used to carry a border and two shadows at once, which read
+     as neither flat nor raised, just soft. The border does the work now and
+     the shadow is a whisper under it. Anything that genuinely floats above
+     the page, a menu or a dialog, still gets shadow-pop. */
+  --shadow-card: 0 1px 1px rgba(16, 24, 40, 0.03);
+  --shadow-pop: 0 8px 24px -6px rgba(16, 24, 40, 0.14), 0 2px 6px rgba(16, 24, 40, 0.06);
 
   /* shadcn mapping */
   --background: var(--bg);
@@ -173,8 +219,8 @@
   --accent: var(--nav-active);
   --accent-foreground: var(--text);
   --destructive: var(--danger);
-  --border: #e8eaed;
-  --input: #e8eaed;
+  --border: #e3e6eb;
+  --input: #dde1e8;
   --ring: var(--brand);
   --chart-1: #3b6ff6;
   --chart-2: #7c5cfc;
@@ -305,6 +351,33 @@
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  /* The page title, in one place. Every screen used to spell out its own
+     26px semibold tracking-tight, so changing the title meant finding
+     thirty-five of them. */
+  .page-title {
+    font-size: var(--text-h1);
+    line-height: var(--text-h1--line-height);
+    letter-spacing: var(--text-h1--letter-spacing);
+    font-weight: 600;
+    color: var(--text);
+  }
+  .page-subtitle {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    color: var(--text-2);
+  }
+
+  /* A column heading over a table or a list. Was written out longhand in a
+     dozen places at three different sizes. */
+  .col-label {
+    font-size: var(--text-label);
+    line-height: var(--text-label--line-height);
+    letter-spacing: var(--text-label--letter-spacing);
+    font-weight: 600;
     text-transform: uppercase;
     color: var(--text-3);
   }

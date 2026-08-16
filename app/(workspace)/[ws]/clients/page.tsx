@@ -119,7 +119,7 @@ export default async function ClientsPage({
       href={`/${ws}/clients${v === "pipeline" ? "?view=pipeline" : ""}`}
       aria-current={view === v ? "page" : undefined}
       className={cn(
-        "flex items-center gap-1.5 rounded-[7px] px-2.5 py-1 text-[12.5px] font-medium transition-colors",
+        "flex items-center gap-1.5 rounded-[7px] px-2.5 py-1 text-meta font-medium transition-colors",
         view === v ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
       )}
     >
@@ -132,10 +132,10 @@ export default async function ClientsPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="page-title">
             Clients
           </h1>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             The relationship pipeline, from onboarding to done.
           </p>
         </div>

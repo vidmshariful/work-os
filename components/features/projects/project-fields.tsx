@@ -199,8 +199,8 @@ export function ProjectFields({
           strokeWidth={2}
         />
         <Sliders className="size-4 text-text-3" strokeWidth={1.5} />
-        <span className="text-sm font-semibold text-text-1">Fields</span>
-        <span className="ml-auto font-mono text-[11.5px] text-text-3 tabular">
+        <span className="text-body font-semibold text-text-1">Fields</span>
+        <span className="ml-auto font-mono text-label text-text-3 tabular">
           {rows.filter((f) => !isEmpty(f.value)).length} of {rows.length}
         </span>
       </button>
@@ -428,7 +428,7 @@ function FieldControl({
             href={String(value)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 px-2 text-[13px] text-brand hover:underline"
+            className="inline-flex items-center gap-1 px-2 text-body text-brand hover:underline"
           >
             <ExternalLink className="size-3.5" strokeWidth={1.5} />
             {shortUrl(String(value))}
@@ -477,7 +477,7 @@ function FieldControl({
     case "long_text": {
       if (!canEdit) {
         return value ? (
-          <p className="whitespace-pre-wrap px-2 text-[13px] text-text-1">{String(value)}</p>
+          <p className="whitespace-pre-wrap px-2 text-body text-text-1">{String(value)}</p>
         ) : (
           empty
         );
@@ -509,7 +509,7 @@ function FieldControl({
     case "date": {
       if (!canEdit) {
         return value ? (
-          <span className="px-2 font-mono text-[13px] text-text-1 tabular">
+          <span className="px-2 font-mono text-body text-text-1 tabular">
             {fmtDate(String(value))}
           </span>
         ) : (
@@ -536,7 +536,7 @@ function FieldControl({
         return value !== null && value !== undefined && value !== "" ? (
           <span
             className={cn(
-              "px-2 text-[13px] text-text-1",
+              "px-2 text-body text-text-1",
               field.kind === "number" && "font-mono tabular"
             )}
           >

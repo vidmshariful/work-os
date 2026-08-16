@@ -61,7 +61,7 @@ export function DueDateLabel({
   return (
     <span
       className={cn(
-        "font-mono text-[12px] tabular",
+        "font-mono text-meta tabular",
         isOverdue(date, status) ? "font-medium text-danger" : "text-text-2",
         className
       )}
@@ -74,7 +74,7 @@ export function DueDateLabel({
 export function RevisionHint({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="font-mono text-[11.5px] text-text-3 tabular">
+    <span className="font-mono text-label text-text-3 tabular">
       x{count} rev
     </span>
   );

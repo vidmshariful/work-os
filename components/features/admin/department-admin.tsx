@@ -37,7 +37,7 @@ export interface DeptAdminRow {
 const ACCENTS = ["#3B6FF6", "#7C5CFC", "#16A34A", "#E5486D", "#12A8A0", "#8A94A3"];
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 function CreateDepartment({ ws }: { ws: string }) {
   const [name, setName] = useState("");
@@ -161,18 +161,18 @@ function DepartmentCard({
                   setEditing(false);
                 }
               }}
-              className="h-8 rounded-[8px] border border-border bg-surface px-2 text-[15px] font-semibold text-text-1 outline-none focus-visible:border-brand"
+              className="h-8 rounded-[8px] border border-border bg-surface px-2 text-lead font-semibold text-text-1 outline-none focus-visible:border-brand"
             />
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="truncate text-[15px] font-semibold text-text-1 hover:text-brand"
+              className="truncate text-lead font-semibold text-text-1 hover:text-brand"
             >
               {dept.name}
             </button>
           )}
           {dept.is_default ? (
-            <span className="rounded-[6px] bg-brand-soft px-1.5 py-0.5 text-[11px] font-medium text-brand">
+            <span className="rounded-[6px] bg-brand-soft px-1.5 py-0.5 text-label font-medium text-brand">
               Default
             </span>
           ) : null}
@@ -234,12 +234,12 @@ function DepartmentCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {dept.members.length === 0 ? (
-          <span className="text-[12.5px] text-text-3">No members yet.</span>
+          <span className="text-meta text-text-3">No members yet.</span>
         ) : (
           dept.members.map((m) => (
             <span
               key={m.id}
-              className="group flex items-center gap-1.5 rounded-full border border-border py-0.5 pl-0.5 pr-1.5 text-[12.5px]"
+              className="group flex items-center gap-1.5 rounded-full border border-border py-0.5 pl-0.5 pr-1.5 text-meta"
             >
               <PersonAvatar name={m.name} src={m.avatar_url} size={20} />
               <span className="text-text-1">{m.name}</span>
@@ -265,7 +265,7 @@ function DepartmentCard({
               const id = e.target.value;
               if (id) run(() => addDepartmentMember(ws, dept.id, id));
             }}
-            className="h-7 rounded-[8px] border border-dashed border-border bg-surface px-2 text-[12.5px] text-text-2 outline-none focus-visible:border-brand"
+            className="h-7 rounded-[8px] border border-dashed border-border bg-surface px-2 text-meta text-text-2 outline-none focus-visible:border-brand"
           >
             <option value="">Add member</option>
             {available.map((m) => (
@@ -291,7 +291,7 @@ export function DepartmentAdmin({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[12.5px] text-text-2">
+      <p className="text-meta text-text-2">
         A space is an area of the studio. People see only the spaces they
         belong to, and executives see all of them. Keep names brand-blind,
         never a client name.

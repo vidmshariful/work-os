@@ -1,7 +1,10 @@
 import { cn } from "@/lib/utils";
 import { Card } from "./card";
 
-// Icon chip, big number, label. Dashboard and KPI headers.
+// Icon chip, big number, label. The number is the whole point of the card, so
+// it is the largest thing on it by a clear step: four of these in a row used
+// to read as four identical grey boxes because the figure and its caption sat
+// only a size apart.
 export function StatCard({
   icon,
   value,
@@ -27,29 +30,29 @@ export function StatCard({
     gray: "bg-chip-gray text-text-2",
   };
   return (
-    <Card className={cn("p-5", className)}>
-      <div className="flex items-start gap-3.5">
+    <Card className={cn("p-4", className)}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-label font-semibold uppercase tracking-[0.07em] text-text-3">
+            {label}
+          </div>
+          <div className="mt-1.5 font-mono text-h1 font-semibold leading-none text-text-1 tabular">
+            {value}
+          </div>
+          {hint ? (
+            <div className="mt-1.5 truncate text-meta text-text-3">{hint}</div>
+          ) : null}
+        </div>
         {icon ? (
           <span
             className={cn(
-              "flex size-9 shrink-0 items-center justify-center rounded-[10px] [&>svg]:size-[18px]",
+              "flex size-8 shrink-0 items-center justify-center rounded-[9px] [&>svg]:size-[17px]",
               tones[tone]
             )}
           >
             {icon}
           </span>
         ) : null}
-        <div className="min-w-0">
-          <div className="font-mono text-[24px] font-semibold leading-tight text-text-1 tabular">
-            {value}
-          </div>
-          <div className="mt-0.5 truncate text-[12.5px] font-medium text-text-2">
-            {label}
-          </div>
-          {hint ? (
-            <div className="mt-0.5 text-[12px] text-text-3">{hint}</div>
-          ) : null}
-        </div>
       </div>
     </Card>
   );

@@ -327,7 +327,7 @@ export function SpaceGroupedList({
                 // rather than a full empty state. The action is right there:
                 // type a title into the row below.
                 <Card className={cn(block.folder !== null && "border-0 bg-transparent shadow-none")}>
-                  <p className="px-5 py-4 text-[12.5px] text-text-3">
+                  <p className="px-5 py-4 text-meta text-text-3">
                     {emptyNote?.[g.key] ??
                       (quickAdd
                         ? `Nothing in ${g.label} yet. Add the first project below.`
@@ -474,7 +474,7 @@ export function SpaceGroupedList({
 
       <DragOverlay>
         {active ? (
-          <div className="rounded-[12px] border border-border bg-surface px-3 py-2 text-[13px] font-medium text-text-1 shadow-[var(--shadow-pop)]">
+          <div className="rounded-[12px] border border-border bg-surface px-3 py-2 text-body font-medium text-text-1 shadow-[var(--shadow-pop)]">
             {active.title}
           </div>
         ) : null}

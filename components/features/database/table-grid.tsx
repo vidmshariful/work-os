@@ -67,7 +67,7 @@ function rowText(row: DbRow, fields: DbField[], members: MemberRef[]) {
 }
 
 const cellInput =
-  "h-9 w-full min-w-[8rem] border-0 bg-transparent px-3 text-[13px] text-text-1 outline-none focus:bg-accent-soft/40";
+  "h-9 w-full min-w-[8rem] border-0 bg-transparent px-3 text-body text-text-1 outline-none focus:bg-accent-soft/40";
 
 export function TableGrid({
   ws,
@@ -168,7 +168,7 @@ export function TableGrid({
   };
   const choices = filterChoices();
   const controlClass =
-    "h-8 rounded-[8px] border border-border bg-surface px-2 text-[12.5px] text-text-2 outline-none focus-visible:border-brand";
+    "h-8 rounded-[8px] border border-border bg-surface px-2 text-meta text-text-2 outline-none focus-visible:border-brand";
 
   function Cell({ row, field }: { row: DbRow; field: DbField }) {
     const v = valueOf(row, field.id);
@@ -192,17 +192,17 @@ export function TableGrid({
 
     if (!canEdit) {
       if (field.type === "checkbox") {
-        return <span className="block px-3 py-2 text-[13px]">{v ? "Yes" : "—"}</span>;
+        return <span className="block px-3 py-2 text-body">{v ? "Yes" : "—"}</span>;
       }
       if (field.type === "person") {
         const m = members.find((x) => x.id === v);
-        return <span className="block px-3 py-2 text-[13px]">{m?.full_name ?? "—"}</span>;
+        return <span className="block px-3 py-2 text-body">{m?.full_name ?? "—"}</span>;
       }
       if (field.type === "multi_select") {
         const vals = asArray(v);
         return (
           <span className="flex flex-wrap gap-1 px-3 py-2">
-            {vals.length === 0 ? <span className="text-[13px]">—</span> : null}
+            {vals.length === 0 ? <span className="text-body">—</span> : null}
             {vals.map((label) => (
               <Chip key={label} label={label} field={field} />
             ))}
@@ -221,14 +221,14 @@ export function TableGrid({
             href={href}
             target={field.type === "url" ? "_blank" : undefined}
             rel="noreferrer"
-            className="block truncate px-3 py-2 text-[13px] text-brand hover:underline"
+            className="block truncate px-3 py-2 text-body text-brand hover:underline"
           >
             {String(v)}
           </a>
         );
       }
       return (
-        <span className="block whitespace-pre-wrap px-3 py-2 text-[13px]">
+        <span className="block whitespace-pre-wrap px-3 py-2 text-body">
           {v == null || v === "" ? "—" : String(v)}
         </span>
       );
@@ -429,13 +429,13 @@ export function TableGrid({
               setFilterVal("");
               setSortId("");
             }}
-            className="text-[12.5px] font-medium text-brand hover:underline"
+            className="text-meta font-medium text-brand hover:underline"
           >
             Clear
           </button>
         ) : null}
 
-        <span className="ml-auto text-[12.5px] text-text-3">
+        <span className="ml-auto text-meta text-text-3">
           <span className="font-mono tabular">{visible.length}</span>
           {visible.length === rows.length ? " rows" : ` of ${rows.length} rows`}
         </span>
@@ -482,7 +482,7 @@ export function TableGrid({
             ))}
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={fields.length + 2} className="px-4 py-8 text-center text-[13px] text-text-3">
+                <td colSpan={fields.length + 2} className="px-4 py-8 text-center text-body text-text-3">
                   {rows.length === 0 ? "No rows yet." : "No rows match those filters."}
                 </td>
               </tr>
@@ -508,7 +508,7 @@ function Chip({ label, field }: { label: string; field: DbField }) {
     field.options?.choices?.find((c) => c.label === label)?.color ?? "#8A94A3";
   return (
     <span
-      className="rounded-full px-1.5 py-0.5 text-[11px] font-medium"
+      className="rounded-full px-1.5 py-0.5 text-label font-medium"
       style={{ backgroundColor: `${color}22`, color }}
     >
       {label}
@@ -540,7 +540,7 @@ function MultiSelectCell({
       <PopoverTrigger asChild>
         <button className="flex min-h-9 w-full flex-wrap items-center gap-1 px-3 py-1.5 text-left hover:bg-accent-soft/40">
           {selected.length === 0 ? (
-            <span className="text-[13px] text-text-3">—</span>
+            <span className="text-body text-text-3">—</span>
           ) : (
             selected.map((label) => <Chip key={label} label={label} field={field} />)
           )}
@@ -548,7 +548,7 @@ function MultiSelectCell({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-52">
         {choices.length === 0 ? (
-          <p className="text-[12.5px] text-text-3">
+          <p className="text-meta text-text-3">
             No choices defined for this field.
           </p>
         ) : (
@@ -561,7 +561,7 @@ function MultiSelectCell({
                 className="flex items-center gap-2 rounded-[7px] px-2 py-1.5 text-left hover:bg-surface-2"
               >
                 <Checkbox checked={selected.includes(c.label)} aria-label={c.label} />
-                <span className="text-[13px] text-text-1">{c.label}</span>
+                <span className="text-body text-text-1">{c.label}</span>
               </button>
             ))}
           </div>
@@ -589,7 +589,7 @@ function FieldHeader({
 
   if (!canEdit) {
     return (
-      <span className="block px-3 py-2 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
+      <span className="block px-3 py-2 text-label font-semibold uppercase tracking-[0.05em] text-text-3">
         {field.name}
       </span>
     );
@@ -598,7 +598,7 @@ function FieldHeader({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button className="block w-full px-3 py-2 text-left text-[11.5px] font-semibold uppercase tracking-[0.05em] text-text-3 hover:text-text-1">
+        <button className="block w-full px-3 py-2 text-left text-label font-semibold uppercase tracking-[0.05em] text-text-3 hover:text-text-1">
           {field.name}
           <span className="ml-1.5 font-normal normal-case text-text-3">
             {TYPE_LABELS[field.type]}
@@ -610,7 +610,7 @@ function FieldHeader({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand"
+            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none focus-visible:border-brand"
           />
           {/* The way out of a password sitting in plain text. Every value in
               the column is encrypted first, and the column only becomes a
@@ -622,7 +622,7 @@ function FieldHeader({
                 onRun(() => convertFieldToSecret(ws, tableId, field.id));
                 setOpen(false);
               }}
-              className="flex items-center gap-2 rounded-[8px] px-1 py-1.5 text-left text-[12.5px] text-text-2 hover:bg-nav-active hover:text-text-1"
+              className="flex items-center gap-2 rounded-[8px] px-1 py-1.5 text-left text-meta text-text-2 hover:bg-nav-active hover:text-text-1"
             >
               <KeyRound className="size-3.5 shrink-0" strokeWidth={1.5} />
               Turn into a password field
@@ -704,12 +704,12 @@ function AddFieldPopover({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Field name"
-            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand"
+            className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none focus-visible:border-brand"
           />
           <select
             value={type}
             onChange={(e) => setType(e.target.value as DbFieldType)}
-            className="h-9 w-full rounded-[9px] border border-border bg-surface px-2.5 text-sm text-text-1 outline-none focus-visible:border-brand"
+            className="h-9 w-full rounded-[9px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none focus-visible:border-brand"
           >
             {(Object.keys(TYPE_LABELS) as DbFieldType[]).map((t) => (
               <option key={t} value={t}>
@@ -722,7 +722,7 @@ function AddFieldPopover({
               value={choices}
               onChange={(e) => setChoices(e.target.value)}
               placeholder="Choices, comma separated"
-              className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand"
+              className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none focus-visible:border-brand"
             />
           ) : null}
           <Button type="submit" size="sm" disabled={!name.trim()}>

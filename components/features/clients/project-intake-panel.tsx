@@ -18,7 +18,7 @@ import type { ProjectIntake } from "@/lib/types";
 const initialState: IntakeActionState = { error: null };
 
 const inputClass =
-  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
+  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
 
 export function IntakeStatusTag({ status }: { status: ProjectIntake["status"] }) {
   if (status === "received") return <Tag tone="green">Intake received</Tag>;
@@ -70,7 +70,7 @@ function ResponseForm({
         rows={4}
         defaultValue={intake.response_note ?? ""}
         placeholder="Paste what they submitted: goals, audience, style, references."
-        className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-[13px] leading-relaxed text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
+        className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body leading-relaxed text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
       />
       <div className="flex justify-end gap-1.5">
         <Button type="button" variant="ghost" size="sm" onClick={onDone}>
@@ -150,7 +150,7 @@ export function ProjectIntakePanel({
   if (intake.status === "sent") {
     return (
       <div className="flex flex-col gap-2">
-        <p className="text-[12.5px] text-text-2">
+        <p className="text-meta text-text-2">
           Sent {intake.sent_at ? <TimeAgo at={intake.sent_at} /> : null}.
           {intake.form_url ? (
             <>
@@ -184,15 +184,15 @@ export function ProjectIntakePanel({
         )}
       >
         {intake.response_note ? (
-          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-text-1">
+          <p className="whitespace-pre-wrap text-body leading-relaxed text-text-1">
             {intake.response_note}
           </p>
         ) : (
-          <p className="text-[12.5px] text-text-3">
+          <p className="text-meta text-text-3">
             Received, no summary pasted yet.
           </p>
         )}
-        <div className="mt-1.5 flex items-center justify-between text-[11.5px] text-text-3">
+        <div className="mt-1.5 flex items-center justify-between text-label text-text-3">
           <span>Received {intake.received_at ? <TimeAgo at={intake.received_at} /> : null}</span>
           {intake.response_url ? (
             <a

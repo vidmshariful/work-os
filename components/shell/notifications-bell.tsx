@@ -90,7 +90,7 @@ export function NotificationsBell({
         >
           <Bell className="size-[18px] stroke-[1.5]" />
           {count > 3 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white tabular ring-2 ring-surface">
+            <span className="absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-danger px-1 text-micro font-semibold text-white tabular ring-2 ring-surface">
               {count > 9 ? "9+" : count}
             </span>
           ) : count > 0 ? (
@@ -100,7 +100,7 @@ export function NotificationsBell({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[340px] p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-          <span className="text-[13px] font-semibold text-text-1">Notifications</span>
+          <span className="text-body font-semibold text-text-1">Notifications</span>
           {count > 0 ? (
             <button
               onClick={async () => {
@@ -108,7 +108,7 @@ export function NotificationsBell({
                 setItems((prev) => prev?.map((n) => ({ ...n, is_read: true })) ?? null);
                 await markAllNotificationsRead(workspaceId);
               }}
-              className="text-[12px] font-medium text-brand hover:underline"
+              className="text-meta font-medium text-brand hover:underline"
             >
               Mark all read
             </button>
@@ -116,9 +116,9 @@ export function NotificationsBell({
         </div>
         <div className="max-h-[360px] overflow-y-auto">
           {items === null ? (
-            <p className="px-4 py-6 text-center text-[12.5px] text-text-3">Loading</p>
+            <p className="px-4 py-6 text-center text-meta text-text-3">Loading</p>
           ) : items.length === 0 ? (
-            <p className="px-4 py-6 text-center text-[12.5px] text-text-3">
+            <p className="px-4 py-6 text-center text-meta text-text-3">
               You are all caught up.
             </p>
           ) : (
@@ -130,11 +130,11 @@ export function NotificationsBell({
                     className={`mt-1.5 size-1.5 shrink-0 rounded-full ${n.is_read ? "bg-transparent" : "bg-brand"}`}
                   />
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-text-1">{n.title}</p>
+                    <p className="text-body font-medium text-text-1">{n.title}</p>
                     {n.body ? (
-                      <p className="mt-0.5 line-clamp-2 text-[12.5px] text-text-2">{n.body}</p>
+                      <p className="mt-0.5 line-clamp-2 text-meta text-text-2">{n.body}</p>
                     ) : null}
-                    <p className="mt-0.5 text-[11.5px] text-text-3"><TimeAgo at={n.created_at} /></p>
+                    <p className="mt-0.5 text-label text-text-3"><TimeAgo at={n.created_at} /></p>
                   </div>
                 </>
               );
@@ -158,7 +158,7 @@ export function NotificationsBell({
           )}
         </div>
         <div className="border-t border-border px-4 py-2">
-          <Link href="/notifications" className="text-[12.5px] font-medium text-brand hover:underline">
+          <Link href="/notifications" className="text-meta font-medium text-brand hover:underline">
             View all notifications
           </Link>
         </div>

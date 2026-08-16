@@ -66,10 +66,10 @@ export default async function PerformancePage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="page-title">
             Performance
           </h1>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             Computed from completed work. Nothing here is typed by hand.
           </p>
         </div>
@@ -193,7 +193,7 @@ function StudioView({
       lead: (
         <span className="flex items-center gap-2.5">
           <PersonAvatar name={name} src={l.profile?.avatar_url} size={26} />
-          <span className="truncate text-sm font-medium text-text-1">{name}</span>
+          <span className="truncate text-body font-medium text-text-1">{name}</span>
         </span>
       ),
       reports: asNum(r?.reports_count) ?? 0,

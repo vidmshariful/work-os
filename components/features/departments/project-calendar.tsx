@@ -70,7 +70,7 @@ export function ProjectCalendar({
   return (
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[15px] font-semibold text-text-1">
+        <h3 className="text-lead font-semibold text-text-1">
           {MONTHS[m - 1]} {y}
         </h3>
         <div className="flex items-center gap-1">
@@ -109,7 +109,7 @@ export function ProjectCalendar({
       ) : (
       <div className="grid grid-cols-7 gap-px overflow-hidden rounded-[10px] border border-border bg-border">
         {WD.map((w) => (
-          <div key={w} className="bg-surface-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.05em] text-text-3">
+          <div key={w} className="bg-surface-2 py-1.5 text-center text-label font-semibold uppercase tracking-[0.05em] text-text-3">
             {w}
           </div>
         ))}
@@ -117,13 +117,13 @@ export function ProjectCalendar({
           <div key={i} className="min-h-[92px] bg-surface p-1.5">
             {d ? (
               <>
-                <div className="mb-1 px-0.5 text-[11.5px] font-medium text-text-3 tabular">{d}</div>
+                <div className="mb-1 px-0.5 text-label font-medium text-text-3 tabular">{d}</div>
                 <div className="flex flex-col gap-1">
                   {(byDay.get(d) ?? []).map((p) => (
                     <Link
                       key={p.id}
                       href={`/${ws}/projects/${p.id}`}
-                      className="flex items-center gap-1 rounded-[6px] bg-surface-2 px-1.5 py-1 text-[11px] text-text-1 hover:bg-accent-soft"
+                      className="flex items-center gap-1 rounded-[6px] bg-surface-2 px-1.5 py-1 text-label text-text-1 hover:bg-accent-soft"
                     >
                       <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: STATUS_DOT[p.status] }} />
                       <span className="truncate">{p.title}</span>

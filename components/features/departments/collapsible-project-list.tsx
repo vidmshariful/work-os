@@ -147,7 +147,7 @@ function RowMarks({
       {files > 0 ? (
         <span className="flex items-center gap-0.5" aria-label={`${files} attached`}>
           <Paperclip className="size-3.5" strokeWidth={1.5} />
-          <span className="font-mono text-[10.5px] tabular">{files}</span>
+          <span className="font-mono text-micro tabular">{files}</span>
         </span>
       ) : null}
     </span>
@@ -198,10 +198,16 @@ const COL = {
   // in the middle of the gap and made a sub-project look like a stray row.
   leadChild: "w-[98px]",
   progress: "w-[20px]",
-  priority: "w-[28px]",
+  // Priority is a flag, but its heading is the word "Priority", and a 28px
+  // column could not hold it: the label ran straight into Status and the two
+  // rendered as "PRIORITSTATUS". A column is as wide as the wider of its
+  // heading and its contents.
+  priority: "w-[68px]",
   assignee: "w-[104px]",
   due: "w-[104px]",
-  status: "w-[104px]",
+  // Wide enough for "In progress" as one line. A status that wraps turns a
+  // 32px row into a 52px one and the whole list loses its rhythm.
+  status: "w-[116px]",
 };
 
 export function ProjectListHeader({
@@ -214,14 +220,14 @@ export function ProjectListHeader({
   return (
     // Same gaps and padding as a dense row, or the labels drift from the
     // columns they name by the difference between the two.
-    <div className="flex items-center gap-3 border-b border-border px-4 py-2 text-[11.5px] font-medium uppercase tracking-[0.06em] text-text-3">
+    <div className="col-label flex items-center gap-3 border-b border-border px-4 py-2">
       <span className={COL.lead} aria-hidden />
       <span className="min-w-0 flex-1">Name</span>
       <span className={COL.progress} aria-hidden />
-      <span className={COL.assignee}>Assignee</span>
-      <span className={COL.due}>Due date</span>
-      <span className={COL.priority}>Priority</span>
-      {showStatus ? <span className={COL.status}>Status</span> : null}
+      <span className={cn(COL.assignee, "truncate")}>Assignee</span>
+      <span className={cn(COL.due, "truncate")}>Due date</span>
+      <span className={cn(COL.priority, "truncate")}>Priority</span>
+      {showStatus ? <span className={cn(COL.status, "truncate")}>Status</span> : null}
       {/* Matches the width of the row's hover actions, so the four labels sit
           over their columns rather than one notch to the right. */}
       {trailingRoom ? <span className="w-[92px]" aria-hidden /> : null}
@@ -357,7 +363,7 @@ export function CollapsibleProjectList({
               ...(rowMeta?.[p.id]?.assignees ?? []),
             ];
             if (people.length === 0) {
-              return <span className="text-[12.5px] text-text-3">Unassigned</span>;
+              return <span className="text-meta text-text-3">Unassigned</span>;
             }
             return (
               <AvatarStack
@@ -398,7 +404,7 @@ export function CollapsibleProjectList({
     return (
       <Link
         href={`/${ws}/projects/${id}`}
-        className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+        className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
       >
         Open
       </Link>

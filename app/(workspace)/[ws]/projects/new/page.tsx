@@ -87,10 +87,10 @@ export default async function NewProjectPage({
         ]}
       />
       <div>
-        <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+        <h1 className="page-title">
           New project
         </h1>
-        <p className="mt-1 text-sm text-text-2">
+        <p className="page-subtitle mt-1">
           A template scaffolds the phases, tasks, and deliverables for you.
         </p>
       </div>

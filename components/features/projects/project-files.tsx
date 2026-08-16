@@ -68,7 +68,7 @@ export function ProjectFiles({
   return (
     <div className="flex flex-col gap-2">
       {files.length === 0 ? (
-        <p className="py-2 text-center text-[12.5px] text-text-3">
+        <p className="py-2 text-center text-meta text-text-3">
           No files yet. Upload the first one.
         </p>
       ) : (
@@ -79,10 +79,10 @@ export function ProjectFiles({
           >
             <FileIcon className="size-4 shrink-0 text-text-3" strokeWidth={1.5} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12.5px] font-medium text-text-1">
+              <p className="truncate text-meta font-medium text-text-1">
                 {f.name}
               </p>
-              <p className="text-[11px] text-text-3">
+              <p className="text-label text-text-3">
                 {fmtSize(f.size)}
                 {f.createdAt ? <> · <TimeAgo at={f.createdAt} /></> : null}
               </p>

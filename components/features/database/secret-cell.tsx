@@ -123,13 +123,13 @@ export function SecretCell({
               setDraft("");
             }
           }}
-          className="h-7 min-w-0 flex-1 rounded-[7px] border border-brand bg-surface px-2 font-mono text-[12.5px] text-text-1 outline-none"
+          className="h-7 min-w-0 flex-1 rounded-[7px] border border-brand bg-surface px-2 font-mono text-meta text-text-1 outline-none"
         />
         <button
           type="button"
           onClick={onSave}
           disabled={busy}
-          className="rounded-[6px] px-1.5 py-1 text-[12px] font-medium text-brand hover:bg-nav-active"
+          className="rounded-[6px] px-1.5 py-1 text-meta font-medium text-brand hover:bg-nav-active"
         >
           Save
         </button>
@@ -142,12 +142,12 @@ export function SecretCell({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="flex h-9 w-full items-center px-3 text-left text-[13px] text-text-3 hover:text-text-1"
+        className="flex h-9 w-full items-center px-3 text-left text-body text-text-3 hover:text-text-1"
       >
         Set
       </button>
     ) : (
-      <span className="block px-3 py-2 text-[13px] text-text-3">Set</span>
+      <span className="block px-3 py-2 text-body text-text-3">Set</span>
     );
   }
 
@@ -155,7 +155,7 @@ export function SecretCell({
     <span className="group/secret flex h-9 items-center gap-1 px-3">
       <span
         className={cn(
-          "min-w-0 flex-1 truncate font-mono text-[12.5px]",
+          "min-w-0 flex-1 truncate font-mono text-meta",
           shown === null ? "tracking-[0.18em] text-text-2" : "text-text-1"
         )}
       >
@@ -190,12 +190,12 @@ export function SecretCell({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="rounded-[6px] px-1 py-1 text-[11.5px] text-text-3 opacity-0 transition-opacity hover:text-text-1 focus-visible:opacity-100 group-hover/secret:opacity-100"
+          className="rounded-[6px] px-1 py-1 text-label text-text-3 opacity-0 transition-opacity hover:text-text-1 focus-visible:opacity-100 group-hover/secret:opacity-100"
         >
           Replace
         </button>
       ) : null}
-      {error ? <span className="truncate text-[11.5px] text-danger">{error}</span> : null}
+      {error ? <span className="truncate text-label text-danger">{error}</span> : null}
     </span>
   );
 }

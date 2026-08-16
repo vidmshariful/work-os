@@ -73,8 +73,8 @@ function ProjectGone() {
         <Compass className="size-6" strokeWidth={1.5} />
       </div>
       <div>
-        <h2 className="text-lg font-semibold text-text-1">Not found</h2>
-        <p className="mt-1 text-sm text-text-2">
+        <h2 className="text-h3 font-semibold text-text-1">Not found</h2>
+        <p className="page-subtitle mt-1">
           This project does not exist, or it is not available to you.
         </p>
       </div>
@@ -388,17 +388,17 @@ export async function ProjectDetail({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <CodeLabel code={project.code} className="text-[13px]" />
+          <CodeLabel code={project.code} className="text-body" />
           {parentProject ? (
             <Link
               href={`/${ws}/projects/${parentProject.id}`}
-              className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-text-2 hover:text-brand"
+              className="mt-1.5 flex items-center gap-1.5 text-meta text-text-2 hover:text-brand"
             >
               <Layers className="size-3.5" strokeWidth={1.5} />
               Part of {parentProject.title}
             </Link>
           ) : null}
-          <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="mt-1.5 page-title">
             {project.title}
           </h1>
         </div>
@@ -427,7 +427,7 @@ export async function ProjectDetail({
 
       {/* The rail carries the activity and comment thread, so it needs a
           little more room than a plain meta column would. */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
           {/* Everything a person asks about a project at a glance, in one
               block that never collapses. A deliberate sibling of the Fields
@@ -481,7 +481,7 @@ export async function ProjectDetail({
                     <Layers className="size-4 text-text-3" strokeWidth={1.5} />
                     Sub-projects
                     {subProjects.length > 0 ? (
-                      <span className="font-mono text-[12px] font-medium text-text-3 tabular">
+                      <span className="font-mono text-meta font-medium text-text-3 tabular">
                         {subProjects.length}
                       </span>
                     ) : null}
@@ -494,7 +494,7 @@ export async function ProjectDetail({
                 }
               />
               {subProjects.length === 0 ? (
-                <p className="px-5 pb-4 text-[12.5px] text-text-3">
+                <p className="px-5 pb-4 text-meta text-text-3">
                   No sub-projects yet. Add one for each piece of a bulk order.
                 </p>
               ) : (
@@ -531,7 +531,7 @@ export async function ProjectDetail({
                             />
                           ) : null}
                           {sp.due_date ? (
-                            <span className="font-mono text-[12px] text-text-2 tabular">
+                            <span className="font-mono text-meta text-text-2 tabular">
                               {fmtDate(sp.due_date)}
                             </span>
                           ) : null}
@@ -542,7 +542,7 @@ export async function ProjectDetail({
                         current ? null : (
                           <Link
                             href={`/${ws}/projects/${sp.id}`}
-                            className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+                            className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
                           >
                             Open
                           </Link>
@@ -556,7 +556,7 @@ export async function ProjectDetail({
           ) : null}
 
           <Card className="p-5">
-            <div className="flex items-center justify-between text-[12.5px] font-medium text-text-2">
+            <div className="flex items-center justify-between text-meta font-medium text-text-2">
               <span>
                 {done} of {total} tasks done
               </span>
@@ -564,7 +564,7 @@ export async function ProjectDetail({
             </div>
             <ProgressBar value={fraction} className="mt-2" />
             {childCount > 0 ? (
-              <p className="mt-2 text-[11.5px] text-text-3">
+              <p className="mt-2 text-label text-text-3">
                 Includes {childCount} sub-project{childCount === 1 ? "" : "s"}.{" "}
                 {directDone} of {directTotal} sit on this project directly.
               </p>
@@ -592,7 +592,7 @@ export async function ProjectDetail({
                   title={
                     <span className="flex items-center gap-2">
                       {group.name}
-                      <span className="font-mono text-[12px] font-medium text-text-3 tabular">
+                      <span className="font-mono text-meta font-medium text-text-3 tabular">
                         {group.tasks.filter((t) => t.status === "done").length}/
                         {group.tasks.length}
                       </span>
@@ -600,7 +600,7 @@ export async function ProjectDetail({
                   }
                 />
                 {group.tasks.length === 0 ? (
-                  <p className="px-5 pb-4 text-[12.5px] text-text-3">
+                  <p className="px-5 pb-4 text-meta text-text-3">
                     Nothing in this phase yet.
                   </p>
                 ) : (
@@ -610,7 +610,7 @@ export async function ProjectDetail({
                       title={t.title}
                       subtitle={
                         t.revision_count > 0 ? (
-                          <span className="font-mono text-[11.5px] tabular">
+                          <span className="font-mono text-label tabular">
                             {t.revision_count} revision{t.revision_count === 1 ? "" : "s"}
                           </span>
                         ) : undefined
@@ -630,7 +630,7 @@ export async function ProjectDetail({
                             />
                           ) : null}
                           {t.due_date ? (
-                            <span className="font-mono text-[12px] text-text-2 tabular">
+                            <span className="font-mono text-meta text-text-2 tabular">
                               {fmtDate(t.due_date)}
                             </span>
                           ) : null}
@@ -640,7 +640,7 @@ export async function ProjectDetail({
                       trailing={
                         <Link
                           href={`/${ws}/tasks/${t.id}`}
-                          className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+                          className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
                         >
                           Open
                         </Link>
@@ -706,7 +706,7 @@ export async function ProjectDetail({
           <RightRailPanel
             title="Activity"
             action={
-              <span className="flex items-center gap-1 text-[11.5px] text-text-3">
+              <span className="flex items-center gap-1 text-label text-text-3">
                 <MessageSquare className="size-3.5" strokeWidth={1.5} />
                 {comments.length}
               </span>

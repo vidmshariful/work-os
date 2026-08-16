@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 // something you could type into. The border is now visible at rest, faint,
 // and firms up on hover.
 export const propertyInputClass =
-  "w-full rounded-[8px] border border-border/60 bg-transparent px-2 py-1 text-[13px] text-text-1 outline-none transition-colors hover:border-border-strong hover:bg-surface-2/50 focus-visible:border-brand focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-brand/25";
+  "w-full rounded-[8px] border border-border/60 bg-transparent px-2 py-1 text-body text-text-1 outline-none transition-colors hover:border-border-strong hover:bg-surface-2/50 focus-visible:border-brand focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-brand/25";
 
 // The same affordance for a value that opens a menu rather than taking
 // typing: a chip, an avatar, a set of tags.
@@ -45,7 +45,7 @@ export const sameValue = (a: unknown, b: unknown) =>
 // An unset value is not a blank. A blank reads as a rendering fault; this
 // reads as a fact nobody has filled in yet.
 export function EmptyValue({ label = "Empty" }: { label?: string }) {
-  return <span className="px-2 text-[13px] text-text-3">{label}</span>;
+  return <span className="px-2 text-body text-text-3">{label}</span>;
 }
 
 export function PropertyRow({
@@ -64,7 +64,7 @@ export function PropertyRow({
     <div className="flex items-start gap-3 px-5 py-2">
       <span
         className={cn(
-          "shrink-0 pt-1 text-[12.5px] text-text-2",
+          "shrink-0 pt-1 text-meta text-text-2",
           size === "wide" ? "w-[170px]" : "w-[104px]"
         )}
       >

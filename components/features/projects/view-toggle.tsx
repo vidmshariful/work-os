@@ -30,7 +30,7 @@ export function ViewToggle({
       href={href(v)}
       aria-current={view === v ? "page" : undefined}
       className={cn(
-        "flex items-center gap-1.5 rounded-[7px] px-2.5 py-1 text-[12.5px] font-medium transition-colors",
+        "flex items-center gap-1.5 rounded-[7px] px-2.5 py-1 text-meta font-medium transition-colors",
         view === v
           ? "bg-nav-active text-text-1"
           : "text-text-2 hover:text-text-1"

@@ -19,14 +19,14 @@ export function RateCard({
       <div className="flex items-start gap-3.5">
         <ProgressRing value={rate ?? 0} size={36} showLabel={false} />
         <div className="min-w-0">
-          <div className="font-mono text-[24px] font-semibold leading-tight text-text-1 tabular">
+          <div className="font-mono text-h2 font-semibold leading-tight text-text-1 tabular">
             {rate === null ? DASH : fmtPercent(rate)}
           </div>
-          <div className="mt-0.5 truncate text-[12.5px] font-medium text-text-2">
+          <div className="mt-0.5 truncate text-meta font-medium text-text-2">
             {label}
           </div>
           {hint ? (
-            <div className="mt-0.5 text-[12px] text-text-3">{hint}</div>
+            <div className="mt-0.5 text-meta text-text-3">{hint}</div>
           ) : null}
         </div>
       </div>

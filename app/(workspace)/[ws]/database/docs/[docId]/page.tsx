@@ -117,12 +117,12 @@ export default async function DocDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <DocTitle ws={ws} docId={docId} title={doc.title} canEdit={canEdit} />
-          <p className="mt-1 flex items-center gap-2 text-sm text-text-2">
+          <p className="mt-1 flex items-center gap-2 text-body text-text-2">
             {doc.scope === "company"
               ? "In the company database."
               : "Private to you and the people you share it with."}
             {doc.contributed ? (
-              <span className="flex items-center gap-1 rounded-full bg-chip-gray px-2 py-0.5 text-[11px] font-medium text-text-2">
+              <span className="flex items-center gap-1 rounded-full bg-chip-gray px-2 py-0.5 text-label font-medium text-text-2">
                 <Users className="size-3" strokeWidth={1.75} />
                 Shared by team
               </span>

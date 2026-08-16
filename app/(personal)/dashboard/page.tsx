@@ -52,10 +52,10 @@ export default async function PersonalDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+        <h1 className="page-title">
           {greeting}, {firstName}
         </h1>
-        <p className="mt-1 text-sm text-text-2">
+        <p className="page-subtitle mt-1">
           Your view across every workspace you belong to.
         </p>
       </div>
@@ -68,18 +68,18 @@ export default async function PersonalDashboard() {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <span
-                    className="flex size-10 items-center justify-center rounded-[10px] text-[15px] font-semibold"
+                    className="flex size-10 items-center justify-center rounded-[10px] text-lead font-semibold"
                     style={{ backgroundColor: `${m.workspace.accent_color}1A`, color: m.workspace.accent_color }}
                   >
                     {m.workspace.name.slice(0, 1)}
                   </span>
                   <div>
-                    <div className="text-[15px] font-semibold text-text-1">{m.workspace.name}</div>
-                    <div className="text-[12.5px] text-text-2">{ROLE_LABELS[m.role] ?? m.role}</div>
+                    <div className="text-lead font-semibold text-text-1">{m.workspace.name}</div>
+                    <div className="text-meta text-text-2">{ROLE_LABELS[m.role] ?? m.role}</div>
                   </div>
                 </div>
               </div>
-              <div className="mt-4 flex items-center gap-4 text-[12.5px] text-text-2">
+              <div className="mt-4 flex items-center gap-4 text-meta text-text-2">
                 <span className="flex items-center gap-1.5">
                   <SquareCheckBig className="size-3.5" />
                   {wsTasks.length} open task{wsTasks.length === 1 ? "" : "s"}
@@ -87,7 +87,7 @@ export default async function PersonalDashboard() {
               </div>
               <Link
                 href={`/${m.workspace.slug}/home`}
-                className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-black"
+                className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-primary px-3.5 text-body font-medium text-primary-foreground transition-colors hover:bg-black"
               >
                 Enter workspace
                 <ArrowRight className="size-4" />
@@ -97,7 +97,7 @@ export default async function PersonalDashboard() {
         })}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader title="My work" />
           {openTasks.length === 0 ? (
@@ -118,7 +118,7 @@ export default async function PersonalDashboard() {
                       <>
                         {ws ? <Tag tone="blue">{ws.name}</Tag> : null}
                         {t.due_date ? (
-                          <span className="font-mono text-[12px] text-text-2 tabular">
+                          <span className="font-mono text-meta text-text-2 tabular">
                             {fmtDate(t.due_date)}
                           </span>
                         ) : null}
@@ -129,7 +129,7 @@ export default async function PersonalDashboard() {
                       ws ? (
                         <Link
                           href={`/${ws.slug}/tasks/${t.id}`}
-                          className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+                          className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
                         >
                           Open
                         </Link>
@@ -146,7 +146,7 @@ export default async function PersonalDashboard() {
           <CardHeader
             title="Recent notifications"
             action={
-              <Link href="/notifications" className="text-[12.5px] font-medium text-brand hover:underline">
+              <Link href="/notifications" className="text-meta font-medium text-brand hover:underline">
                 View all
               </Link>
             }
@@ -161,8 +161,8 @@ export default async function PersonalDashboard() {
                   <div key={n.id} className="flex gap-2.5 border-b border-border px-5 py-3 last:border-b-0">
                     <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${n.is_read ? "bg-transparent" : "bg-brand"}`} />
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-text-1">{n.title}</p>
-                      <p className="mt-0.5 flex items-center gap-2 text-[11.5px] text-text-3">
+                      <p className="text-body font-medium text-text-1">{n.title}</p>
+                      <p className="mt-0.5 flex items-center gap-2 text-label text-text-3">
                         {ws ? <span>{ws.name}</span> : null}
                         <span><TimeAgo at={n.created_at} /></span>
                       </p>

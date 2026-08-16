@@ -28,7 +28,7 @@ import { AddTodo, NewStage, StageEditor } from "./stage-controls";
 
 function seg(active: boolean) {
   return cn(
-    "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
+    "rounded-[7px] px-3 py-1 text-body font-medium transition-colors",
     active ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
   );
 }
@@ -49,7 +49,7 @@ function Header({
   return (
     <div className="flex items-center gap-2 px-1">
       <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: stage.color }} />
-      <span className="truncate text-[12.5px] font-semibold text-text-1">{stage.name}</span>
+      <span className="truncate text-meta font-semibold text-text-1">{stage.name}</span>
       {stage.is_done ? (
         <CircleCheckBig className="size-3.5 text-success" strokeWidth={1.75} />
       ) : null}
@@ -221,10 +221,10 @@ export function TodosWorkspace({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="page-title">
             My to-dos
           </h1>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             Your personal board. Only you can see this.
           </p>
         </div>
@@ -242,7 +242,7 @@ export function TodosWorkspace({
       </div>
 
       {stages.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-border px-6 py-10 text-center text-sm text-text-3">
+        <div className="rounded-[14px] border border-dashed border-border px-6 py-10 text-center text-body text-text-3">
           Add a stage to start organizing your work.
         </div>
       ) : view === "board" ? (

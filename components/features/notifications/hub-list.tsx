@@ -44,11 +44,11 @@ export function NotificationHubList({
               className={`mt-2 size-1.5 shrink-0 rounded-full ${isRead ? "bg-transparent" : "bg-brand"}`}
             />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-text-1">{n.title}</p>
+              <p className="text-body font-medium text-text-1">{n.title}</p>
               {n.body ? (
-                <p className="mt-0.5 text-[12.5px] text-text-2">{n.body}</p>
+                <p className="mt-0.5 text-meta text-text-2">{n.body}</p>
               ) : null}
-              <p className="mt-1 text-[11.5px] text-text-3"><TimeAgo at={n.created_at} /></p>
+              <p className="mt-1 text-label text-text-3"><TimeAgo at={n.created_at} /></p>
             </div>
           </>
         );
@@ -76,7 +76,7 @@ export function NotificationHubList({
               {!isRead ? (
                 <button
                   onClick={() => markRead(n.id)}
-                  className="rounded-[8px] px-2 py-1 text-[12px] font-medium text-brand hover:bg-brand-soft"
+                  className="rounded-[8px] px-2 py-1 text-meta font-medium text-brand hover:bg-brand-soft"
                 >
                   Mark read
                 </button>

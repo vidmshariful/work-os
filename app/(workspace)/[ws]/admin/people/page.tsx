@@ -39,16 +39,16 @@ export default async function AdminPeoplePage({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[12.5px] text-text-2">{WALL_HELPER_COPY}</p>
+      <p className="text-meta text-text-2">{WALL_HELPER_COPY}</p>
       <Card className="overflow-x-auto">
-        <table className="w-full min-w-[860px] border-collapse text-sm">
+        <table className="w-full min-w-[860px] border-collapse text-body">
           <thead>
             <tr className="border-b border-border">
               {["Person", "Role", "Archetype", "Wall side", "Reports to", "Active"].map(
                 (h) => (
                   <th
                     key={h}
-                    className="px-4 py-2.5 text-left text-[12px] font-semibold uppercase tracking-[0.06em] text-text-3"
+                    className="px-4 py-2.5 text-left text-meta font-semibold uppercase tracking-[0.06em] text-text-3"
                   >
                     {h}
                   </th>
@@ -73,7 +73,7 @@ export default async function AdminPeoplePage({
                       <span className="block truncate font-medium text-text-1">
                         {r.profile.full_name}
                       </span>
-                      <span className="block truncate text-[11.5px] text-text-3">
+                      <span className="block truncate text-label text-text-3">
                         {r.profile.email}
                       </span>
                     </span>

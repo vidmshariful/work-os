@@ -22,7 +22,10 @@ Internal operating system for Vidiosa. Next.js 15 App Router + TypeScript + Tail
 - Tokens are in `app/globals.css`: canvas `bg-canvas`, cards `bg-surface`, text `text-text-1/2/3`, accent `brand`/`brand-soft`, wall amber `wall`/`wall-soft`, semantic + tag palette (`tag-blue`, `tag-violet`, ...). Radii: cards 14px, controls 9px, chips 8px.
 - Compose screens from primitives in `components/primitives/`: Card/CardHeader/CardBody, StatCard, ListRow, Tag + status chips + ConfidentialChip, PersonAvatar/AvatarStack, ProgressRing/ProgressBar, DataTable, RightRailPanel, Breadcrumbs, CountBadge, DragHandle, CodeLabel, EmptyState, Field/SearchField. shadcn/ui primitives in `components/ui/`. Icons: lucide, 18-20px, stroke 1.5.
 - Codes, dates, and numeric columns use `font-mono` + `tabular` class.
-- Page title: `text-[26px] font-semibold tracking-tight`, one-line `text-sm text-text-2` subtitle. See `app/(workspace)/[ws]/home/page.tsx` for the reference composition.
+- **Type comes from the scale, never from a pixel value.** Seven steps, each with its own line height, defined in `app/globals.css`: `text-micro` `text-label` `text-meta` `text-body` `text-lead` `text-h3` `text-h2` `text-h1`. `text-body` is the default, `text-meta` is secondary text, `text-label` is an uppercase column or group heading. Do not write `text-[13px]` or `text-sm`: if a size seems missing, the answer is one of the seven, not an eighteenth.
+- Page title is the `page-title` utility with a `page-subtitle` under it. Column headings use `col-label`. See `app/(workspace)/[ws]/home/page.tsx` for the reference composition.
+- A two-column page grid needs `items-start`, or the shorter column stretches to the taller one and leaves a well of dead space under it.
+- Cards carry a border and almost no shadow. A panel inside a card is `Panel`, not a second `Card`. `shadow-pop` is for things that genuinely float: menus, dialogs.
 - UI copy: sentence case, plain verbs, no em-dashes anywhere. Periods, commas, or colons.
 - Empty states always offer a next action. Every list row hover reveals its actions.
 

@@ -27,10 +27,10 @@ export function UserMenu({ profile }: { profile: Profile }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
-          <span className="block text-[13px] font-medium text-text-1">
+          <span className="block text-body font-medium text-text-1">
             {profile.full_name}
           </span>
-          <span className="block text-[12px] font-normal text-text-3">
+          <span className="block text-meta font-normal text-text-3">
             {profile.email}
           </span>
         </DropdownMenuLabel>

@@ -60,7 +60,7 @@ export function FieldChip({
   const label = current ? (
     <Tag tone={tone(current.color)}>{current.label}</Tag>
   ) : (
-    <span className="text-[11.5px] text-text-3">{field.name}</span>
+    <span className="text-label text-text-3">{field.name}</span>
   );
   const icon = (
     <Sliders className="size-3 shrink-0 text-text-3" strokeWidth={1.5} aria-hidden />

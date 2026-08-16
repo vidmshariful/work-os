@@ -8,7 +8,7 @@ export default function HrLoading() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeaderSkeleton />
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_360px]">
         <RowsSkeleton rows={4} />
         <div className="flex flex-col gap-4">
           <Card className="p-5">

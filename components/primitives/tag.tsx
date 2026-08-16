@@ -88,7 +88,7 @@ export function Tag({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-[8px] px-2 py-0.5 text-[12px] font-medium",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-[8px] px-2 py-0.5 text-meta font-medium",
         t.bg,
         t.text,
         className
@@ -163,7 +163,7 @@ export function LeaveStatusChip({ status }: { status: LeaveStatus }) {
 // only on above-wall screens.
 export function ConfidentialChip() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-[8px] bg-wall-soft px-2 py-0.5 text-[12px] font-medium text-wall">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[8px] bg-wall-soft px-2 py-0.5 text-meta font-medium text-wall">
       <span className="size-1.5 rounded-full bg-wall" />
       Confidential
     </span>

@@ -61,18 +61,18 @@ function CardBody({
       <div className="flex items-center justify-between gap-2">
         <CodeLabel code={p.code} />
         <span className="flex items-center gap-1">
-          <DueDate due={p.due_date} status={p.status} className="text-[11.5px]" />
+          <DueDate due={p.due_date} status={p.status} className="text-label" />
           {withActions ? <ProjectOverflowButton project={p} /> : null}
         </span>
       </div>
-      <p className="mt-1.5 line-clamp-2 text-[13.5px] font-medium leading-snug text-text-1">
+      <p className="mt-1.5 line-clamp-2 text-body font-medium leading-snug text-text-1">
         {p.title}
       </p>
       <div className="mt-3 flex items-center justify-between">
         {p.owner ? (
           <PersonAvatar name={p.owner.full_name} src={p.owner.avatar_url} size={24} />
         ) : (
-          <span className="text-[12px] text-text-3">No owner</span>
+          <span className="text-meta text-text-3">No owner</span>
         )}
         <ProgressRing value={fraction} size={28} />
       </div>
@@ -167,7 +167,7 @@ function Column({
       )}
     >
       <div className="flex items-center gap-2 px-1">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.06em] text-text-3">
+        <span className="text-meta font-semibold uppercase tracking-[0.06em] text-text-3">
           {label}
         </span>
         <CountBadge count={count} className="ml-0" />
@@ -177,13 +177,13 @@ function Column({
         // pointed at the one action a column actually offers.
         <div
           className={cn(
-            "rounded-[14px] border border-dashed px-4 py-8 text-center text-[12.5px] text-text-3 transition-colors",
+            "rounded-[14px] border border-dashed px-4 py-8 text-center text-meta text-text-3 transition-colors",
             isOver ? "border-brand text-brand" : "border-border"
           )}
         >
           {isOver ? `Drop to move here` : `Nothing in ${label.toLowerCase()}.`}
           {!isOver ? (
-            <span className="mt-0.5 block text-[11.5px]">
+            <span className="mt-0.5 block text-label">
               Drag a card here to move it.
             </span>
           ) : null}

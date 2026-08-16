@@ -17,7 +17,7 @@ import type { MemberOption, ProjectWithOwner } from "./types";
 import type { DeptOption } from "./new-project-form";
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 // The project brief: an autosaving textarea for managers and the owner, a
 // read-only paragraph for everyone else. Saves when focus leaves the field.
@@ -38,7 +38,7 @@ export function ProjectBrief({
 
   if (!canEdit) {
     return (
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-1">
+      <p className="whitespace-pre-wrap text-body leading-relaxed text-text-1">
         {brief}
       </p>
     );

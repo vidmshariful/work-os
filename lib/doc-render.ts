@@ -21,7 +21,7 @@ function safeHref(raw: string) {
 function inline(text: string) {
   let out = escapeHtml(text);
   // `code`
-  out = out.replace(/`([^`]+)`/g, '<code class="rounded bg-surface-2 px-1 py-0.5 text-[12.5px]">$1</code>');
+  out = out.replace(/`([^`]+)`/g, '<code class="rounded bg-surface-2 px-1 py-0.5 text-meta">$1</code>');
   // **bold** then *italic*
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
@@ -52,7 +52,7 @@ export function renderMarkdown(src: string): string {
     if (line.trim().startsWith("```")) {
       if (inCode) {
         html.push(
-          `<pre class="overflow-x-auto rounded-[9px] bg-surface-2 p-3 text-[12.5px]"><code>${escapeHtml(code.join("\n"))}</code></pre>`
+          `<pre class="overflow-x-auto rounded-[9px] bg-surface-2 p-3 text-meta"><code>${escapeHtml(code.join("\n"))}</code></pre>`
         );
         code = [];
         inCode = false;
@@ -76,7 +76,7 @@ export function renderMarkdown(src: string): string {
     if (h) {
       closeList();
       const level = h[1].length;
-      const size = ["text-[20px]", "text-[17px]", "text-[15px]", "text-[14px]"][level - 1];
+      const size = ["text-h2", "text-h3", "text-lead", "text-lead"][level - 1];
       html.push(`<h${level} class="${size} mt-4 mb-1 font-semibold text-text-1">${inline(h[2])}</h${level}>`);
       continue;
     }
@@ -124,7 +124,7 @@ export function renderMarkdown(src: string): string {
 
   if (inCode && code.length) {
     html.push(
-      `<pre class="overflow-x-auto rounded-[9px] bg-surface-2 p-3 text-[12.5px]"><code>${escapeHtml(code.join("\n"))}</code></pre>`
+      `<pre class="overflow-x-auto rounded-[9px] bg-surface-2 p-3 text-meta"><code>${escapeHtml(code.join("\n"))}</code></pre>`
     );
   }
   closeList();

@@ -34,7 +34,7 @@ export function DocTitle({
 
   if (!canEdit) {
     return (
-      <h1 className="text-[26px] font-semibold tracking-tight text-text-1">{title}</h1>
+      <h1 className="page-title">{title}</h1>
     );
   }
 
@@ -69,7 +69,7 @@ export function DocTitle({
             setEditing(false);
           }
         }}
-        className="w-full rounded-[9px] border border-border bg-surface px-2 py-1 text-[26px] font-semibold tracking-tight text-text-1 outline-none focus-visible:border-brand"
+        className="w-full rounded-[9px] border border-border bg-surface px-2 py-1 page-title outline-none focus-visible:border-brand"
       />
     );
   }
@@ -77,7 +77,7 @@ export function DocTitle({
   return (
     <h1
       onClick={() => setEditing(true)}
-      className="cursor-text text-[26px] font-semibold tracking-tight text-text-1"
+      className="cursor-text page-title"
     >
       {title}
     </h1>
@@ -126,11 +126,11 @@ export function DocPage({
         ) : null}
         {value.trim() ? (
           <div
-            className="text-[14px] text-text-1"
+            className="text-lead text-text-1"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
           />
         ) : (
-          <p className="text-[13px] text-text-3">
+          <p className="text-body text-text-3">
             This page is empty{canEdit ? ". Choose Edit to start writing." : "."}
           </p>
         )}
@@ -141,7 +141,7 @@ export function DocPage({
   return (
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[12.5px] text-text-3">
+        <span className="text-meta text-text-3">
           Markdown. Headings, lists, links, bold, and code are supported.
         </span>
         <Button
@@ -163,7 +163,7 @@ export function DocPage({
         onBlur={save}
         rows={18}
         placeholder={"# Tech stack\n\n- **Frontend**: Next.js\n- **Database**: Postgres\n\n[Docs](https://example.com)"}
-        className="w-full resize-y rounded-[9px] border border-border bg-surface p-3 font-mono text-[13px] leading-relaxed text-text-1 outline-none focus-visible:border-brand"
+        className="w-full resize-y rounded-[9px] border border-border bg-surface p-3 font-mono text-body leading-relaxed text-text-1 outline-none focus-visible:border-brand"
       />
     </Card>
   );
@@ -187,7 +187,7 @@ export function DocFile({
 }) {
   if (!url) {
     return (
-      <Card className="p-6 text-center text-[13px] text-text-3">
+      <Card className="p-6 text-center text-body text-text-3">
         The preview link could not be prepared. Try reloading.
       </Card>
     );
@@ -201,7 +201,7 @@ export function DocFile({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[12.5px] text-text-2">{fileName}</span>
+        <span className="font-mono text-meta text-text-2">{fileName}</span>
         <Button variant="outline" size="sm" asChild>
           <a href={url} download={fileName} target="_blank" rel="noreferrer">
             <Download />
@@ -214,11 +214,11 @@ export function DocFile({
         <Card className="overflow-x-auto p-5">
           {textKind === "md" ? (
             <div
-              className="text-[14px] text-text-1"
+              className="text-lead text-text-1"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }}
             />
           ) : textKind === "csv" ? (
-            <table className="w-full min-w-max border-collapse text-[13px]">
+            <table className="w-full min-w-max border-collapse text-body">
               <tbody>
                 {parseCsv(text).map((row, i) => (
                   <tr key={i} className="border-b border-border last:border-b-0">
@@ -238,7 +238,7 @@ export function DocFile({
               </tbody>
             </table>
           ) : (
-            <pre className="whitespace-pre-wrap font-mono text-[12.5px] leading-relaxed text-text-1">
+            <pre className="whitespace-pre-wrap font-mono text-meta leading-relaxed text-text-1">
               {textKind === "json" ? prettyJson(text) : text}
             </pre>
           )}
@@ -260,7 +260,7 @@ export function DocFile({
         </Card>
       ) : (
         <Card className="p-8 text-center">
-          <p className="text-[13px] text-text-2">
+          <p className="text-body text-text-2">
             This format has no in-app preview. Download it to open.
           </p>
         </Card>
@@ -275,7 +275,7 @@ export function DocLink({ url }: { url: string }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="min-w-0 truncate font-mono text-[12.5px] text-text-2">{url}</span>
+        <span className="min-w-0 truncate font-mono text-meta text-text-2">{url}</span>
         <Button variant="outline" size="sm" asChild>
           <a href={url} target="_blank" rel="noreferrer noopener">
             <ExternalLink />
@@ -294,7 +294,7 @@ export function DocLink({ url }: { url: string }) {
         </Card>
       ) : (
         <Card className="p-8 text-center">
-          <p className="text-[13px] text-text-2">
+          <p className="text-body text-text-2">
             This link opens in a new window. Google Docs, Sheets, and Slides
             preview here when they are shared publicly.
           </p>

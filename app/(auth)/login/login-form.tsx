@@ -7,7 +7,7 @@ import { signIn, type AuthState } from "@/lib/actions/auth";
 const initialState: AuthState = { error: null };
 
 const inputClass =
-  "h-10 rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-10 rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export interface DemoAccount {
   email: string;
@@ -42,7 +42,7 @@ export function LoginForm({
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-[12.5px] font-medium text-text-2">
+            <label htmlFor="email" className="text-meta font-medium text-text-2">
               Email
             </label>
             <input
@@ -58,7 +58,7 @@ export function LoginForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[12.5px] font-medium text-text-2">
+            <label htmlFor="password" className="text-meta font-medium text-text-2">
               Password
             </label>
             <input
@@ -74,20 +74,20 @@ export function LoginForm({
             />
           </div>
           {state.error ? (
-            <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+            <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-meta font-medium text-danger">
               {state.error}
             </p>
           ) : null}
           <button
             type="submit"
             disabled={pending}
-            className="h-10 rounded-[9px] bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-black disabled:opacity-60"
+            className="h-10 rounded-[9px] bg-primary text-body font-medium text-primary-foreground transition-colors hover:bg-black disabled:opacity-60"
           >
             {pending ? "Signing in" : "Sign in"}
           </button>
           <Link
             href="/reset"
-            className="text-center text-[13px] font-medium text-text-2 hover:text-text-1"
+            className="text-center text-body font-medium text-text-2 hover:text-text-1"
           >
             Forgot password?
           </Link>
@@ -97,8 +97,8 @@ export function LoginForm({
       {demoAccounts && demoAccounts.length > 0 ? (
         <div className="mt-4 rounded-[14px] border border-border bg-surface p-4">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-[13px] font-semibold text-text-1">Demo accounts</h2>
-            <span className="text-[11.5px] text-text-3">Click to sign in</span>
+            <h2 className="text-body font-semibold text-text-1">Demo accounts</h2>
+            <span className="text-label text-text-3">Click to sign in</span>
           </div>
           <div className="mt-2 flex flex-col">
             {demoAccounts.map((a) => (
@@ -117,21 +117,21 @@ export function LoginForm({
                   className="flex w-full items-center justify-between gap-3 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2 disabled:opacity-60"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-[12.5px] font-medium text-text-1">
+                    <span className="block truncate text-meta font-medium text-text-1">
                       {a.name}
                     </span>
-                    <span className="block truncate font-mono text-[11px] text-text-3">
+                    <span className="block truncate font-mono text-label text-text-3">
                       {a.email}
                     </span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-0.5">
-                    <span className="text-[11px] text-text-2">{a.role}</span>
+                    <span className="text-label text-text-2">{a.role}</span>
                     {submitting === a.email ? (
-                      <span className="text-[10px] font-medium text-brand">
+                      <span className="text-micro font-medium text-brand">
                         Signing in
                       </span>
                     ) : (
-                      <span className="rounded-full bg-chip-gray px-1.5 py-0.5 text-[10px] font-medium text-text-2">
+                      <span className="rounded-full bg-chip-gray px-1.5 py-0.5 text-micro font-medium text-text-2">
                         {a.wall} wall
                       </span>
                     )}
@@ -141,7 +141,7 @@ export function LoginForm({
             ))}
           </div>
           {demoPassword ? (
-            <p className="mt-2 border-t border-border pt-2 text-[11.5px] text-text-3">
+            <p className="mt-2 border-t border-border pt-2 text-label text-text-3">
               Password for all:{" "}
               <span className="font-mono text-text-1">{demoPassword}</span>
             </p>

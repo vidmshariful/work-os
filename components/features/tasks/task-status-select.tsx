@@ -58,7 +58,7 @@ export function TaskStatusSelect({
       <SelectTrigger
         size="sm"
         aria-label="Change status"
-        className="w-[126px] text-[12.5px]"
+        className="w-[126px] text-meta"
       >
         <SelectValue />
       </SelectTrigger>

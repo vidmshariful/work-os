@@ -105,14 +105,14 @@ export default async function ClientDetailPage({
         />
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <CodeLabel code={client.code} className="text-[13px]" />
+            <CodeLabel code={client.code} className="text-body" />
             <ClientStageChip stage={client.stage} />
           </div>
-          <h1 className="mt-1.5 font-mono text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="mt-1.5 font-mono page-title">
             {client.code}
           </h1>
           {owner ? (
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-text-2">
+            <p className="mt-1 flex items-center gap-1.5 text-body text-text-2">
               <PersonAvatar name={owner.full_name} src={owner.avatar_url} size={20} />
               Owned by {owner.full_name}
             </p>
@@ -218,15 +218,15 @@ export default async function ClientDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <CodeLabel code={client.code} className="text-[13px]" />
+            <CodeLabel code={client.code} className="text-body" />
             <ClientStageChip stage={client.stage} />
             {isConfidential(client) ? <ConfidentialChip /> : null}
           </div>
-          <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="mt-1.5 page-title">
             {clientLabel(client)}
           </h1>
           {owner ? (
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-text-2">
+            <p className="mt-1 flex items-center gap-1.5 text-body text-text-2">
               <PersonAvatar name={owner.full_name} src={owner.avatar_url} size={20} />
               Owned by {owner.full_name}
             </p>
@@ -258,7 +258,7 @@ export default async function ClientDetailPage({
       />
 
       {active === "activity" ? (
-        <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+        <div className="grid items-start gap-4 lg:grid-cols-[1fr_300px]">
           <Card>
             <CardBody className="pt-5">
               <ActivityThread
@@ -337,7 +337,7 @@ export default async function ClientDetailPage({
                       action={
                         <Link
                           href={`/${ws}/projects/${p.id}`}
-                          className="text-[12.5px] font-medium text-brand hover:underline"
+                          className="text-meta font-medium text-brand hover:underline"
                         >
                           Open project
                         </Link>
@@ -358,7 +358,7 @@ export default async function ClientDetailPage({
                             />
                           </div>
                         ) : (
-                          <p className="text-[12.5px] text-text-3">
+                          <p className="text-meta text-text-3">
                             Internal project, no intake.
                           </p>
                         )}
@@ -401,7 +401,7 @@ export default async function ClientDetailPage({
               tone={outstanding > 0 ? "amber" : "green"}
             />
           </div>
-          <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <div className="grid items-start gap-4 lg:grid-cols-[1fr_320px]">
             <Card>
               <CardHeader title="Payments" />
               <CardBody>
@@ -424,11 +424,11 @@ export default async function ClientDetailPage({
                         <div key={p.id} className="flex items-center justify-between gap-2">
                           <CodeLabel code={p.code} />
                           <span className="text-right">
-                            <span className="block font-mono text-[13px] font-medium text-text-1 tabular">
+                            <span className="block font-mono text-body font-medium text-text-1 tabular">
                               {c.price != null ? fmtMoney(Number(c.price)) : "—"}
                             </span>
                             {c.invoice_terms ? (
-                              <span className="block text-[11px] text-text-3">
+                              <span className="block text-label text-text-3">
                                 {c.invoice_terms}
                               </span>
                             ) : null}
@@ -436,7 +436,7 @@ export default async function ClientDetailPage({
                         </div>
                       );
                     })}
-                  <p className="mt-1 text-[11px] text-text-3">
+                  <p className="mt-1 text-label text-text-3">
                     Only executives and assigned managers see pricing.
                   </p>
                 </div>
@@ -447,7 +447,7 @@ export default async function ClientDetailPage({
       ) : null}
 
       {active === "details" ? (
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="grid items-start gap-4 lg:grid-cols-[1fr_320px]">
           <div className="flex flex-col gap-4">
             <Card>
               <CardHeader title="Contacts" />

@@ -167,15 +167,15 @@ export default async function HrPage({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+        <h1 className="page-title">
           HR and leave
         </h1>
-        <p className="mt-1 text-sm text-text-2">
+        <p className="page-subtitle mt-1">
           Requests route up your reporting line, the Operations Manager has the final say.
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
           {ctx.capabilities.canApproveLeave && (leadQueue.length > 0 || execQueue.length > 0) ? (
             <Card>
@@ -192,10 +192,10 @@ export default async function HrPage({
                       size={30}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-text-1">
+                      <p className="text-body font-medium text-text-1">
                         {r.person?.full_name ?? "Teammate"}
                       </p>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12.5px] text-text-2">
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-meta text-text-2">
                         <span className="font-mono tabular">
                           {fmtDate(r.start_date)} to {fmtDate(r.end_date)}
                         </span>
@@ -206,7 +206,7 @@ export default async function HrPage({
                         ) : null}
                       </p>
                       {r.reason ? (
-                        <p className="mt-0.5 text-[12.5px] text-text-3">{r.reason}</p>
+                        <p className="mt-0.5 text-meta text-text-3">{r.reason}</p>
                       ) : null}
                     </div>
                     <ApprovalButtons
@@ -225,7 +225,7 @@ export default async function HrPage({
               <CardHeader
                 title="Everyone's leave"
                 action={
-                  <span className="text-[11.5px] text-text-3">
+                  <span className="text-label text-text-3">
                     settled records, newest first
                   </span>
                 }
@@ -248,19 +248,19 @@ export default async function HrPage({
                         size={26}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="flex flex-wrap items-center gap-2 text-[13.5px] font-medium text-text-1">
+                        <p className="flex flex-wrap items-center gap-2 text-body font-medium text-text-1">
                           {r.person?.full_name ?? "Teammate"}
-                          <span className="font-mono text-[12.5px] font-normal text-text-2 tabular">
+                          <span className="font-mono text-meta font-normal text-text-2 tabular">
                             {fmtDate(r.start_date)} to {fmtDate(r.end_date)}
                           </span>
-                          <span className="font-mono text-[12px] font-normal text-text-2 tabular">
+                          <span className="font-mono text-meta font-normal text-text-2 tabular">
                             {r.days}d
                           </span>
                           <Tag tone="gray">{TYPE_LABELS[r.type] ?? r.type}</Tag>
                           <LeaveStatusChip status={r.status} />
                         </p>
                         {r.filed_by ? (
-                          <p className="mt-0.5 text-[12px] text-text-3">
+                          <p className="mt-0.5 text-meta text-text-3">
                             Recorded by an admin, not filed by them.
                           </p>
                         ) : null}
@@ -298,25 +298,25 @@ export default async function HrPage({
                   className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3.5 last:border-b-0"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-1">
-                      <span className="font-mono text-[13px] tabular">
+                    <p className="flex flex-wrap items-center gap-2 text-body font-medium text-text-1">
+                      <span className="font-mono text-body tabular">
                         {fmtDate(r.start_date)} to {fmtDate(r.end_date)}
                       </span>
-                      <span className="font-mono text-[12.5px] text-text-2 tabular">
+                      <span className="font-mono text-meta text-text-2 tabular">
                         {r.days}d
                       </span>
                       <Tag tone="gray">{TYPE_LABELS[r.type] ?? r.type}</Tag>
                     </p>
                     {r.reason ? (
-                      <p className="mt-0.5 text-[12.5px] text-text-3">{r.reason}</p>
+                      <p className="mt-0.5 text-meta text-text-3">{r.reason}</p>
                     ) : null}
                     {r.status === "pending" && r.lead_approved_at ? (
-                      <p className="mt-0.5 text-[12px] text-text-3">
+                      <p className="mt-0.5 text-meta text-text-3">
                         Endorsed, waiting on the final gate.
                       </p>
                     ) : null}
                     {r.status === "rejected" && r.decision_note ? (
-                      <p className="mt-0.5 text-[12.5px] text-danger">
+                      <p className="mt-0.5 text-meta text-danger">
                         {r.decision_note}
                       </p>
                     ) : null}
@@ -340,10 +340,10 @@ export default async function HrPage({
               {balance ? (
                 <>
                   <div className="flex items-end justify-between">
-                    <span className="font-mono text-[28px] font-semibold text-text-1 tabular">
+                    <span className="font-mono text-h1 font-semibold text-text-1 tabular">
                       {remaining}
                     </span>
-                    <span className="pb-1 text-[12.5px] text-text-2">
+                    <span className="pb-1 text-meta text-text-2">
                       of {Number(balance.total_days)} days left
                     </span>
                   </div>
@@ -355,12 +355,12 @@ export default async function HrPage({
                     }
                     className="mt-2"
                   />
-                  <p className="mt-2 text-[12px] text-text-3">
+                  <p className="mt-2 text-meta text-text-3">
                     {Number(balance.used_days)} used. Approved leave lands on the calendar automatically.
                   </p>
                 </>
               ) : (
-                <p className="text-[13px] text-text-3">
+                <p className="text-body text-text-3">
                   No balance set for this year yet. An executive can add one in Admin.
                 </p>
               )}
@@ -378,7 +378,7 @@ export default async function HrPage({
             <Card>
               <CardHeader
                 title="Record leave for someone"
-                action={<span className="text-[11.5px] text-text-3">admin</span>}
+                action={<span className="text-label text-text-3">admin</span>}
               />
               <CardBody>
                 <RecordLeaveForm ws={ws} people={recordFor} />
@@ -400,10 +400,10 @@ export default async function HrPage({
                       src={o.person?.avatar_url}
                       size={24}
                     />
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-text-1">
+                    <span className="min-w-0 flex-1 truncate text-body text-text-1">
                       {o.person?.full_name ?? "Teammate"}
                     </span>
-                    <span className="font-mono text-[12px] text-text-2 tabular">
+                    <span className="font-mono text-meta text-text-2 tabular">
                       {fmtDate(o.start_date)} to {fmtDate(o.end_date)}
                     </span>
                   </div>
@@ -417,7 +417,7 @@ export default async function HrPage({
               <CardHeader
                 title={`Allowances, ${year}`}
                 action={
-                  <span className="text-[11.5px] text-text-3">days per year</span>
+                  <span className="text-label text-text-3">days per year</span>
                 }
               />
               <AllowanceEditor ws={ws} year={year} people={allowancePeople} />

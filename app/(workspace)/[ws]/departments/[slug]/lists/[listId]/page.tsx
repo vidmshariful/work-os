@@ -129,7 +129,7 @@ export default async function ListPage({
     <Link
       href={`${base}${key === "list" ? "" : `?view=${key}`}`}
       className={cn(
-        "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
+        "rounded-[7px] px-3 py-1 text-body font-medium transition-colors",
         view === key ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
       )}
     >
@@ -149,8 +149,8 @@ export default async function ListPage({
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">{list.name}</h1>
-          <p className="mt-1 text-sm text-text-2">
+          <h1 className="page-title">{list.name}</h1>
+          <p className="page-subtitle mt-1">
             {tops.length} project{tops.length === 1 ? "" : "s"} in {dept.name}.
           </p>
         </div>

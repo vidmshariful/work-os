@@ -19,7 +19,7 @@ export default async function AdminGeneralPage({
       <Card>
         <CardHeader title="Workspace settings" />
         <CardBody>
-          <p className="pb-2 text-[12.5px] text-text-2">
+          <p className="pb-2 text-meta text-text-2">
             Set once here. Every member reads these, so a change applies to
             everyone on their next screen.
           </p>
@@ -37,7 +37,7 @@ export default async function AdminGeneralPage({
       <Card>
         <CardHeader title="Identity" />
         <CardBody>
-          <p className="pb-3 text-[12.5px] text-text-2">
+          <p className="pb-3 text-meta text-text-2">
             The name and accent shown in the workspace rail.
           </p>
           <WorkspaceForm

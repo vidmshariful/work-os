@@ -18,7 +18,7 @@ export interface SubtaskRow {
 }
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function SubtasksCard({
   ws,
@@ -78,7 +78,7 @@ export function SubtasksCard({
     <div className="flex flex-col gap-3">
       {rows.length > 0 ? (
         <>
-          <div className="flex items-center justify-between text-[12.5px] font-medium text-text-2">
+          <div className="flex items-center justify-between text-meta font-medium text-text-2">
             <span>
               {done} of {rows.length} done
             </span>
@@ -100,7 +100,7 @@ export function SubtasksCard({
                 />
                 <Link
                   href={`/${ws}/tasks/${s.id}`}
-                  className={`min-w-0 flex-1 truncate text-[13px] hover:text-brand ${
+                  className={`min-w-0 flex-1 truncate text-body hover:text-brand ${
                     s.status === "done"
                       ? "text-text-3 line-through"
                       : "text-text-1"
@@ -113,14 +113,14 @@ export function SubtasksCard({
             ))}
           </div>
           {parentStatus === "done" && open > 0 ? (
-            <p className="rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-[12px] text-text-2">
+            <p className="rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-meta text-text-2">
               This task is marked done but {open} subtask{open === 1 ? "" : "s"}{" "}
               {open === 1 ? "is" : "are"} still open.
             </p>
           ) : null}
         </>
       ) : (
-        <p className="text-[12.5px] text-text-3">No subtasks yet.</p>
+        <p className="text-meta text-text-3">No subtasks yet.</p>
       )}
 
       {canManage ? (

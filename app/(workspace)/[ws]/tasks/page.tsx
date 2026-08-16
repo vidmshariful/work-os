@@ -24,7 +24,7 @@ function TabLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "rounded-[9px] px-3 py-1.5 text-sm font-medium transition-colors",
+        "rounded-[9px] px-3 py-1.5 text-body font-medium transition-colors",
         active ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
       )}
     >
@@ -50,10 +50,10 @@ export default async function TasksPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+          <h1 className="page-title">
             {isBoard ? "Team board" : "My tasks"}
           </h1>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             {isBoard
               ? "Everything in flight across the team."
               : "Your assignments, labeled by project code."}

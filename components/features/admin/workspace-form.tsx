@@ -34,7 +34,7 @@ export function WorkspaceForm({
       <Field label="Workspace name" htmlFor="ws_name">
         <input
           id="ws_name"
-          className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+          className="h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />

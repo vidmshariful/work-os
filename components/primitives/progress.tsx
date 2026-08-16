@@ -44,7 +44,7 @@ export function ProgressRing({
         />
       </svg>
       {showLabel ? (
-        <span className="absolute font-mono text-[9px] font-semibold text-text-2 tabular">
+        <span className="absolute font-mono text-micro font-semibold text-text-2 tabular">
           {Math.round(clamped * 100)}
         </span>
       ) : null}

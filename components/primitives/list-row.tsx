@@ -1,12 +1,8 @@
 import { cn } from "@/lib/utils";
 
-// Title plus subtitle, meta columns, a tag, a trailing action and overflow.
-// Projects, tasks, history.
-//
-// dense is one line and half the height, for a surface that is read as a
-// table rather than a feed. A project list of fifteen rows at the roomy
-// height fills a screen with six of them, which is not a list anyone can
-// scan. Everything else keeps the original rhythm.
+// One row in a list: leading marks, a title, metadata columns, and actions
+// that appear on hover. The whole app is made of these, so the density set
+// here is the density of the product.
 export function ListRow({
   title,
   subtitle,
@@ -28,7 +24,7 @@ export function ListRow({
     <div
       className={cn(
         "group flex items-center border-b border-border transition-colors last:border-b-0 hover:bg-surface-2",
-        dense ? "gap-3 px-4 py-1.5" : "gap-4 px-5 py-3.5",
+        dense ? "gap-3 px-4 py-1.5" : "gap-4 px-4 py-3",
         className
       )}
     >
@@ -36,16 +32,17 @@ export function ListRow({
       <div className="min-w-0 flex-1">
         <div
           className={cn(
-            "truncate font-medium text-text-1",
-            dense ? "text-[13px]" : "text-sm"
+            "truncate text-text-1",
+            // A dense row is a table row: its title is body weight, and the
+            // columns beside it carry the emphasis. A roomy row is a card in
+            // disguise, so its title leads.
+            dense ? "text-body font-medium" : "text-body font-medium"
           )}
         >
           {title}
         </div>
         {subtitle ? (
-          <div className="mt-0.5 truncate text-[12.5px] text-text-2">
-            {subtitle}
-          </div>
+          <div className="mt-0.5 truncate text-meta text-text-2">{subtitle}</div>
         ) : null}
       </div>
       {meta ? (
@@ -53,9 +50,7 @@ export function ListRow({
           {meta}
         </div>
       ) : null}
-      {trailing ? (
-        <div className="flex shrink-0 items-center gap-1.5">{trailing}</div>
-      ) : null}
+      {trailing ? <div className="shrink-0">{trailing}</div> : null}
     </div>
   );
 }

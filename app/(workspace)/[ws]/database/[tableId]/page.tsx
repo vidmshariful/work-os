@@ -119,22 +119,22 @@ export default async function TablePage({
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">
             <span
-              className="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[13px] font-semibold"
+              className="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-body font-semibold"
               style={{ backgroundColor: `${table.color}1A`, color: table.color }}
             >
               {table.name.slice(0, 1).toUpperCase()}
             </span>
-            <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+            <h1 className="page-title">
               {table.name}
             </h1>
             {table.contributed ? (
-              <span className="flex items-center gap-1 rounded-full bg-chip-gray px-2 py-0.5 text-[11px] font-medium text-text-2">
+              <span className="flex items-center gap-1 rounded-full bg-chip-gray px-2 py-0.5 text-label font-medium text-text-2">
                 <Users className="size-3" strokeWidth={1.75} />
                 Shared by team
               </span>
             ) : null}
           </div>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             {table.description ??
               (table.scope === "company"
                 ? "In the company database."

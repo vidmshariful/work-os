@@ -130,12 +130,12 @@ export function ProjectMissing() {
               <Compass className="size-6" strokeWidth={1.5} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-text-1">Not found</h2>
-              <p className="mt-1 text-sm text-text-2">
+              <h2 className="text-h3 font-semibold text-text-1">Not found</h2>
+              <p className="page-subtitle mt-1">
                 This project does not exist, or it is not available to you.
               </p>
             </div>
-            <DialogPrimitive.Close className="rounded-[9px] border border-border px-3 py-1.5 text-sm text-text-1 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40">
+            <DialogPrimitive.Close className="rounded-[9px] border border-border px-3 py-1.5 text-body text-text-1 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40">
               Close
             </DialogPrimitive.Close>
           </div>

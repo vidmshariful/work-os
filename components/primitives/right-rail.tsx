@@ -21,7 +21,7 @@ export function RightRailPanel({
       )}
     >
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h4 className="text-[13px] font-semibold text-text-1">{title}</h4>
+        <h4 className="text-body font-semibold text-text-1">{title}</h4>
         {action}
       </div>
       <div className="px-4 pb-4">{children}</div>

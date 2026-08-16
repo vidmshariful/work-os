@@ -73,7 +73,7 @@ export default async function AdminOwnershipPage({
       <Card>
         <CardHeader title="Spaces" />
         <CardBody>
-          <p className="pb-2 text-[12.5px] text-text-2">
+          <p className="pb-2 text-meta text-text-2">
             Who leads each space. Reporting lines stay the permission truth, so
             this is ownership, not access.
           </p>
@@ -84,7 +84,7 @@ export default async function AdminOwnershipPage({
               action={
                 <Link
                   href={`/${ws}/admin/departments`}
-                  className="text-[13px] font-medium text-brand hover:underline"
+                  className="text-body font-medium text-brand hover:underline"
                 >
                   Add a space
                 </Link>

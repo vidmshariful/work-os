@@ -41,7 +41,7 @@ export interface FilterOption {
 }
 
 const control =
-  "inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-border bg-surface px-2.5 text-[12.5px] font-medium text-text-2 outline-none transition-colors hover:text-text-1 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-border bg-surface px-2.5 text-meta font-medium text-text-2 outline-none transition-colors hover:text-text-1 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 function Trigger({
   label,
@@ -57,7 +57,7 @@ function Trigger({
       {icon}
       {label}
       {count > 0 ? (
-        <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 font-mono text-[10px] font-semibold text-white tabular">
+        <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 font-mono text-micro font-semibold text-white tabular">
           {count}
         </span>
       ) : null}
@@ -95,7 +95,7 @@ function MultiSelect({
       <PopoverContent align="start" className="w-56 p-1">
         <div className="max-h-64 overflow-y-auto">
           {options.length === 0 ? (
-            <p className="px-2 py-2 text-[12.5px] text-text-3">Nothing to pick.</p>
+            <p className="px-2 py-2 text-meta text-text-3">Nothing to pick.</p>
           ) : (
             options.map((o) => {
               const on = selected.includes(o.value);
@@ -109,7 +109,7 @@ function MultiSelect({
                   role="checkbox"
                   aria-checked={on}
                   onClick={() => toggle(o.value)}
-                  className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] text-text-1 transition-colors hover:bg-surface-2"
+                  className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-body text-text-1 transition-colors hover:bg-surface-2"
                 >
                   <span
                     className={cn(
@@ -129,7 +129,7 @@ function MultiSelect({
           <button
             type="button"
             onClick={() => onChange([])}
-            className="mt-1 w-full rounded-[8px] border-t border-border px-2 py-1.5 text-left text-[12px] font-medium text-text-2 hover:text-text-1"
+            className="mt-1 w-full rounded-[8px] border-t border-border px-2 py-1.5 text-left text-meta font-medium text-text-2 hover:text-text-1"
           >
             Clear {label.toLowerCase()}
           </button>
@@ -169,7 +169,7 @@ function SingleSelect({
             aria-checked={selected === o.value}
             onClick={() => onChange(selected === o.value ? null : o.value)}
             className={cn(
-              "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
+              "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-body transition-colors hover:bg-surface-2",
               selected === o.value ? "font-medium text-text-1" : "text-text-2"
             )}
           >
@@ -405,7 +405,7 @@ export function SpaceControls({
         href={qs ? `${base}?${qs}` : base}
         aria-current={view === key ? "page" : undefined}
         className={cn(
-          "rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors",
+          "rounded-[7px] px-3 py-1 text-body font-medium transition-colors",
           view === key ? "bg-nav-active text-text-1" : "text-text-2 hover:text-text-1"
         )}
       >
@@ -416,7 +416,7 @@ export function SpaceControls({
 
   return (
     <div className="rounded-[11px] border border-border bg-surface">
-      {/* Row A: shape */}
+      {/* One bar: what shape, what subset, and how it is displayed. */}
       <div className="flex flex-wrap items-center gap-2 px-2.5 py-2">
         <div className="inline-flex shrink-0 items-center gap-0.5 rounded-[9px] border border-border p-0.5">
           {viewTab("list", "List")}
@@ -425,99 +425,8 @@ export function SpaceControls({
           {viewTab("calendar", "Calendar")}
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          {/* The calendar has no grouping and no sort of its own, so it gets
-              no Display control rather than one that does nothing. */}
-          {view !== "calendar" ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button type="button" aria-label="Display options">
-                  <span
-                    className={cn(control, displayOn && "border-brand/40 text-text-1")}
-                  >
-                    <Settings2 className="size-3.5" strokeWidth={1.5} />
-                    Display
-                    {displayOn ? (
-                      <span className="ml-0.5 size-1.5 rounded-full bg-brand" />
-                    ) : null}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-52 p-1">
-                {/* Grouping only applies where sections exist. The board draws
-                    its own columns and the table is one flat grid. */}
-                {view === "list" ? (
-                  <>
-                    <p className="px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-text-3">
-                      Group by
-                    </p>
-                    {GROUP_CHOICES.map((g) => (
-                      <button
-                        key={g.value}
-                        type="button"
-                        // One of a set, and the tick is the only sign of
-                        // which. Said out loud here for the same reason the
-                        // filter checkboxes are.
-                        role="menuitemradio"
-                        aria-checked={filters.group === g.value}
-                        onClick={() => push({ group: g.value as GroupKey })}
-                        className={cn(
-                          "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
-                          filters.group === g.value ? "font-medium text-text-1" : "text-text-2"
-                        )}
-                      >
-                        <span className="w-4">
-                          {filters.group === g.value ? (
-                            <Check className="size-3.5 text-brand" strokeWidth={3} />
-                          ) : null}
-                        </span>
-                        {g.label}
-                      </button>
-                    ))}
-                    <div className="my-1 border-t border-border" />
-                  </>
-                ) : null}
-                <p className="px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-text-3">
-                  {view === "board" ? "Sort within column" : "Sort by"}
-                </p>
-                {SORT_CHOICES.map((so) => (
-                  <button
-                    key={so.value}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={filters.sort === so.value}
-                    onClick={() => push({ sort: so.value as SortKey })}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-2",
-                      filters.sort === so.value ? "font-medium text-text-1" : "text-text-2"
-                    )}
-                  >
-                    <span className="w-4">
-                      {filters.sort === so.value ? (
-                        <Check className="size-3.5 text-brand" strokeWidth={3} />
-                      ) : null}
-                    </span>
-                    {so.label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => push({ dir: filters.dir === "asc" ? "desc" : "asc" })}
-                  className="mt-1 w-full border-t border-border px-2 py-1.5 text-left text-[12px] font-medium text-text-2 hover:text-text-1"
-                >
-                  {filters.dir === "asc" ? "Ascending" : "Descending"}, click to flip
-                </button>
-              </PopoverContent>
-            </Popover>
-          ) : null}
-          <span className="h-4 w-px bg-border" />
-          <ShortcutsHint />
-        </div>
-      </div>
-
-      {/* Row B: subset. Only drawn when there is something to filter. */}
-      {hasProjects ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-border px-2.5 py-2">
+        {hasProjects ? (
+          <>
           <div className="relative shrink-0">
             <Search
               className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3"
@@ -533,7 +442,7 @@ export function SpaceControls({
               // How the "/" shortcut finds this box. An attribute rather than
               // an id, because the bar can be rendered more than once.
               data-space-search
-              className="h-8 w-[170px] rounded-[9px] border border-border bg-surface pl-7.5 pr-2 text-[12.5px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 xl:w-[230px]"
+              className="h-8 w-[170px] rounded-[9px] border border-border bg-surface pl-7.5 pr-2 text-meta text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 xl:w-[230px]"
             />
           </div>
 
@@ -560,17 +469,107 @@ export function SpaceControls({
               variant="ghost"
               size="sm"
               onClick={clearAll}
-              className="h-8 shrink-0 gap-1 px-2 text-[12.5px] text-text-2 hover:text-text-1"
+              className="h-8 shrink-0 gap-1 px-2 text-meta text-text-2 hover:text-text-1"
             >
               <X className="size-3.5" strokeWidth={2} />
               Clear all
-              <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-chip-gray px-1 font-mono text-[10px] font-semibold text-text-2 tabular">
+              <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-chip-gray px-1 font-mono text-micro font-semibold text-text-2 tabular">
                 {count}
               </span>
             </Button>
           ) : null}
+          </>
+        ) : null}
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {/* The calendar has no grouping and no sort of its own, so it gets
+              no Display control rather than one that does nothing. */}
+          {view !== "calendar" ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" aria-label="Display options">
+                  <span
+                    className={cn(control, displayOn && "border-brand/40 text-text-1")}
+                  >
+                    <Settings2 className="size-3.5" strokeWidth={1.5} />
+                    Display
+                    {displayOn ? (
+                      <span className="ml-0.5 size-1.5 rounded-full bg-brand" />
+                    ) : null}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-52 p-1">
+                {/* Grouping only applies where sections exist. The board draws
+                    its own columns and the table is one flat grid. */}
+                {view === "list" ? (
+                  <>
+                    <p className="px-2 pb-1 pt-1.5 text-label font-medium uppercase tracking-wide text-text-3">
+                      Group by
+                    </p>
+                    {GROUP_CHOICES.map((g) => (
+                      <button
+                        key={g.value}
+                        type="button"
+                        // One of a set, and the tick is the only sign of
+                        // which. Said out loud here for the same reason the
+                        // filter checkboxes are.
+                        role="menuitemradio"
+                        aria-checked={filters.group === g.value}
+                        onClick={() => push({ group: g.value as GroupKey })}
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-body transition-colors hover:bg-surface-2",
+                          filters.group === g.value ? "font-medium text-text-1" : "text-text-2"
+                        )}
+                      >
+                        <span className="w-4">
+                          {filters.group === g.value ? (
+                            <Check className="size-3.5 text-brand" strokeWidth={3} />
+                          ) : null}
+                        </span>
+                        {g.label}
+                      </button>
+                    ))}
+                    <div className="my-1 border-t border-border" />
+                  </>
+                ) : null}
+                <p className="px-2 pb-1 pt-1.5 text-label font-medium uppercase tracking-wide text-text-3">
+                  {view === "board" ? "Sort within column" : "Sort by"}
+                </p>
+                {SORT_CHOICES.map((so) => (
+                  <button
+                    key={so.value}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={filters.sort === so.value}
+                    onClick={() => push({ sort: so.value as SortKey })}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-body transition-colors hover:bg-surface-2",
+                      filters.sort === so.value ? "font-medium text-text-1" : "text-text-2"
+                    )}
+                  >
+                    <span className="w-4">
+                      {filters.sort === so.value ? (
+                        <Check className="size-3.5 text-brand" strokeWidth={3} />
+                      ) : null}
+                    </span>
+                    {so.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => push({ dir: filters.dir === "asc" ? "desc" : "asc" })}
+                  className="mt-1 w-full border-t border-border px-2 py-1.5 text-left text-meta font-medium text-text-2 hover:text-text-1"
+                >
+                  {filters.dir === "asc" ? "Ascending" : "Descending"}, click to flip
+                </button>
+              </PopoverContent>
+            </Popover>
+          ) : null}
+          <span className="h-4 w-px bg-border" />
+          <ShortcutsHint />
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

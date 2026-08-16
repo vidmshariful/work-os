@@ -30,8 +30,8 @@ export default async function AccountPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-[26px] font-semibold tracking-tight text-text-1">Account</h1>
-        <p className="mt-1 text-sm text-text-2">Your profile across all workspaces.</p>
+        <h1 className="page-title">Account</h1>
+        <p className="page-subtitle mt-1">Your profile across all workspaces.</p>
       </div>
 
       <Card>
@@ -40,8 +40,8 @@ export default async function AccountPage() {
           <div className="flex items-center gap-4 pb-5">
             <PersonAvatar name={session.profile.full_name} src={session.profile.avatar_url} size={56} />
             <div>
-              <div className="text-[15px] font-semibold text-text-1">{session.profile.full_name}</div>
-              <div className="text-[13px] text-text-2">{session.profile.email}</div>
+              <div className="text-lead font-semibold text-text-1">{session.profile.full_name}</div>
+              <div className="text-body text-text-2">{session.profile.email}</div>
             </div>
           </div>
           <form action={updateName} className="flex max-w-sm flex-col gap-4">
@@ -50,11 +50,11 @@ export default async function AccountPage() {
                 id="full_name"
                 name="full_name"
                 defaultValue={session.profile.full_name}
-                className="h-10 rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+                className="h-10 rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
               />
             </Field>
             <div>
-              <button className="h-9 rounded-[9px] bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-black">
+              <button className="h-9 rounded-[9px] bg-primary px-3.5 text-body font-medium text-primary-foreground transition-colors hover:bg-black">
                 Save changes
               </button>
             </div>
@@ -76,14 +76,14 @@ export default async function AccountPage() {
             <div key={m.id} className="flex items-center justify-between rounded-[10px] border border-border px-4 py-3">
               <div className="flex items-center gap-3">
                 <span
-                  className="flex size-8 items-center justify-center rounded-[8px] text-[13px] font-semibold"
+                  className="flex size-8 items-center justify-center rounded-[8px] text-body font-semibold"
                   style={{ backgroundColor: `${m.workspace.accent_color}1A`, color: m.workspace.accent_color }}
                 >
                   {m.workspace.name.slice(0, 1)}
                 </span>
                 <div>
-                  <div className="text-sm font-medium text-text-1">{m.workspace.name}</div>
-                  <div className="text-[12px] text-text-3">{ROLE_LABELS[m.role] ?? m.role}</div>
+                  <div className="text-body font-medium text-text-1">{m.workspace.name}</div>
+                  <div className="text-meta text-text-3">{ROLE_LABELS[m.role] ?? m.role}</div>
                 </div>
               </div>
               <Tag tone="gray">{m.archetype.replace("_", " ")}</Tag>

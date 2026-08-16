@@ -12,14 +12,14 @@ export function DataTable({
 }) {
   return (
     <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full border-collapse text-body">
         <thead>
           <tr className="border-b border-border">
             {columns.map((c) => (
               <th
                 key={c.key}
                 className={cn(
-                  "px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-text-3",
+                  "px-4 py-2.5 text-meta font-semibold uppercase tracking-[0.06em] text-text-3",
                   c.align === "right" ? "text-right" : "text-left"
                 )}
               >
@@ -40,7 +40,7 @@ export function DataTable({
                   className={cn(
                     "px-4 py-3 text-text-1",
                     c.align === "right" && "text-right",
-                    c.mono && "font-mono text-[13px] tabular"
+                    c.mono && "font-mono text-body tabular"
                   )}
                 >
                   {row[c.key]}

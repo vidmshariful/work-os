@@ -35,7 +35,7 @@ export function DueDate({
   return (
     <span
       suppressHydrationWarning
-      className={cn("text-[12px]", DUE_TONE_CLASS[state.tone], className)}
+      className={cn("text-meta", DUE_TONE_CLASS[state.tone], className)}
       title={due ? fmtDate(due) : undefined}
     >
       {state.label}

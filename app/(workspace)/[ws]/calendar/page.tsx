@@ -172,7 +172,7 @@ export default async function CalendarPage({
     <Link
       href={`/${ws}/calendar?m=${target}${mineOnly ? "&mine=1" : ""}`}
       aria-label={aria}
-      className="flex h-8 items-center justify-center rounded-[8px] border border-border bg-surface px-2 text-sm font-medium text-text-2 transition-colors hover:text-text-1"
+      className="flex h-8 items-center justify-center rounded-[8px] border border-border bg-surface px-2 text-body font-medium text-text-2 transition-colors hover:text-text-1"
     >
       {label}
     </Link>
@@ -182,8 +182,8 @@ export default async function CalendarPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">Calendar</h1>
-          <p className="mt-1 text-sm text-text-2">
+          <h1 className="page-title">Calendar</h1>
+          <p className="page-subtitle mt-1">
             Deadlines and approved leave land here on their own.
           </p>
         </div>
@@ -193,13 +193,13 @@ export default async function CalendarPage({
             {navLink(todayIso.slice(0, 7), "Today", "Current month")}
             {navLink(next, <ChevronRight className="size-4" />, "Next month")}
           </div>
-          <span className="min-w-[130px] text-center text-[15px] font-semibold text-text-1">
+          <span className="min-w-[130px] text-center text-lead font-semibold text-text-1">
             {monthName}
           </span>
           <Link
             href={`/${ws}/calendar${mineOnly ? `?m=${m}` : `?m=${m}&mine=1`}`}
             className={cn(
-              "rounded-[9px] border px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+              "rounded-[9px] border px-3 py-1.5 text-meta font-medium transition-colors",
               mineOnly
                 ? "border-brand bg-brand-soft text-brand"
                 : "border-border bg-surface text-text-2 hover:text-text-1"
@@ -245,7 +245,7 @@ export default async function CalendarPage({
                   key={`${item.date}-${item.label}-${i}`}
                   className="group flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0"
                 >
-                  <span className="w-14 font-mono text-[12px] text-text-2 tabular">
+                  <span className="w-14 font-mono text-meta text-text-2 tabular">
                     {fmtDate(item.date)}
                   </span>
                   <Tag tone={item.tone as TagTone} dot>
@@ -258,12 +258,12 @@ export default async function CalendarPage({
                   {item.href ? (
                     <Link
                       href={item.href}
-                      className="min-w-0 flex-1 truncate text-sm font-medium text-text-1 hover:text-brand"
+                      className="min-w-0 flex-1 truncate text-body font-medium text-text-1 hover:text-brand"
                     >
                       {item.label}
                     </Link>
                   ) : (
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-1">
+                    <span className="min-w-0 flex-1 truncate text-body font-medium text-text-1">
                       {item.label}
                     </span>
                   )}

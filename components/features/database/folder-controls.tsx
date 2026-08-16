@@ -28,7 +28,7 @@ import type { ShareRow } from "./table-controls";
 const PALETTE = ["#3B6FF6", "#7C5CFC", "#16A34A", "#E5486D", "#12A8A0", "#8A94A3"];
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function NewFolderDialog({ ws }: { ws: string }) {
   const router = useRouter();
@@ -158,7 +158,7 @@ export function FolderPeopleDialog({
           <Users />
           People
           {shares.length > 0 ? (
-            <span className="ml-1 font-mono tabular text-[12px] text-text-3">
+            <span className="ml-1 font-mono tabular text-meta text-text-3">
               {shares.length}
             </span>
           ) : null}
@@ -171,11 +171,11 @@ export function FolderPeopleDialog({
 
         <div className="flex flex-col gap-4">
           <div className="rounded-[10px] border border-border bg-surface-2 p-3">
-            <div className="flex items-center gap-2 text-[13px] font-medium text-text-1">
+            <div className="flex items-center gap-2 text-body font-medium text-text-1">
               <Building2 className="size-4 text-text-3" strokeWidth={1.5} />
               {scope === "company" ? "In the company database" : "Private to you"}
             </div>
-            <p className="mt-1 text-[12.5px] text-text-2">
+            <p className="mt-1 text-meta text-text-2">
               {scope === "company"
                 ? "Everyone in the workspace can open this folder and everything in it."
                 : "Only you and the people below can open this folder."}
@@ -202,14 +202,14 @@ export function FolderPeopleDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-[12.5px] font-medium text-text-2">People</span>
+            <span className="text-meta font-medium text-text-2">People</span>
             {shares.length === 0 ? (
-              <p className="text-[12.5px] text-text-3">Nobody else has this folder yet.</p>
+              <p className="text-meta text-text-3">Nobody else has this folder yet.</p>
             ) : (
               shares.map((s) => (
                 <div key={s.profile_id} className="flex items-center gap-2">
                   <PersonAvatar name={s.name} src={s.avatar_url} size={24} />
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-text-1">{s.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-body text-text-1">{s.name}</span>
                   {canEdit ? (
                     <>
                       <select
@@ -220,7 +220,7 @@ export function FolderPeopleDialog({
                             setFolderShare(ws, folderId, s.profile_id, e.target.value === "edit")
                           )
                         }
-                        className="h-7 rounded-[8px] border border-border bg-surface px-2 text-[12px] text-text-2 outline-none focus-visible:border-brand"
+                        className="h-7 rounded-[8px] border border-border bg-surface px-2 text-meta text-text-2 outline-none focus-visible:border-brand"
                       >
                         <option value="view">Can view</option>
                         <option value="edit">Can edit</option>
@@ -234,7 +234,7 @@ export function FolderPeopleDialog({
                       </button>
                     </>
                   ) : (
-                    <span className="text-[12px] text-text-3">
+                    <span className="text-meta text-text-3">
                       {s.can_edit ? "Can edit" : "Can view"}
                     </span>
                   )}
@@ -248,7 +248,7 @@ export function FolderPeopleDialog({
                 onChange={(e) =>
                   e.target.value && run(() => setFolderShare(ws, folderId, e.target.value, false))
                 }
-                className="h-8 rounded-[8px] border border-dashed border-border bg-surface px-2 text-[12.5px] text-text-2 outline-none focus-visible:border-brand"
+                className="h-8 rounded-[8px] border border-dashed border-border bg-surface px-2 text-meta text-text-2 outline-none focus-visible:border-brand"
               >
                 <option value="">Add a person</option>
                 {available.map((m) => (
@@ -260,7 +260,7 @@ export function FolderPeopleDialog({
             ) : null}
           </div>
 
-          <p className="border-t border-border pt-3 text-[12px] text-text-3">
+          <p className="border-t border-border pt-3 text-meta text-text-3">
             {itemCount === 0
               ? "Nothing is filed here yet. Anyone added above will see whatever you move in."
               : `Anyone added here can open all ${itemCount} item${itemCount === 1 ? "" : "s"} in this folder, including any stored passwords. Every password they reveal is recorded.`}
@@ -303,7 +303,7 @@ export function MoveToFolder({
           if (res.error) toast.error(res.error);
         });
       }}
-      className="h-9 rounded-[9px] border border-border bg-surface px-2.5 text-[12.5px] text-text-2 outline-none focus-visible:border-brand"
+      className="h-9 rounded-[9px] border border-border bg-surface px-2.5 text-meta text-text-2 outline-none focus-visible:border-brand"
     >
       <option value="">No folder</option>
       {folders.map((f) => (

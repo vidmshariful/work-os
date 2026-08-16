@@ -29,7 +29,7 @@ export function AdminTabs({ ws }: { ws: string }) {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-[9px] px-3 py-1.5 text-[13px] font-medium transition-colors",
+              "rounded-[9px] px-3 py-1.5 text-body font-medium transition-colors",
               active
                 ? "bg-nav-active text-text-1"
                 : "text-text-2 hover:bg-surface-2 hover:text-text-1"

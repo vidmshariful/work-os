@@ -20,7 +20,7 @@ import type { DbScope } from "@/lib/types";
 const PALETTE = ["#3B6FF6", "#7C5CFC", "#16A34A", "#E5486D", "#12A8A0", "#8A94A3"];
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export interface ShareRow {
   profile_id: string;
@@ -158,11 +158,11 @@ export function ShareTableDialog({
 
         <div className="flex flex-col gap-4">
           <div className="rounded-[10px] border border-border bg-surface-2 p-3">
-            <div className="flex items-center gap-2 text-[13px] font-medium text-text-1">
+            <div className="flex items-center gap-2 text-body font-medium text-text-1">
               <Building2 className="size-4 text-text-3" strokeWidth={1.5} />
               {scope === "company" ? "In the company database" : "Private to you"}
             </div>
-            <p className="mt-1 text-[12.5px] text-text-2">
+            <p className="mt-1 text-meta text-text-2">
               {scope === "company"
                 ? contributed
                   ? "Everyone in the workspace can see this. It shows as shared by the team."
@@ -189,14 +189,14 @@ export function ShareTableDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-[12.5px] font-medium text-text-2">People</span>
+            <span className="text-meta font-medium text-text-2">People</span>
             {shares.length === 0 ? (
-              <p className="text-[12.5px] text-text-3">Not shared with anyone yet.</p>
+              <p className="text-meta text-text-3">Not shared with anyone yet.</p>
             ) : (
               shares.map((s) => (
                 <div key={s.profile_id} className="flex items-center gap-2">
                   <PersonAvatar name={s.name} src={s.avatar_url} size={24} />
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-text-1">{s.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-body text-text-1">{s.name}</span>
                   {canEdit ? (
                     <>
                       <select
@@ -207,7 +207,7 @@ export function ShareTableDialog({
                             setTableShare(ws, tableId, s.profile_id, e.target.value === "edit")
                           )
                         }
-                        className="h-7 rounded-[8px] border border-border bg-surface px-2 text-[12px] text-text-2 outline-none focus-visible:border-brand"
+                        className="h-7 rounded-[8px] border border-border bg-surface px-2 text-meta text-text-2 outline-none focus-visible:border-brand"
                       >
                         <option value="view">Can view</option>
                         <option value="edit">Can edit</option>
@@ -221,7 +221,7 @@ export function ShareTableDialog({
                       </button>
                     </>
                   ) : (
-                    <span className="text-[12px] text-text-3">
+                    <span className="text-meta text-text-3">
                       {s.can_edit ? "Can edit" : "Can view"}
                     </span>
                   )}
@@ -235,7 +235,7 @@ export function ShareTableDialog({
                 onChange={(e) =>
                   e.target.value && run(() => setTableShare(ws, tableId, e.target.value, false))
                 }
-                className="h-8 rounded-[8px] border border-dashed border-border bg-surface px-2 text-[12.5px] text-text-2 outline-none focus-visible:border-brand"
+                className="h-8 rounded-[8px] border border-dashed border-border bg-surface px-2 text-meta text-text-2 outline-none focus-visible:border-brand"
               >
                 <option value="">Add a person</option>
                 {available.map((m) => (
@@ -247,7 +247,7 @@ export function ShareTableDialog({
             ) : null}
           </div>
 
-          <p className="border-t border-border pt-3 text-[12px] text-text-3">
+          <p className="border-t border-border pt-3 text-meta text-text-3">
             Rows here are free text, not client records, so nothing is masked
             automatically. Keep client names out of tables shared below the wall.
           </p>

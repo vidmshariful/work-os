@@ -118,11 +118,11 @@ export default async function FolderPage({
             >
               <FolderOpen className="size-4" strokeWidth={1.75} />
             </span>
-            <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+            <h1 className="page-title">
               {folder.name}
             </h1>
           </div>
-          <p className="mt-1 text-sm text-text-2">
+          <p className="page-subtitle mt-1">
             {folder.description ??
               (folder.scope === "company"
                 ? "In the company database."
@@ -159,21 +159,21 @@ export default async function FolderPage({
               <Card className="h-full p-5 transition-colors hover:border-border-strong">
                 <div className="flex items-start gap-2.5">
                   <span
-                    className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[13px] font-semibold"
+                    className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] text-body font-semibold"
                     style={{ backgroundColor: `${t.color}1A`, color: t.color }}
                   >
                     {t.name.slice(0, 1).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-[14.5px] font-semibold text-text-1">{t.name}</div>
+                    <div className="truncate text-lead font-semibold text-text-1">{t.name}</div>
                     {t.description ? (
-                      <p className="mt-0.5 line-clamp-2 text-[12.5px] text-text-2">
+                      <p className="mt-0.5 line-clamp-2 text-meta text-text-2">
                         {t.description}
                       </p>
                     ) : null}
                   </div>
                 </div>
-                <div className="mt-4 flex items-center gap-3 text-[12px] text-text-3">
+                <div className="mt-4 flex items-center gap-3 text-meta text-text-3">
                   <span className="flex items-center gap-1.5">
                     <Rows3 className="size-3.5" strokeWidth={1.5} />
                     <span className="font-mono tabular">{counts.get(t.id) ?? 0}</span> rows
@@ -203,10 +203,10 @@ export default async function FolderPage({
                     )}
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-[14.5px] font-semibold text-text-1">
+                    <div className="truncate text-lead font-semibold text-text-1">
                       {d.title}
                     </div>
-                    <p className="mt-0.5 text-[12.5px] text-text-2">
+                    <p className="mt-0.5 text-meta text-text-2">
                       {d.kind === "link" ? "Link" : d.kind === "file" ? "File" : "Page"}
                     </p>
                   </div>

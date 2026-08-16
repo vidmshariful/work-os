@@ -29,7 +29,7 @@ function Pill({ item }: { item: CalendarItem }) {
   const inner = (
     <span
       className={cn(
-        "block truncate rounded-[6px] px-1.5 py-0.5 text-[11px] font-medium leading-4",
+        "block truncate rounded-[6px] px-1.5 py-0.5 text-label font-medium leading-4",
         TONE_CLASSES[item.tone],
         item.href && "hover:opacity-80"
       )}
@@ -85,7 +85,7 @@ export function MonthGrid({
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
           <div
             key={d}
-            className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-text-3"
+            className="px-2 py-2 text-center text-label font-semibold uppercase tracking-[0.06em] text-text-3"
           >
             {d}
           </div>
@@ -106,7 +106,7 @@ export function MonthGrid({
               >
                 <span
                   className={cn(
-                    "mb-1 flex size-6 items-center justify-center rounded-full font-mono text-[11.5px] tabular",
+                    "mb-1 flex size-6 items-center justify-center rounded-full font-mono text-label tabular",
                     isToday
                       ? "bg-primary font-semibold text-primary-foreground"
                       : cell.inMonth
@@ -121,7 +121,7 @@ export function MonthGrid({
                     <Pill key={`${item.label}-${i}`} item={item} />
                   ))}
                   {dayItems.length > MAX_PILLS ? (
-                    <span className="px-1 font-mono text-[10.5px] text-text-3 tabular">
+                    <span className="px-1 font-mono text-micro text-text-3 tabular">
                       +{dayItems.length - MAX_PILLS} more
                     </span>
                   ) : null}

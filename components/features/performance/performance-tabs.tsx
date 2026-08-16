@@ -24,7 +24,7 @@ export function PerformanceTabs({
           key={t.key}
           href={`/${ws}/performance?tab=${t.key}`}
           className={cn(
-            "rounded-[9px] px-3 py-1.5 text-[13px] font-medium transition-colors",
+            "rounded-[9px] px-3 py-1.5 text-body font-medium transition-colors",
             active === t.key
               ? "bg-brand-soft text-brand"
               : "text-text-2 hover:bg-surface-2 hover:text-text-1"

@@ -50,7 +50,7 @@ export function DepartmentTree({
         href={indexHref}
         aria-current={indexActive ? "page" : undefined}
         className={cn(
-          "flex items-center gap-2.5 rounded-[9px] px-2.5 py-[7px] text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand/40",
+          "flex items-center gap-2.5 rounded-[9px] px-2.5 py-[7px] text-body font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand/40",
           indexActive
             ? "bg-nav-active text-text-1"
             : "text-text-2 hover:bg-surface-2 hover:text-text-1"
@@ -127,7 +127,7 @@ function DeptRow({
         <Link
           href={deptHref}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2 py-[6px] text-[13px] font-medium outline-none",
+            "flex min-w-0 flex-1 items-center gap-2 py-[6px] text-body font-medium outline-none",
             active ? "text-text-1" : "text-text-2 group-hover:text-text-1"
           )}
         >
@@ -215,7 +215,7 @@ function FolderRow({
         type="button"
         onClick={() => setManual(!open)}
         aria-expanded={open}
-        className="flex h-7 w-full items-center gap-1.5 rounded-[8px] px-1 text-[12.5px] text-text-2 outline-none transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:ring-2 focus-visible:ring-brand/40"
+        className="flex h-7 w-full items-center gap-1.5 rounded-[8px] px-1 text-meta text-text-2 outline-none transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:ring-2 focus-visible:ring-brand/40"
       >
         <ChevronRight
           className={cn("size-3 shrink-0 transition-transform", open && "rotate-90")}
@@ -227,7 +227,7 @@ function FolderRow({
           <Folder className={cn("size-3.5 shrink-0", folderTint)} strokeWidth={1.5} />
         )}
         <span className="truncate">{folder.name}</span>
-        <span className="ml-auto font-mono text-[10.5px] text-text-3 tabular">
+        <span className="ml-auto font-mono text-micro text-text-3 tabular">
           {folder.lists.length}
         </span>
       </button>
@@ -257,7 +257,7 @@ function ListLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-7 items-center gap-1.5 rounded-[8px] px-2 text-[12.5px] transition-colors",
+        "flex h-7 items-center gap-1.5 rounded-[8px] px-2 text-meta transition-colors",
         active
           ? "bg-nav-active font-medium text-text-1"
           : "text-text-2 hover:bg-surface-2 hover:text-text-1"

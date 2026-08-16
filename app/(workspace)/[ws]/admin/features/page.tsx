@@ -39,7 +39,7 @@ export default async function AdminFeaturesPage({
     <Card>
       <CardHeader title="Features" />
       <CardBody>
-        <p className="pb-2 text-[12.5px] text-text-2">
+        <p className="pb-2 text-meta text-text-2">
           Turn a feature off and it leaves the sidebar for everyone. Set a
           minimum role to keep it, but narrow who sees it. Dashboard, my tasks,
           and settings stay on so an admin can always get back here.

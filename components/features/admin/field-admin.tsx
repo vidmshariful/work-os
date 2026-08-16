@@ -53,7 +53,7 @@ const kindLabel = (k: ProjectFieldKind) =>
 const isChoice = (k: ProjectFieldKind) => k === "select" || k === "multi_select";
 
 const inputClass =
-  "h-8 rounded-[9px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-8 rounded-[9px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
@@ -69,7 +69,7 @@ export function FieldAdmin({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[12.5px] text-text-2">
+      <p className="text-meta text-text-2">
         Fields appear on every project page, in this order. A field scoped to
         one space only shows on projects in that space, so Production can
         carry an editing stage that Sales never sees. Keep names brand-blind:
@@ -81,7 +81,7 @@ export function FieldAdmin({
 
       {fields.length === 0 ? (
         <Card>
-          <p className="px-5 py-6 text-center text-[12.5px] text-text-3">
+          <p className="px-5 py-6 text-center text-meta text-text-3">
             No fields yet. The first one you add shows on every project.
           </p>
         </Card>
@@ -168,7 +168,7 @@ function CreateField({
     <Card className="p-4">
       <div className="flex flex-wrap items-end gap-3">
         <label className="block">
-          <span className="mb-1 block text-[12px] font-medium text-text-2">Name</span>
+          <span className="mb-1 block text-meta font-medium text-text-2">Name</span>
           <input
             autoFocus
             value={name}
@@ -179,7 +179,7 @@ function CreateField({
           />
         </label>
         <label className="block">
-          <span className="mb-1 block text-[12px] font-medium text-text-2">Type</span>
+          <span className="mb-1 block text-meta font-medium text-text-2">Type</span>
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as ProjectFieldKind)}
@@ -194,7 +194,7 @@ function CreateField({
           </select>
         </label>
         <label className="block">
-          <span className="mb-1 block text-[12px] font-medium text-text-2">Shows in</span>
+          <span className="mb-1 block text-meta font-medium text-text-2">Shows in</span>
           <select
             value={spaceId}
             onChange={(e) => setSpaceId(e.target.value)}
@@ -211,7 +211,7 @@ function CreateField({
         </label>
         {isChoice(kind) ? (
           <label className="block flex-1">
-            <span className="mb-1 block text-[12px] font-medium text-text-2">
+            <span className="mb-1 block text-meta font-medium text-text-2">
               Choices, separated by commas
             </span>
             <input
@@ -230,7 +230,7 @@ function CreateField({
           Cancel
         </Button>
       </div>
-      <p className="mt-2 text-[11.5px] text-text-3">
+      <p className="mt-2 text-label text-text-3">
         {KINDS.find((k) => k.value === kind)?.hint ||
           "The type cannot be changed later, because every saved value is in its shape."}
       </p>
@@ -331,20 +331,20 @@ function FieldRow({
               }
             }}
             aria-label={`Rename ${field.name}`}
-            className={cn(inputClass, "w-56 text-[14px] font-semibold")}
+            className={cn(inputClass, "w-56 text-lead font-semibold")}
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
             aria-label={`Rename ${field.name}`}
-            className="text-[14px] font-semibold text-text-1 hover:text-brand"
+            className="text-lead font-semibold text-text-1 hover:text-brand"
           >
             {field.name}
           </button>
         )}
 
-        <span className="rounded-[6px] bg-chip-gray px-1.5 py-0.5 text-[11px] font-medium text-text-2">
+        <span className="rounded-[6px] bg-chip-gray px-1.5 py-0.5 text-label font-medium text-text-2">
           {kindLabel(field.kind)}
         </span>
 
@@ -357,7 +357,7 @@ function FieldRow({
               updateProjectField(ws, field.id, { departmentId: e.target.value || null })
             )
           }
-          className={cn(inputClass, "h-7 w-44 text-[12px]")}
+          className={cn(inputClass, "h-7 w-44 text-meta")}
         >
           <option value="">Every space</option>
           {spaces.map((s) => (
@@ -367,7 +367,7 @@ function FieldRow({
           ))}
         </select>
 
-        <span className="ml-auto font-mono text-[11.5px] text-text-3 tabular">
+        <span className="ml-auto font-mono text-label text-text-3 tabular">
           {field.valueCount} set
         </span>
         <Button
@@ -391,7 +391,7 @@ function FieldRow({
       ) : null}
 
       {scope ? (
-        <p className="mt-2 text-[11.5px] text-text-3">
+        <p className="mt-2 text-label text-text-3">
           Only on projects in {scope}.
         </p>
       ) : null}
@@ -526,7 +526,7 @@ function ChoiceEditor({
             { value, label, color: TAG_TONES[options.length % TAG_TONES.length] },
           ]);
         }}
-        className={cn(inputClass, "h-7 w-36 text-[12px]")}
+        className={cn(inputClass, "h-7 w-36 text-meta")}
       />
     </div>
   );

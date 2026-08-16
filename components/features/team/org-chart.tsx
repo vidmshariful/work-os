@@ -46,16 +46,16 @@ function OrgNode({ node, ws, depth }: { node: TreeNode; ws: string; depth: numbe
       >
         <PersonAvatar name={m.profile.full_name} src={m.profile.avatar_url} size={32} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-text-1">
+          <span className="block truncate text-body font-medium text-text-1">
             {m.profile.full_name}
           </span>
-          <span className="block text-[12px] text-text-3">
+          <span className="block text-meta text-text-3">
             {ROLE_LABELS[m.role] ?? m.role}
           </span>
         </span>
         <Tag tone={meta.tone}>{meta.label}</Tag>
         {node.children.length > 0 ? (
-          <span className="font-mono text-[11.5px] text-text-3 tabular">
+          <span className="font-mono text-label text-text-3 tabular">
             {node.children.length} report{node.children.length === 1 ? "" : "s"}
           </span>
         ) : null}

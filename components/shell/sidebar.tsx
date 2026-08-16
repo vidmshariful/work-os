@@ -60,8 +60,8 @@ export function Sidebar({
   return (
     <nav className="flex h-full w-[228px] shrink-0 flex-col border-r border-border bg-surface">
       <div className="px-4 pb-2 pt-4">
-        <div className="text-[15px] font-semibold text-text-1">{workspace.name}</div>
-        <div className="text-[12px] text-text-3">Workspace</div>
+        <div className="text-lead font-semibold text-text-1">{workspace.name}</div>
+        <div className="text-meta text-text-3">Workspace</div>
       </div>
       <div className="flex-1 overflow-y-auto px-2.5 py-2">
         {navGroups.map((group) => {

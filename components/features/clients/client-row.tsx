@@ -27,7 +27,7 @@ export function ClientRow({
   const openAction = (
     <Link
       href={`/${ws}/clients/${client.id}`}
-      className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+      className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
     >
       Open
     </Link>
@@ -36,19 +36,19 @@ export function ClientRow({
   const ownerCell = owner ? (
     <span className="flex items-center gap-2">
       <PersonAvatar name={owner.full_name} src={owner.avatar_url} size={24} />
-      <span className="hidden text-[12.5px] text-text-2 md:inline">
+      <span className="hidden text-meta text-text-2 md:inline">
         {owner.full_name}
       </span>
     </span>
   ) : (
-    <span className="text-[12.5px] text-text-3">Unassigned</span>
+    <span className="text-meta text-text-3">Unassigned</span>
   );
 
   if (!unmasked) {
     return (
       <ListRow
         title={
-          <CodeLabel code={client.code} className="text-[13.5px] text-text-1" />
+          <CodeLabel code={client.code} className="text-body text-text-1" />
         }
         meta={
           <>
@@ -75,14 +75,14 @@ export function ClientRow({
           {ownerCell}
           {outstanding && outstanding > 0 ? (
             <span
-              className="hidden font-mono text-[12px] font-medium text-wall tabular lg:inline"
+              className="hidden font-mono text-meta font-medium text-wall tabular lg:inline"
               title="Outstanding payments"
             >
               {fmtMoney(outstanding)} due
             </span>
           ) : null}
           <ClientStageChip stage={client.stage} />
-          <span className="w-24 text-right font-mono text-[12.5px] font-medium text-text-1 tabular">
+          <span className="w-24 text-right font-mono text-meta font-medium text-text-1 tabular">
             {client.contract_value !== null ? fmtMoney(client.contract_value) : ""}
           </span>
         </>

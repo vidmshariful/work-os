@@ -5,7 +5,7 @@ import type { MemberOption } from "./types";
 import { PROJECT_STATUS_OPTIONS } from "./types";
 
 const selectClass =
-  "h-8 rounded-[9px] border border-border bg-surface px-2.5 text-[12.5px] font-medium text-text-2 outline-none transition-colors hover:text-text-1 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-8 rounded-[9px] border border-border bg-surface px-2.5 text-meta font-medium text-text-2 outline-none transition-colors hover:text-text-1 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 // Status and owner filters for the projects screen. Selection rewrites the
 // searchParams, so the server re-renders the filtered set.

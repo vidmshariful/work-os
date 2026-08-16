@@ -8,7 +8,7 @@ import { createSubProject } from "@/lib/actions/projects";
 import type { MemberOption } from "./types";
 
 const inputClass =
-  "h-9 rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 // Add a sub-project to a parent. It inherits the parent's space, list, and
 // client; you give it a title and an owner.

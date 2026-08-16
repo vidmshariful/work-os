@@ -17,9 +17,9 @@ import type { ProjectFieldOption, ProjectTemplate } from "@/lib/types";
 import type { TemplateFieldOption, TemplateStructureDraft } from "./shared";
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 const smallInputClass =
-  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
+  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
 
 interface PhaseDraft {
   name: string;
@@ -113,15 +113,15 @@ export function TemplateManager({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[15px] font-semibold text-text-1">{t.name}</span>
+                    <span className="text-lead font-semibold text-text-1">{t.name}</span>
                     {t.is_default ? <Tag tone="blue">Default</Tag> : null}
                   </div>
                   {t.description ? (
-                    <p className="mt-1 text-[12.5px] text-text-2">{t.description}</p>
+                    <p className="mt-1 text-meta text-text-2">{t.description}</p>
                   ) : null}
                 </div>
               </div>
-              <p className="mt-3 font-mono text-[12px] text-text-3 tabular">
+              <p className="mt-3 font-mono text-meta text-text-3 tabular">
                 {phases} phases · {tasks} tasks ·{" "}
                 {(t.structure?.deliverables ?? []).length} deliverables ·{" "}
                 {(t.structure?.fields ?? []).length} fields
@@ -208,7 +208,7 @@ function TemplateEditor({
   return (
     <div className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-semibold text-text-1">
+        <h3 className="text-lead font-semibold text-text-1">
           {draft.id ? "Edit template" : "New template"}
         </h3>
         <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={onClose}>
@@ -260,7 +260,7 @@ function TemplateEditor({
           />
         </Field>
       </div>
-      <label className="flex items-center gap-2.5 text-sm text-text-1">
+      <label className="flex items-center gap-2.5 text-body text-text-1">
         <Switch
           checked={draft.is_default}
           onCheckedChange={(v) => setDraft({ ...draft, is_default: v })}
@@ -387,13 +387,13 @@ function TemplateEditor({
       <div className="flex flex-col gap-2">
         <span className="group-label">Fields</span>
         {fields.length === 0 ? (
-          <p className="text-[12.5px] text-text-2">
+          <p className="text-meta text-text-2">
             No fields are defined yet. Add them in Admin, Fields, and they
             appear here for templates to fill in.
           </p>
         ) : (
           <>
-            <p className="text-[12.5px] text-text-2">
+            <p className="text-meta text-text-2">
               Values a project starts with. Leave a field alone and it starts
               empty, the way it does today. Someone can still change any of
               them on the project.
@@ -443,9 +443,9 @@ function TemplateFieldRow({
   return (
     <div className="flex items-start gap-3 px-3 py-2">
       <div className="w-[190px] shrink-0 pt-1.5">
-        <span className="text-[13px] text-text-1">{field.name}</span>
+        <span className="text-body text-text-1">{field.name}</span>
         {field.space ? (
-          <span className="ml-1.5 text-[11.5px] text-text-3">{field.space} only</span>
+          <span className="ml-1.5 text-label text-text-3">{field.space} only</span>
         ) : null}
       </div>
       <div className="min-w-0 flex-1">
@@ -525,7 +525,7 @@ function TemplateFieldControl({
 
     case "checkbox":
       return (
-        <label className="flex items-center gap-2 py-1 text-[12.5px] text-text-2">
+        <label className="flex items-center gap-2 py-1 text-meta text-text-2">
           <Switch
             checked={value === true}
             onCheckedChange={(v) => onChange(v ? true : null)}

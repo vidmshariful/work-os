@@ -11,7 +11,7 @@ import {
 const initialState: ProjectFormState = { error: null };
 
 const inputClass =
-  "w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 // The post box for a project's thread. Mirrors the task CommentForm so the
 // two threads behave identically: clear on success, toast on refusal.

@@ -25,10 +25,10 @@ export default async function NewEventPage({
         ]}
       />
       <div>
-        <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+        <h1 className="page-title">
           New event
         </h1>
-        <p className="mt-1 text-sm text-text-2">
+        <p className="page-subtitle mt-1">
           Only for genuinely new things, like a shoot day. Deadlines and leave arrive on their own.
         </p>
       </div>

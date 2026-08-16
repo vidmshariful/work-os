@@ -8,10 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export const controlSelectClass =
-  "h-8 w-full rounded-[8px] border border-border bg-surface px-2 text-[12.5px] text-text-1 outline-none transition-colors focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 disabled:opacity-50";
+  "h-8 w-full rounded-[8px] border border-border bg-surface px-2 text-meta text-text-1 outline-none transition-colors focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 disabled:opacity-50";
 
 export const controlInputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none transition-colors focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 disabled:opacity-50";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none transition-colors focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25 disabled:opacity-50";
 
 // A labelled row: name and description on the left, the control on the right.
 // The layout every settings screen uses.
@@ -38,12 +38,12 @@ export function SettingRow({
       <div className="min-w-0 flex-1">
         <label
           htmlFor={htmlFor}
-          className="block text-[13px] font-medium text-text-1"
+          className="block text-body font-medium text-text-1"
         >
           {label}
         </label>
         {description ? (
-          <p className="mt-0.5 text-[12px] text-text-3">{description}</p>
+          <p className="mt-0.5 text-meta text-text-3">{description}</p>
         ) : null}
       </div>
       <div className="w-full shrink-0 sm:w-[260px]">{control}</div>

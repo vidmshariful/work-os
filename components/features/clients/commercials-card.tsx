@@ -14,7 +14,7 @@ import type { ProjectCommercials } from "@/lib/types";
 const initialState: IntakeActionState = { error: null };
 
 const inputClass =
-  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
+  "h-8 w-full rounded-[8px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand";
 
 // Pricing and invoice terms for one project. Rendered only for executives
 // and the assigned manager; RLS returns zero rows to everyone else, so this
@@ -52,7 +52,7 @@ export function CommercialsPanel({
         <input type="hidden" name="ws" value={ws} />
         <input type="hidden" name="project_id" value={projectId} />
         <input type="hidden" name="client_id" value={clientId ?? ""} />
-        <label className="text-[12px] font-medium text-text-2" htmlFor={`price-${projectId}`}>
+        <label className="text-meta font-medium text-text-2" htmlFor={`price-${projectId}`}>
           Price
         </label>
         <input
@@ -65,7 +65,7 @@ export function CommercialsPanel({
           placeholder="9500"
           className={`${inputClass} font-mono tabular`}
         />
-        <label className="text-[12px] font-medium text-text-2" htmlFor={`terms-${projectId}`}>
+        <label className="text-meta font-medium text-text-2" htmlFor={`terms-${projectId}`}>
           Invoice terms
         </label>
         <input
@@ -80,7 +80,7 @@ export function CommercialsPanel({
           rows={2}
           defaultValue={commercials?.notes ?? ""}
           placeholder="Billing notes, optional"
-          className="w-full rounded-[8px] border border-border bg-surface px-2.5 py-1.5 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
+          className="w-full rounded-[8px] border border-border bg-surface px-2.5 py-1.5 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
         />
         <div className="flex justify-end gap-1.5">
           <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
@@ -97,7 +97,7 @@ export function CommercialsPanel({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between">
-        <span className="font-mono text-[22px] font-semibold text-text-1 tabular">
+        <span className="font-mono text-h2 font-semibold text-text-1 tabular">
           {commercials?.price != null ? fmtMoney(Number(commercials.price)) : "—"}
         </span>
         {canEdit ? (
@@ -106,13 +106,13 @@ export function CommercialsPanel({
           </Button>
         ) : null}
       </div>
-      <p className="text-[12.5px] text-text-2">
+      <p className="text-meta text-text-2">
         {commercials?.invoice_terms ?? "No invoice terms set."}
       </p>
       {commercials?.notes ? (
-        <p className="text-[12px] text-text-3">{commercials.notes}</p>
+        <p className="text-meta text-text-3">{commercials.notes}</p>
       ) : null}
-      <p className="mt-1 text-[11px] text-text-3">
+      <p className="mt-1 text-label text-text-3">
         Visible to executives and the assigned manager only.
       </p>
     </div>

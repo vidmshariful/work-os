@@ -80,7 +80,7 @@ export interface SpaceSettingsSpace {
 }
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 // Creating a space asks for the two things it cannot be without: a name and
 // a colour. Everything else lives in the settings panel, which is where the
@@ -319,9 +319,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[12px] font-medium text-text-2">{label}</span>
+      <span className="mb-1 block text-meta font-medium text-text-2">{label}</span>
       {children}
-      {hint ? <span className="mt-1 block text-[11.5px] text-text-3">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-label text-text-3">{hint}</span> : null}
     </label>
   );
 }
@@ -382,8 +382,8 @@ function GeneralTab({ ws, space }: { ws: string; space: SpaceSettingsSpace }) {
       <div className="flex items-center gap-3">
         <SpaceGlyph name={name || "?"} icon={icon || null} color={color} size={44} />
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-medium text-text-1">{name || "New space"}</div>
-          <div className="text-[11.5px] text-text-3">
+          <div className="text-body font-medium text-text-1">{name || "New space"}</div>
+          <div className="text-label text-text-3">
             {icon ? "Pick another icon below, or clear it." : "No icon yet, so the first letter shows."}
           </div>
         </div>
@@ -427,7 +427,7 @@ function GeneralTab({ ws, space }: { ws: string; space: SpaceSettingsSpace }) {
           onChange={(e) => setIcon(e.target.value)}
           placeholder="Emoji"
           aria-label="Space emoji"
-          className={cn(inputClass, "mt-2 w-24 text-center text-[16px]")}
+          className={cn(inputClass, "mt-2 w-24 text-center text-h3")}
         />
       </Field>
 
@@ -501,15 +501,15 @@ function GeneralTab({ ws, space }: { ws: string; space: SpaceSettingsSpace }) {
 
       <div className="flex items-center justify-between rounded-[10px] border border-border px-3 py-2.5">
         <div>
-          <div className="text-[13px] font-medium text-text-1">Set as default space</div>
-          <div className="text-[11.5px] text-text-3">
+          <div className="text-body font-medium text-text-1">Set as default space</div>
+          <div className="text-label text-text-3">
             {space.is_default
               ? "New projects that name no space are filed here."
               : "New projects that name no space are filed into the default space."}
           </div>
         </div>
         {space.is_default ? (
-          <span className="rounded-[6px] bg-brand-soft px-2 py-1 text-[11.5px] font-medium text-brand">
+          <span className="rounded-[6px] bg-brand-soft px-2 py-1 text-label font-medium text-brand">
             Default
           </span>
         ) : (
@@ -600,15 +600,15 @@ function MembersTab({
     <div className="flex flex-col gap-4 pt-4">
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[12px] font-medium text-text-2">
+          <span className="text-meta font-medium text-text-2">
             Members of this space
           </span>
-          <span className="font-mono text-[11.5px] text-text-3 tabular">
+          <span className="font-mono text-label text-text-3 tabular">
             {staff.length}
           </span>
         </div>
         {staff.length === 0 ? (
-          <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-warning-soft px-3 py-2.5 text-[12.5px] text-text-1">
+          <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-warning-soft px-3 py-2.5 text-meta text-text-1">
             <AlertTriangle className="mt-px size-4 shrink-0 text-warning" strokeWidth={1.5} />
             <span>
               Nobody works in this space. Its projects are invisible to
@@ -621,8 +621,8 @@ function MembersTab({
               <div key={m.id} className="group flex items-center gap-2.5 px-3 py-2">
                 <PersonAvatar name={m.name} src={m.avatar_url} size={26} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] text-text-1">{m.name}</div>
-                  <div className="text-[11.5px] text-text-3">
+                  <div className="truncate text-body text-text-1">{m.name}</div>
+                  <div className="text-label text-text-3">
                     {ARCHETYPE_LABELS[m.archetype]}
                   </div>
                 </div>
@@ -642,7 +642,7 @@ function MembersTab({
       </div>
 
       <div>
-        <span className="mb-1.5 block text-[12px] font-medium text-text-2">
+        <span className="mb-1.5 block text-meta font-medium text-text-2">
           Add someone
         </span>
         <div className="relative">
@@ -659,11 +659,11 @@ function MembersTab({
           />
         </div>
         {addable.length === 0 ? (
-          <p className="mt-1.5 text-[11.5px] text-text-3">
+          <p className="mt-1.5 text-label text-text-3">
             Everyone in the workspace is already here.
           </p>
         ) : matches.length === 0 ? (
-          <p className="mt-1.5 text-[11.5px] text-text-3">Nobody matches that.</p>
+          <p className="mt-1.5 text-label text-text-3">Nobody matches that.</p>
         ) : (
           <div className="mt-1.5 max-h-48 divide-y divide-border overflow-y-auto rounded-[10px] border border-border">
             {matches.map((c) => (
@@ -677,8 +677,8 @@ function MembersTab({
               >
                 <PersonAvatar name={c.name} src={c.avatar_url} size={26} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] text-text-1">{c.name}</div>
-                  <div className="text-[11.5px] text-text-3">
+                  <div className="truncate text-body text-text-1">{c.name}</div>
+                  <div className="text-label text-text-3">
                     {ARCHETYPE_LABELS[c.archetype]}
                   </div>
                 </div>
@@ -693,21 +693,21 @@ function MembersTab({
           removing them here would not change anything, so the section says so
           rather than offering a control that does nothing. */}
       <div className="rounded-[10px] border border-dashed border-border px-3 py-2.5">
-        <div className="mb-1.5 text-[12px] font-medium text-text-2">
+        <div className="mb-1.5 text-meta font-medium text-text-2">
           Executives, always included
         </div>
-        <p className="mb-2 text-[11.5px] text-text-3">
+        <p className="mb-2 text-label text-text-3">
           Executives see every space in the workspace and cannot be removed
           from one here. Change this in Admin, People, by changing their role.
         </p>
         <div className="flex flex-wrap gap-1.5">
           {executives.length === 0 ? (
-            <span className="text-[12px] text-text-3">No executives.</span>
+            <span className="text-meta text-text-3">No executives.</span>
           ) : (
             executives.map((e) => (
               <span
                 key={e.id}
-                className="flex items-center gap-1.5 rounded-full border border-border py-0.5 pl-0.5 pr-2 text-[12px] text-text-2"
+                className="flex items-center gap-1.5 rounded-full border border-border py-0.5 pl-0.5 pr-2 text-meta text-text-2"
               >
                 <PersonAvatar name={e.name} src={e.avatar_url} size={20} />
                 {e.name}
@@ -786,10 +786,10 @@ function DangerTab({
       <div className="rounded-[10px] border border-border px-3 py-2.5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium text-text-1">
+            <div className="text-body font-medium text-text-1">
               {archived ? "Restore space" : "Archive space"}
             </div>
-            <div className="mt-0.5 text-[11.5px] text-text-3">
+            <div className="mt-0.5 text-label text-text-3">
               {archived
                 ? "Put it back in the sidebar and on the index."
                 : "Takes it out of the sidebar and the index. Nothing is deleted, nobody loses access, and the page still opens from a direct link."}
@@ -812,7 +812,7 @@ function DangerTab({
           )}
         </div>
         {space.is_default && !archived ? (
-          <p className="mt-2 text-[11.5px] text-warning">
+          <p className="mt-2 text-label text-warning">
             This is the default space, so it cannot be archived. Make another
             space the default first, on the General tab.
           </p>
@@ -869,10 +869,10 @@ export function DeleteSpaceCard({
 
   return (
     <div className="rounded-[10px] border border-danger/40 px-3 py-2.5">
-      <div className="text-[13px] font-medium text-danger">Delete space</div>
+      <div className="text-body font-medium text-danger">Delete space</div>
       {space.is_default ? (
         <>
-          <p className="mt-0.5 text-[11.5px] text-text-3">
+          <p className="mt-0.5 text-label text-text-3">
             The default space cannot be deleted, because new projects that name
             no space are filed into it.
           </p>
@@ -886,13 +886,13 @@ export function DeleteSpaceCard({
             <Trash2 strokeWidth={1.5} />
             Delete space
           </Button>
-          <p className="mt-2 text-[11.5px] text-warning">
+          <p className="mt-2 text-label text-warning">
             Make another space the default first, on the General tab.
           </p>
         </>
       ) : (
         <>
-          <p className="mt-0.5 text-[12px] text-text-2">
+          <p className="mt-0.5 text-meta text-text-2">
             {projectCount === 0
               ? "No projects are filed here."
               : `${projectCount} project${projectCount === 1 ? "" : "s"} ${
@@ -908,7 +908,7 @@ export function DeleteSpaceCard({
                 } deleted, because a list belongs to one space and has nowhere to go.`
               : ""}
           </p>
-          <p className="mt-2 text-[11.5px] text-text-3">
+          <p className="mt-2 text-label text-text-3">
             Type <span className="font-medium text-text-1">{space.name}</span> to
             confirm.
           </p>

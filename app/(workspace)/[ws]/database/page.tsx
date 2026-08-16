@@ -81,19 +81,19 @@ export default async function DatabasePage({
           <Card className="h-full p-5 transition-colors hover:border-border-strong">
             <div className="flex items-start gap-2.5">
               <span
-                className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[13px] font-semibold"
+                className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] text-body font-semibold"
                 style={{ backgroundColor: `${t.color}1A`, color: t.color }}
               >
                 {t.name.slice(0, 1).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <div className="truncate text-[14.5px] font-semibold text-text-1">{t.name}</div>
+                <div className="truncate text-lead font-semibold text-text-1">{t.name}</div>
                 {t.description ? (
-                  <p className="mt-0.5 line-clamp-2 text-[12.5px] text-text-2">{t.description}</p>
+                  <p className="mt-0.5 line-clamp-2 text-meta text-text-2">{t.description}</p>
                 ) : null}
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-3 text-[12px] text-text-3">
+            <div className="mt-4 flex items-center gap-3 text-meta text-text-3">
               <span className="flex items-center gap-1.5">
                 <Rows3 className="size-3.5" strokeWidth={1.5} />
                 <span className="font-mono tabular">{counts.get(t.id) ?? 0}</span> rows
@@ -129,8 +129,8 @@ export default async function DatabasePage({
     items.length === 0 ? null : (
       <section>
         <div className="mb-2">
-          <h2 className="text-[15px] font-semibold text-text-1">{title}</h2>
-          <p className="text-[12.5px] text-text-2">{hint}</p>
+          <h2 className="text-lead font-semibold text-text-1">{title}</h2>
+          <p className="text-meta text-text-2">{hint}</p>
         </div>
         <Grid items={items} />
       </section>
@@ -140,8 +140,8 @@ export default async function DatabasePage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">Database</h1>
-          <p className="mt-1 text-sm text-text-2">
+          <h1 className="page-title">Database</h1>
+          <p className="page-subtitle mt-1">
             Tables, documents and credentials. Folders decide who sees what.
           </p>
         </div>
@@ -155,8 +155,8 @@ export default async function DatabasePage({
       {folders.length > 0 ? (
         <section>
           <div className="mb-2">
-            <h2 className="text-[15px] font-semibold text-text-1">Folders</h2>
-            <p className="text-[12.5px] text-text-2">
+            <h2 className="text-lead font-semibold text-text-1">Folders</h2>
+            <p className="text-meta text-text-2">
               Give someone a folder and they get everything filed in it.
             </p>
           </div>
@@ -172,10 +172,10 @@ export default async function DatabasePage({
                       <Folder className="size-4" strokeWidth={1.75} />
                     </span>
                     <div className="min-w-0">
-                      <div className="truncate text-[14px] font-semibold text-text-1">
+                      <div className="truncate text-lead font-semibold text-text-1">
                         {f.name}
                       </div>
-                      <div className="text-[12px] text-text-3">
+                      <div className="text-meta text-text-3">
                         <span className="font-mono tabular">{filed.get(f.id) ?? 0}</span> item
                         {(filed.get(f.id) ?? 0) === 1 ? "" : "s"}
                       </div>

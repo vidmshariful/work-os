@@ -118,7 +118,7 @@ export function DetailSkeleton() {
     <div className="flex flex-col gap-4">
       <Skeleton className="h-4 w-72" />
       <Skeleton className="h-8 w-96" />
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-4">
           <Skeleton className="h-44 w-full rounded-[14px]" />
           <Skeleton className="h-56 w-full rounded-[14px]" />

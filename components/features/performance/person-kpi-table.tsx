@@ -39,7 +39,7 @@ export function PersonKpiTable({
       person: (
         <span className="flex items-center gap-2.5">
           <PersonAvatar name={name} src={p.profile?.avatar_url} size={26} />
-          <span className="truncate text-sm font-medium text-text-1">
+          <span className="truncate text-body font-medium text-text-1">
             {name}
           </span>
         </span>

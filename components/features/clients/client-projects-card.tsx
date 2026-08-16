@@ -34,7 +34,7 @@ export function ClientProjectsCard({
           canCreateProjects ? (
             <Link
               href={`/${ws}/projects/new`}
-              className="text-[12.5px] font-medium text-brand hover:underline"
+              className="text-meta font-medium text-brand hover:underline"
             >
               New project
             </Link>
@@ -64,7 +64,7 @@ export function ClientProjectsCard({
               trailing={
                 <Link
                   href={`/${ws}/projects/${p.id}`}
-                  className="rounded-[8px] px-2.5 py-1 text-[12.5px] font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
+                  className="rounded-[8px] px-2.5 py-1 text-meta font-medium text-brand opacity-0 transition-opacity hover:bg-brand-soft group-hover:opacity-100"
                 >
                   Open
                 </Link>

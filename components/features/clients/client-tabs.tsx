@@ -28,7 +28,7 @@ export function ClientTabs({
           href={`/${ws}/clients/${clientId}${t.key === "activity" ? "" : `?tab=${t.key}`}`}
           aria-current={active === t.key ? "page" : undefined}
           className={cn(
-            "-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-[13px] font-medium transition-colors",
+            "-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-body font-medium transition-colors",
             active === t.key
               ? "border-brand text-text-1"
               : "border-transparent text-text-2 hover:text-text-1"

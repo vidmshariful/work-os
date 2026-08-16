@@ -13,8 +13,8 @@ function IdentityRow({
 }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-border py-2.5 first:pt-0 last:border-b-0 last:pb-0">
-      <span className="shrink-0 text-[12.5px] text-text-2">{label}</span>
-      <span className="min-w-0 text-right text-[13px] font-medium text-text-1">
+      <span className="shrink-0 text-meta text-text-2">{label}</span>
+      <span className="min-w-0 text-right text-body font-medium text-text-1">
         {children}
       </span>
     </div>

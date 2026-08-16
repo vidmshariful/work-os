@@ -157,17 +157,17 @@ export default async function TaskDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <CodeLabel code={task.project.code} className="text-[13px]" />
+            <CodeLabel code={task.project.code} className="text-body" />
             <TaskStatusChip status={task.status} />
             <PriorityTag priority={task.priority} />
             {task.phase ? (
-              <span className="text-[12.5px] text-text-3">{task.phase.name}</span>
+              <span className="text-meta text-text-3">{task.phase.name}</span>
             ) : null}
           </div>
           {isSubtask && parentTask ? (
             <Link
               href={`/${ws}/tasks/${parentTask.id}`}
-              className="mt-1 flex items-center gap-1.5 text-[12.5px] text-text-2 hover:text-brand"
+              className="mt-1 flex items-center gap-1.5 text-meta text-text-2 hover:text-brand"
             >
               <ListTree className="size-3.5" strokeWidth={1.5} />
               Part of {parentTask.title}
@@ -187,7 +187,7 @@ export default async function TaskDetailPage({
 
       {/* The rail carries the activity and comment thread, so it needs a
           little more room than a plain meta column would. */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader title="Description" />
@@ -209,7 +209,7 @@ export default async function TaskDetailPage({
                     <ListTree className="size-4 text-text-3" strokeWidth={1.5} />
                     Subtasks
                     {subtasks.length > 0 ? (
-                      <span className="font-mono text-[12px] font-medium text-text-3 tabular">
+                      <span className="font-mono text-meta font-medium text-text-3 tabular">
                         {subtasks.filter((s) => s.status === "done").length}/
                         {subtasks.length}
                       </span>
@@ -235,7 +235,7 @@ export default async function TaskDetailPage({
                 <span className="flex items-center gap-2">
                   <History className="size-4 text-text-3" strokeWidth={1.5} />
                   Revisions
-                  <span className="font-mono text-[12px] font-medium text-text-3 tabular">
+                  <span className="font-mono text-meta font-medium text-text-3 tabular">
                     {task.revision_count}
                   </span>
                 </span>
@@ -244,7 +244,7 @@ export default async function TaskDetailPage({
             />
             <CardBody className="flex flex-col gap-3">
               {(revisions ?? []).length === 0 ? (
-                <p className="text-[13px] text-text-3">
+                <p className="text-body text-text-3">
                   No revisions logged. That is a good sign.
                 </p>
               ) : (
@@ -263,14 +263,14 @@ export default async function TaskDetailPage({
                         size={26}
                       />
                       <div className="min-w-0">
-                        <p className="text-[12.5px]">
+                        <p className="text-meta">
                           <span className="font-medium text-text-1">
                             {rev.requester?.full_name ?? "Someone"}
                           </span>{" "}
                           <span className="text-text-3"><TimeAgo at={rev.created_at} /></span>
                         </p>
                         {rev.note ? (
-                          <p className="mt-0.5 text-sm text-text-2">{rev.note}</p>
+                          <p className="mt-0.5 text-body text-text-2">{rev.note}</p>
                         ) : null}
                       </div>
                     </div>
@@ -284,8 +284,8 @@ export default async function TaskDetailPage({
 
         <div className="flex flex-col gap-4">
           <Card className="p-4">
-            <h4 className="text-[13px] font-semibold text-text-1">Details</h4>
-            <div className="mt-3 flex flex-col gap-2.5 text-[12.5px]">
+            <h4 className="text-body font-semibold text-text-1">Details</h4>
+            <div className="mt-3 flex flex-col gap-2.5 text-meta">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-text-2">Assignee</span>
                 {canManage ? (
@@ -352,13 +352,13 @@ export default async function TaskDetailPage({
           </Card>
 
           <Card className="p-4">
-            <h4 className="flex items-center gap-2 text-[13px] font-semibold text-text-1">
+            <h4 className="flex items-center gap-2 text-body font-semibold text-text-1">
               <GitBranch className="size-4 text-text-3" strokeWidth={1.5} />
               Dependencies
             </h4>
             <div className="mt-3 flex flex-col gap-2">
               {deps.length === 0 ? (
-                <p className="text-[12.5px] text-text-3">No dependencies.</p>
+                <p className="text-meta text-text-3">No dependencies.</p>
               ) : (
                 deps.map((d) => (
                   <div
@@ -367,7 +367,7 @@ export default async function TaskDetailPage({
                   >
                     <Link
                       href={`/${ws}/tasks/${d.depends_on!.id}`}
-                      className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-text-1 hover:text-brand"
+                      className="min-w-0 flex-1 truncate text-meta font-medium text-text-1 hover:text-brand"
                     >
                       {d.depends_on!.title}
                     </Link>
@@ -383,7 +383,7 @@ export default async function TaskDetailPage({
                 ))
               )}
               {waiting && task.status === "blocked" ? (
-                <p className="rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-[12px] text-text-2">
+                <p className="rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-meta text-text-2">
                   Waiting on dependencies.
                 </p>
               ) : null}
@@ -400,11 +400,11 @@ export default async function TaskDetailPage({
 
           <Card className="p-4">
             <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-2 text-[13px] font-semibold text-text-1">
+              <h4 className="flex items-center gap-2 text-body font-semibold text-text-1">
                 <History className="size-4 text-text-3" strokeWidth={1.5} />
                 Activity
               </h4>
-              <span className="flex items-center gap-1 text-[11.5px] text-text-3">
+              <span className="flex items-center gap-1 text-label text-text-3">
                 <MessageSquare className="size-3.5" strokeWidth={1.5} />
                 {comments.length}
               </span>

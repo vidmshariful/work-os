@@ -28,7 +28,7 @@ export default function AdminIntegrationsPage() {
         <Card key={item.name}>
           <CardHeader title={item.name} action={<Tag tone="gray">Linked externally</Tag>} />
           <CardBody>
-            <p className="text-sm leading-relaxed text-text-2">{item.body}</p>
+            <p className="text-body leading-relaxed text-text-2">{item.body}</p>
             <Button asChild variant="outline" size="sm" className="mt-4">
               <a href={item.href} target="_blank" rel="noopener noreferrer">
                 <ExternalLink />

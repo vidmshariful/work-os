@@ -783,7 +783,7 @@ export function ShortcutsHint({ className }: { className?: string }) {
       aria-label="Show keyboard shortcuts"
       title="Keyboard shortcuts"
       className={cn(
-        "inline-flex size-7 shrink-0 items-center justify-center rounded-[8px] border border-border font-mono text-[12px] font-semibold text-text-3 transition-colors hover:text-text-1",
+        "inline-flex size-7 shrink-0 items-center justify-center rounded-[8px] border border-border font-mono text-meta font-semibold text-text-3 transition-colors hover:text-text-1",
         className
       )}
     >
@@ -794,10 +794,10 @@ export function ShortcutsHint({ className }: { className?: string }) {
 
 function Key({ children }: { children: React.ReactNode }) {
   if (children === "or") {
-    return <span className="px-0.5 text-[11px] text-text-3">or</span>;
+    return <span className="px-0.5 text-label text-text-3">or</span>;
   }
   return (
-    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] border border-border bg-surface-2 px-1.5 font-mono text-[11px] font-medium text-text-2">
+    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] border border-border bg-surface-2 px-1.5 font-mono text-label font-medium text-text-2">
       {children}
     </kbd>
   );
@@ -823,7 +823,7 @@ function ShortcutsDialog({
         <div className="flex flex-col gap-1.5">
           {SHORTCUTS.map((s) => (
             <div key={s.what} className="flex items-center justify-between gap-4">
-              <span className="text-[13px] text-text-2">{s.what}</span>
+              <span className="text-body text-text-2">{s.what}</span>
               <span className="flex shrink-0 items-center gap-1">
                 {s.keys.map((k, i) => (
                   <Key key={`${k}-${i}`}>{k}</Key>
@@ -1247,11 +1247,11 @@ function BulkBar({
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
       <div className="pointer-events-auto flex flex-wrap items-center gap-1 rounded-[12px] border border-border bg-surface px-2 py-1.5 shadow-[var(--shadow-pop)]">
-        <span className="px-2 text-[12.5px] font-medium text-text-1">
+        <span className="px-2 text-meta font-medium text-text-1">
           {count} selected
         </span>
         {editable < count ? (
-          <span className="text-[11.5px] text-text-3">
+          <span className="text-label text-text-3">
             {count - editable} not yours
           </span>
         ) : null}
@@ -1383,7 +1383,7 @@ function DueDateDialog({
           value={value}
           aria-label="Due date"
           onChange={(e) => setValue(e.target.value)}
-          className="h-9 w-full rounded-[9px] border border-border bg-surface px-2.5 text-[13px] text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+          className="h-9 w-full rounded-[9px] border border-border bg-surface px-2.5 text-body text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
         />
         <DialogFooter>
           <Button variant="ghost" onClick={() => onSave(null)}>
@@ -1432,7 +1432,7 @@ function DeleteDialog({
           </DialogDescription>
         </DialogHeader>
         {targets.length > 1 ? (
-          <ul className="max-h-40 overflow-y-auto text-[12.5px] text-text-2">
+          <ul className="max-h-40 overflow-y-auto text-meta text-text-2">
             {targets.map((p) => (
               <li key={p.id} className="truncate py-0.5">
                 <span className="font-mono tabular text-text-3">{p.code}</span>{" "}

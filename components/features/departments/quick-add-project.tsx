@@ -117,8 +117,8 @@ export function QuickAddProject({
               <ProgressRing value={0} size={32} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-text-3">{title}</div>
-              <div className="mt-0.5 text-[12.5px] text-text-3">Adding</div>
+              <div className="truncate text-body font-medium text-text-3">{title}</div>
+              <div className="mt-0.5 text-meta text-text-3">Adding</div>
             </div>
           </div>
         ))}
@@ -146,7 +146,7 @@ export function QuickAddProject({
             setValue("");
             input.current?.blur();
           }}
-          className="h-7 w-full bg-transparent text-[13px] text-text-1 outline-none placeholder:text-text-3"
+          className="h-7 w-full bg-transparent text-body text-text-1 outline-none placeholder:text-text-3"
         />
       </form>
     </div>

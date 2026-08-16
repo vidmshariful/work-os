@@ -67,10 +67,10 @@ export default async function NewClientPage({
         ]}
       />
       <div>
-        <h1 className="text-[26px] font-semibold tracking-tight text-text-1">
+        <h1 className="page-title">
           New client
         </h1>
-        <p className="mt-1 text-sm text-text-2">
+        <p className="page-subtitle mt-1">
           They paid, so they exist. Everything after this runs itself.
         </p>
       </div>

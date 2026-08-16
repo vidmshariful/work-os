@@ -27,7 +27,7 @@ import {
 const initialState: TaskActionState = { error: null };
 
 const inputClass =
-  "w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function CommentForm({ ws, taskId }: { ws: string; taskId: string }) {
   const [state, formAction, pending] = useActionState(addComment, initialState);
@@ -130,7 +130,7 @@ export function DependencyManager({
   return (
     <select
       aria-label="Add dependency"
-      className="h-8 w-full rounded-[9px] border border-border bg-surface px-2.5 text-[12.5px] text-text-2 outline-none focus-visible:border-brand"
+      className="h-8 w-full rounded-[9px] border border-border bg-surface px-2.5 text-meta text-text-2 outline-none focus-visible:border-brand"
       value=""
       disabled={pending}
       onChange={(e) => onAdd(e.target.value)}
@@ -191,7 +191,7 @@ export function EditableTitle({
 
   if (!canEdit) {
     return (
-      <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight text-text-1">
+      <h1 className="mt-1.5 page-title">
         {title}
       </h1>
     );
@@ -230,7 +230,7 @@ export function EditableTitle({
             setEditing(false);
           }
         }}
-        className="mt-1.5 w-full rounded-[9px] border border-border bg-surface px-2 py-1 text-[26px] font-semibold tracking-tight text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+        className="mt-1.5 w-full rounded-[9px] border border-border bg-surface px-2 py-1 page-title outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
       />
     );
   }
@@ -238,7 +238,7 @@ export function EditableTitle({
   return (
     <h1
       onClick={() => setEditing(true)}
-      className="group mt-1.5 flex cursor-text items-center gap-2 text-[26px] font-semibold tracking-tight text-text-1"
+      className="group mt-1.5 flex cursor-text items-center gap-2 page-title"
     >
       {title}
       <Pencil
@@ -268,11 +268,11 @@ export function EditableDescription({
 
   if (!canEdit) {
     return description ? (
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-1">
+      <p className="whitespace-pre-wrap text-body leading-relaxed text-text-1">
         {description}
       </p>
     ) : (
-      <p className="text-[13px] text-text-3">No description.</p>
+      <p className="text-body text-text-3">No description.</p>
     );
   }
 
@@ -316,7 +316,7 @@ export function PhaseSelect({
   return (
     <select
       aria-label="Task phase"
-      className="h-8 max-w-[160px] rounded-[9px] border border-border bg-surface px-2 text-[12.5px] text-text-1 outline-none focus-visible:border-brand"
+      className="h-8 max-w-[160px] rounded-[9px] border border-border bg-surface px-2 text-meta text-text-1 outline-none focus-visible:border-brand"
       value={phaseId ?? ""}
       disabled={pending}
       onChange={(e) =>
@@ -379,7 +379,7 @@ export function DeleteTaskButton({
         <DialogHeader>
           <DialogTitle>Delete this task?</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-text-2">
+        <p className="text-body text-text-2">
           This removes the task along with its comments, revisions, and
           dependencies. It cannot be undone.
         </p>
@@ -411,7 +411,7 @@ export function AssigneeSelect({
   return (
     <select
       aria-label="Reassign task"
-      className="h-8 max-w-[160px] rounded-[9px] border border-border bg-surface px-2 text-[12.5px] text-text-1 outline-none focus-visible:border-brand"
+      className="h-8 max-w-[160px] rounded-[9px] border border-border bg-surface px-2 text-meta text-text-1 outline-none focus-visible:border-brand"
       value={assigneeId ?? ""}
       disabled={pending}
       onChange={(e) =>

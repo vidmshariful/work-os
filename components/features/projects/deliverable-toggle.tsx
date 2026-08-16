@@ -50,14 +50,14 @@ export function DeliverableToggle({
       />
       <span
         className={cn(
-          "flex-1 text-sm",
+          "flex-1 text-body",
           optimisticDone ? "text-text-3 line-through" : "text-text-1"
         )}
       >
         {deliverable.title}
       </span>
       {deliverable.due_date ? (
-        <span className="font-mono text-[12px] text-text-3 tabular">
+        <span className="font-mono text-meta text-text-3 tabular">
           {fmtDate(deliverable.due_date)}
         </span>
       ) : null}

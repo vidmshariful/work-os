@@ -9,8 +9,8 @@ export default function MessagesIndex() {
         <MessageSquare className="size-6" strokeWidth={1.5} />
       </div>
       <div>
-        <p className="text-sm font-medium text-text-1">Pick someone to write to</p>
-        <p className="mt-0.5 text-[12.5px] text-text-2">
+        <p className="text-body font-medium text-text-1">Pick someone to write to</p>
+        <p className="mt-0.5 text-meta text-text-2">
           Every teammate is in the list, whether or not you have talked before.
         </p>
       </div>

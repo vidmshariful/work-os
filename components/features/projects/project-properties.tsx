@@ -233,7 +233,7 @@ export function ProjectProperties({
                 <button
                   type="button"
                   aria-label="Change owner"
-                  className={cn(propertyTriggerClass, "flex items-center gap-1.5 text-[13px] text-text-1")}
+                  className={cn(propertyTriggerClass, "flex items-center gap-1.5 text-body text-text-1")}
                 >
                   {owner ? (
                     <>
@@ -272,7 +272,7 @@ export function ProjectProperties({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : owner ? (
-            <span className="flex items-center gap-1.5 px-2 text-[13px] text-text-1">
+            <span className="flex items-center gap-1.5 px-2 text-body text-text-1">
               <PersonAvatar name={owner.full_name} src={owner.avatar_url} size={20} />
               {owner.full_name}
             </span>
@@ -316,7 +316,7 @@ export function ProjectProperties({
                 />
               </>
             ) : startDate || dueDate ? (
-              <span className="px-2 font-mono text-[13px] text-text-1 tabular">
+              <span className="px-2 font-mono text-body text-text-1 tabular">
                 {startDate ? fmtDateFull(startDate) : "Any time"} to{" "}
                 {dueDate ? fmtDateFull(dueDate) : "no end"}
               </span>
@@ -337,7 +337,7 @@ export function ProjectProperties({
               {assignees.map((a) => (
                 <span
                   key={a.id}
-                  className="flex items-center gap-1.5 text-[12.5px] text-text-1"
+                  className="flex items-center gap-1.5 text-meta text-text-1"
                 >
                   <PersonAvatar name={a.full_name} src={a.avatar_url} size={20} />
                   {a.full_name}
@@ -352,7 +352,7 @@ export function ProjectProperties({
         <PropertyRow label="Client" size="half">
           {client.href && client.label ? (
             <span className="flex flex-wrap items-center gap-2 px-2">
-              <Link href={client.href} className="text-[13px] text-brand hover:underline">
+              <Link href={client.href} className="text-body text-brand hover:underline">
                 {client.label}
               </Link>
               {client.confidential ? <ConfidentialChip /> : null}
@@ -380,14 +380,14 @@ export function ProjectProperties({
               }
             />
           ) : type ? (
-            <span className="px-2 text-[13px] text-text-1">{type}</span>
+            <span className="px-2 text-body text-text-1">{type}</span>
           ) : (
             <EmptyValue />
           )}
         </PropertyRow>
       </div>
 
-      <div className="border-t border-border px-5 py-2 text-[11.5px] text-text-3">
+      <div className="border-t border-border px-5 py-2 text-label text-text-3">
         Created {fmtDateFull(project.created_at)}
       </div>
     </Card>

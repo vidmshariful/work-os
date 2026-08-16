@@ -17,7 +17,7 @@ import {
 const initialState: LeaveActionState = { error: null };
 
 const inputClass =
-  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-9 w-full rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function LeaveRequestForm({ ws }: { ws: string }) {
   const [state, formAction, pending] = useActionState(
@@ -58,11 +58,11 @@ export function LeaveRequestForm({ ws }: { ws: string }) {
           name="reason"
           rows={2}
           placeholder="Optional"
-          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
         />
       </Field>
       {state.error ? (
-        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-meta font-medium text-danger">
           {state.error}
         </p>
       ) : null}
@@ -172,11 +172,11 @@ export function RecordLeaveForm({
           name="reason"
           rows={2}
           placeholder="Optional"
-          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+          className="w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
         />
       </Field>
       {state.error ? (
-        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-[12.5px] font-medium text-danger">
+        <p className="rounded-[9px] bg-danger-soft px-3 py-2 text-meta font-medium text-danger">
           {state.error}
         </p>
       ) : null}
@@ -226,7 +226,7 @@ export function ApprovalButtons({
             if (e.key === "Enter")
               run(() => decideLeave(ws, requestId, "rejected", note));
           }}
-          className="h-8 w-44 rounded-[8px] border border-border bg-surface px-2 text-[12.5px] text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
+          className="h-8 w-44 rounded-[8px] border border-border bg-surface px-2 text-meta text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand"
         />
         <Button
           variant="destructive"
@@ -292,10 +292,10 @@ export function AllowanceEditor({
           key={p.id}
           className="flex items-center gap-3 border-b border-border px-5 py-2 last:border-b-0"
         >
-          <span className="min-w-0 flex-1 truncate text-[13px] text-text-1">
+          <span className="min-w-0 flex-1 truncate text-body text-text-1">
             {p.full_name}
           </span>
-          <span className="font-mono text-[12px] text-text-3 tabular">
+          <span className="font-mono text-meta text-text-3 tabular">
             {p.used} used
           </span>
           <input
@@ -312,7 +312,7 @@ export function AllowanceEditor({
                 e.currentTarget.blur();
               }
             }}
-            className="h-8 w-16 rounded-[8px] border border-border bg-surface px-2 text-right font-mono text-[13px] text-text-1 tabular outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+            className="h-8 w-16 rounded-[8px] border border-border bg-surface px-2 text-right font-mono text-body text-text-1 tabular outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
           />
         </div>
       ))}

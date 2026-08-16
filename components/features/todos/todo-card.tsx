@@ -48,7 +48,7 @@ export function TodoCard({
         <button onClick={() => onOpen(todo.id)} className="min-w-0 flex-1 text-left">
           <span
             className={cn(
-              "block text-[13px] font-medium leading-snug",
+              "block text-body font-medium leading-snug",
               done ? "text-text-3 line-through" : "text-text-1"
             )}
           >
@@ -57,19 +57,19 @@ export function TodoCard({
           {hasMeta ? (
             <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               {todo.priority > 0 ? (
-                <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", prio.tone)}>
+                <span className={cn("inline-flex items-center gap-1 text-label font-medium", prio.tone)}>
                   <span className="size-1.5 rounded-full" style={{ backgroundColor: prio.dot }} />
                   {prio.label}
                 </span>
               ) : null}
               {todo.due_date ? (
-                <span className="inline-flex items-center gap-1 text-[11.5px] text-text-2">
+                <span className="inline-flex items-center gap-1 text-label text-text-2">
                   <CalendarDays className="size-3.5" strokeWidth={1.5} />
                   <span className="font-mono tabular">{fmtDate(todo.due_date)}</span>
                 </span>
               ) : null}
               {total > 0 ? (
-                <span className="inline-flex items-center gap-1 text-[11.5px] text-text-3">
+                <span className="inline-flex items-center gap-1 text-label text-text-3">
                   <ListChecks className="size-3.5" strokeWidth={1.5} />
                   <span className="font-mono tabular">
                     {checked}/{total}
@@ -82,7 +82,7 @@ export function TodoCard({
               {todo.labels.map((l) => (
                 <span
                   key={l.id}
-                  className="rounded-full px-1.5 py-0.5 text-[10.5px] font-medium"
+                  className="rounded-full px-1.5 py-0.5 text-micro font-medium"
                   style={{ backgroundColor: `${l.color}22`, color: l.color }}
                 >
                   {l.name}

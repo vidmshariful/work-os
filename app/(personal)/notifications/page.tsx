@@ -37,8 +37,8 @@ export default async function NotificationsHub() {
     <div className="flex flex-col gap-5">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-text-1">Notifications</h1>
-          <p className="mt-1 text-sm text-text-2">
+          <h1 className="page-title">Notifications</h1>
+          <p className="page-subtitle mt-1">
             {unread > 0 ? `${unread} unread across your workspaces.` : "You are all caught up."}
           </p>
         </div>
@@ -49,7 +49,7 @@ export default async function NotificationsHub() {
               await markAllNotificationsRead();
             }}
           >
-            <button className="h-9 rounded-[9px] border border-border bg-surface px-3.5 text-sm font-medium text-text-1 transition-colors hover:bg-surface-2">
+            <button className="h-9 rounded-[9px] border border-border bg-surface px-3.5 text-body font-medium text-text-1 transition-colors hover:bg-surface-2">
               Mark all read
             </button>
           </form>

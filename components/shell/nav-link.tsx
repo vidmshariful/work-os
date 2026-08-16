@@ -45,10 +45,13 @@ export function NavLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-[9px] px-2.5 py-[7px] text-sm font-medium outline-none transition-colors",
+        "relative flex items-center gap-2.5 rounded-[9px] px-2.5 py-[7px] text-body font-medium outline-none transition-colors",
         "focus-visible:ring-2 focus-visible:ring-brand/40",
         active
-          ? "bg-nav-active text-text-1"
+          ? // A grey fill alone was doing all the work of saying where you
+            // are, and grey on grey is not much of a signal. The bar is the
+            // signal; the fill is just the resting surface under it.
+            "bg-nav-active text-text-1 before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-r-full before:bg-brand before:content-['']"
           : "text-text-2 hover:bg-surface-2 hover:text-text-1"
       )}
     >

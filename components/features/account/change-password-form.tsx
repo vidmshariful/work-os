@@ -8,7 +8,7 @@ import { updatePassword, type AuthState } from "@/lib/actions/auth";
 const initialState: AuthState = { error: null };
 
 const inputClass =
-  "h-10 rounded-[9px] border border-border bg-surface px-3 text-sm text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
+  "h-10 rounded-[9px] border border-border bg-surface px-3 text-body text-text-1 outline-none placeholder:text-text-3 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
 export function ChangePasswordForm() {
   const [state, formAction, pending] = useActionState(updatePassword, initialState);
@@ -52,7 +52,7 @@ export function ChangePasswordForm() {
       <div>
         <button
           disabled={pending}
-          className="h-9 rounded-[9px] bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-black disabled:opacity-60"
+          className="h-9 rounded-[9px] bg-primary px-3.5 text-body font-medium text-primary-foreground transition-colors hover:bg-black disabled:opacity-60"
         >
           {pending ? "Updating" : "Update password"}
         </button>

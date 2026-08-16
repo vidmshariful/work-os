@@ -118,7 +118,7 @@ export function SpaceTable({
     return qs ? `${base}?${qs}` : base;
   };
 
-  const cellClass = "px-3 py-2 text-[12.5px] text-text-2 align-middle";
+  const cellClass = "px-3 py-2 text-meta text-text-2 align-middle";
   // The first column stays put while the rest scrolls sideways.
   const stickyCell =
     "sticky left-0 z-10 bg-surface group-hover/row:bg-surface-2 px-3 py-2 align-middle";
@@ -126,7 +126,7 @@ export function SpaceTable({
   return (
     <div className="rounded-[14px] border border-border bg-surface">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <span className="text-[12.5px] text-text-3">
+        <span className="text-meta text-text-3">
           {rows.length} row{rows.length === 1 ? "" : "s"}
         </span>
         <Popover>
@@ -134,7 +134,7 @@ export function SpaceTable({
             <button
               type="button"
               aria-label="Show or hide columns"
-              className="inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-border px-2.5 text-[12.5px] font-medium text-text-2 transition-colors hover:text-text-1"
+              className="inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-border px-2.5 text-meta font-medium text-text-2 transition-colors hover:text-text-1"
             >
               <Columns3 className="size-3.5" strokeWidth={1.5} />
               Columns
@@ -158,7 +158,7 @@ export function SpaceTable({
                     })
                   }
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors",
+                    "flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-body transition-colors",
                     locked
                       ? "cursor-not-allowed text-text-3"
                       : "text-text-1 hover:bg-surface-2"
@@ -221,7 +221,7 @@ export function SpaceTable({
                         : "none"
                     }
                     className={cn(
-                      "whitespace-nowrap border-b border-border text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-text-3",
+                      "whitespace-nowrap border-b border-border text-left text-label font-semibold uppercase tracking-[0.06em] text-text-3",
                       i === 0 && "sticky left-9 z-30 bg-surface-2"
                     )}
                   >
@@ -297,7 +297,7 @@ export function SpaceTable({
                             <Link
                               href={`/${ws}/projects/${p.id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="text-[13px] font-medium text-text-1 hover:underline"
+                              className="text-body font-medium text-text-1 hover:underline"
                             >
                               {p.title}
                             </Link>
@@ -325,7 +325,7 @@ export function SpaceTable({
                                 onChange={(e) =>
                                   actions.setStatus(p, e.target.value as ProjectStatus)
                                 }
-                                className="h-7 rounded-[8px] border border-border bg-surface px-1.5 text-[12px] text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+                                className="h-7 rounded-[8px] border border-border bg-surface px-1.5 text-meta text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
                               >
                                 {PROJECT_STATUS_OPTIONS.map((s) => (
                                   <option key={s.value} value={s.value}>
@@ -346,7 +346,7 @@ export function SpaceTable({
                                 aria-label={`Assignee for ${p.code}`}
                                 value={p.owner_id ?? ""}
                                 onChange={(e) => actions.setOwner(p, e.target.value || null)}
-                                className="h-7 max-w-[150px] rounded-[8px] border border-border bg-surface px-1.5 text-[12px] text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
+                                className="h-7 max-w-[150px] rounded-[8px] border border-border bg-surface px-1.5 text-meta text-text-1 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25"
                               >
                                 <option value="">Unassigned</option>
                                 {members.map((m) => (
@@ -383,7 +383,7 @@ export function SpaceTable({
                                 value={c.total > 0 ? c.done / c.total : 0}
                                 size={26}
                               />
-                              <span className="font-mono text-[11.5px] text-text-3 tabular">
+                              <span className="font-mono text-label text-text-3 tabular">
                                 {c.done}/{c.total}
                               </span>
                             </span>
