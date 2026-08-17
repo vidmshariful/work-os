@@ -111,12 +111,16 @@ export default async function WorkspaceLayout({
 
   return (
     <div className="flex h-dvh overflow-hidden bg-canvas">
-      <div className="hidden md:flex">
-        <WorkspaceRail
-          workspaces={ctx.memberships.map((m) => m.workspace)}
-          activeSlug={ctx.workspace.slug}
-        />
-      </div>
+      {/* Only worth a column of its own when there is somewhere to switch to.
+          The mark for the current workspace lives in the sidebar header. */}
+      {ctx.memberships.length > 1 ? (
+        <div className="hidden md:flex">
+          <WorkspaceRail
+            workspaces={ctx.memberships.map((m) => m.workspace)}
+            activeSlug={ctx.workspace.slug}
+          />
+        </div>
+      ) : null}
       <div className="hidden md:flex">
         <Sidebar
           workspace={ctx.workspace}

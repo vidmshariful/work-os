@@ -59,9 +59,29 @@ export function Sidebar({
   const canSeeSettings = navGroups.some((g) => g.items.includes("admin"));
   return (
     <nav className="flex h-full w-[228px] shrink-0 flex-col border-r border-border bg-surface">
-      <div className="px-4 pb-2 pt-4">
-        <div className="text-lead font-semibold text-text-1">{workspace.name}</div>
-        <div className="text-meta text-text-3">Workspace</div>
+      {/* The workspace mark sits with the workspace name. It used to live
+          alone in a 52px rail down the left edge, which is worth the space
+          only when there is more than one workspace to switch between. With
+          one, that rail was a blank column holding a button that took you to
+          the page you were already on. The rail still appears for anyone who
+          belongs to two. */}
+      <div className="flex items-center gap-2.5 px-4 pb-2 pt-4">
+        <span
+          aria-hidden
+          className="flex size-8 shrink-0 items-center justify-center rounded-[10px] text-body font-semibold"
+          style={{
+            backgroundColor: `${workspace.accent_color}1A`,
+            color: workspace.accent_color,
+          }}
+        >
+          {workspace.name.slice(0, 1).toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <div className="truncate text-lead font-semibold text-text-1">
+            {workspace.name}
+          </div>
+          <div className="text-meta text-text-3">Workspace</div>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto px-2.5 py-2">
         {navGroups.map((group) => {
