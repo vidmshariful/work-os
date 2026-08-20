@@ -102,6 +102,11 @@ export interface Membership {
   reports_to: string | null;
   wall_side: WallSide;
   is_active: boolean;
+  // Set when the membership began as an invitation. Null for the founding
+  // team, who never had one. Whether it was accepted is not stored: that is
+  // auth's fact, read from last_sign_in_at.
+  invited_at: string | null;
+  invited_by: string | null;
   created_at: string;
 }
 

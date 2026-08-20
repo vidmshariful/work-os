@@ -31,11 +31,14 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // The reset routes must be reachable without a session: the email link
-  // lands on /reset/confirm before any session exists.
+  // These have to be reachable without a session, because that is the whole
+  // point of them: a reset link lands on /reset/confirm and an invitation on
+  // /invite/accept, both before any session exists. Leaving /invite out sent
+  // the newcomer to the sign in page holding a token they had no way to use.
   const isAuthRoute =
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/reset") ||
+    request.nextUrl.pathname.startsWith("/invite") ||
     request.nextUrl.pathname.startsWith("/auth");
 
   if (!user && !isAuthRoute) {

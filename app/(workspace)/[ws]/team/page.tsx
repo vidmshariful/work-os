@@ -11,7 +11,7 @@ import { ROLE_LABELS } from "@/components/shell/sidebar";
 import { cn } from "@/lib/utils";
 import { ARCHETYPE_META, type Member } from "@/components/features/team/labels";
 import { OrgChart } from "@/components/features/team/org-chart";
-import { OnboardDialog } from "@/components/features/team/team-controls";
+import { InviteDialog } from "@/components/features/admin/people-controls";
 
 export const metadata: Metadata = { title: "Team" };
 
@@ -80,7 +80,7 @@ export default async function TeamPage({
             {tab("chart", "Org chart")}
           </div>
           {isExec ? (
-            <OnboardDialog
+            <InviteDialog
               ws={ws}
               members={active.map((m) => ({ id: m.profile_id, full_name: m.profile.full_name }))}
             />

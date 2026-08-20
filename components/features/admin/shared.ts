@@ -6,16 +6,20 @@ import type {
   ProjectFieldOption,
   TemplateStructure,
 } from "@/lib/types";
+import {
+  ARCHETYPE_META,
+  ARCHETYPES as ARCHETYPE_KEYS,
+} from "@/components/features/team/labels";
 
-export const ARCHETYPE_LABELS: Record<Archetype, string> = {
-  executive: "Executive",
-  domain_manager: "Domain manager",
-  team_lead: "Team lead",
-  contributor: "Contributor",
-  revenue: "Revenue",
-};
+// One source for what the five access levels are called. The names people
+// read are plain sentences, because "domain manager" tells somebody joining
+// on Monday nothing about what they can do. The keys never change: every
+// permission in the app is written against them.
+export const ARCHETYPE_LABELS: Record<Archetype, string> = Object.fromEntries(
+  ARCHETYPE_KEYS.map((a) => [a, ARCHETYPE_META[a].label])
+) as Record<Archetype, string>;
 
-export const ARCHETYPES = Object.keys(ARCHETYPE_LABELS) as Archetype[];
+export const ARCHETYPES = ARCHETYPE_KEYS;
 
 // The 8 preset accent colors for workspace settings.
 export const ACCENT_PRESETS = [
