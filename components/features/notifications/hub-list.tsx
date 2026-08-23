@@ -2,16 +2,20 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { X } from "lucide-react";
 import { Tag } from "@/components/primitives/tag";
 import { TimeAgo } from "@/components/primitives/local-time";
 import { notificationHref } from "@/lib/notifications";
-import { markNotificationRead } from "@/lib/actions/notifications";
+import {
+  dismissNotification,
+  markNotificationRead,
+} from "@/lib/actions/notifications";
 import type { Notification } from "@/lib/types";
 
 // The hub rows. Each links to its entity in that notification's own
-// workspace; clicking marks it read on the way. A "Mark read" button covers
-// notifications that have nothing to open. Read state is optimistic: ids added
-// to the overlay render as read immediately, while the server catches up.
+// workspace; clicking marks it read on the way. Read state and dismissal are
+// both optimistic, so a row answers the click immediately and the server
+// catches up behind it.
 export function NotificationHubList({
   notifications,
   workspaces,
@@ -20,18 +24,35 @@ export function NotificationHubList({
   workspaces: Record<string, { name: string; slug: string }>;
 }) {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [goneIds, setGoneIds] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
 
-  const markRead = (id: string) => {
+  const markRead = (id: string, slug?: string) => {
     setReadIds((prev) => new Set(prev).add(id));
     startTransition(() => {
-      void markNotificationRead(id);
+      void markNotificationRead(id, slug);
     });
   };
 
+  const dismiss = (id: string, slug?: string) => {
+    setGoneIds((prev) => new Set(prev).add(id));
+    startTransition(() => {
+      void dismissNotification(id, slug);
+    });
+  };
+
+  const visible = notifications.filter((n) => !goneIds.has(n.id));
+  if (visible.length === 0) {
+    return (
+      <p className="px-5 py-10 text-center text-meta text-text-3">
+        Nothing left here.
+      </p>
+    );
+  }
+
   return (
     <>
-      {notifications.map((n) => {
+      {visible.map((n) => {
         const isRead = n.is_read || readIds.has(n.id);
         const ws = workspaces[n.workspace_id];
         const href = ws
@@ -56,13 +77,13 @@ export function NotificationHubList({
         return (
           <div
             key={n.id}
-            className="flex items-start gap-3 border-b border-border px-5 py-3.5 transition-colors last:border-b-0 hover:bg-surface-2"
+            className="group flex items-start gap-3 border-b border-border px-5 py-3.5 transition-colors last:border-b-0 hover:bg-surface-2"
           >
             {href ? (
               <Link
                 href={href}
                 onClick={() => {
-                  if (!isRead) markRead(n.id);
+                  if (!isRead) markRead(n.id, ws?.slug);
                 }}
                 className="flex min-w-0 flex-1 items-start gap-3"
               >
@@ -75,12 +96,20 @@ export function NotificationHubList({
               {ws ? <Tag tone="blue">{ws.name}</Tag> : null}
               {!isRead ? (
                 <button
-                  onClick={() => markRead(n.id)}
+                  onClick={() => markRead(n.id, ws?.slug)}
                   className="rounded-[8px] px-2 py-1 text-meta font-medium text-brand hover:bg-brand-soft"
                 >
                   Mark read
                 </button>
               ) : null}
+              {/* Appears on hover, like every other row action in the app. */}
+              <button
+                onClick={() => dismiss(n.id, ws?.slug)}
+                aria-label={`Dismiss: ${n.title}`}
+                className="rounded-[7px] p-1 text-text-3 opacity-0 transition-opacity hover:bg-danger-soft hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
+              >
+                <X className="size-3.5" strokeWidth={1.75} />
+              </button>
             </div>
           </div>
         );

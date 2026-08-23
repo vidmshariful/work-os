@@ -17,6 +17,11 @@ export function notificationHref(
       return `/${wsSlug}/hr`;
     case "todo":
       return `/${wsSlug}/todos`;
+    // Only people above the wall are ever notified about a client, so the
+    // client record is a safe place to send them. RLS refuses anyone else
+    // regardless of what this returns.
+    case "client":
+      return `/${wsSlug}/clients/${entityId}`;
     default:
       return null;
   }

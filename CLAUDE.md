@@ -34,4 +34,5 @@ Internal operating system for Vidiosa. Next.js 15 App Router + TypeScript + Tail
 - `npx tsc --noEmit` must pass. `npm run build` must pass.
 - Wall acceptance: `node scripts/wall-test.mjs` must stay green.
 - Access acceptance: `node scripts/access-test.mjs` must stay green. It asserts three directions at once: nothing readable whose subject is invisible, nothing missing that should be readable, and no write a contributor should not have. Add a scoped table to its three lists when you add one.
+- Notification acceptance: `node scripts/notification-test.mjs` must stay green. It asserts the reminder job is quiet on a second run, that every entity type in use resolves to a link, and that nothing points at a deleted record.
 - Seed users all share the seed password; see scripts/seed.mjs (emails like rakib@vidiosa.com below wall, nadia@vidiosa.com above).

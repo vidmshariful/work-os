@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -32,8 +32,16 @@ export function NotificationsBell({
   const [items, setItems] = useState<Notification[] | null>(null);
   const supabase = useMemo(() => createClient(), []);
 
+  // Take the server's number only when the server's number has actually
+  // changed. Marking read lowers the badge here first, and a re-render that
+  // carries the same stale prop would otherwise put it straight back, which
+  // reads as the click having done nothing.
+  const lastFromServer = useRef(initialCount);
   useEffect(() => {
-    setCount(initialCount);
+    if (initialCount !== lastFromServer.current) {
+      lastFromServer.current = initialCount;
+      setCount(initialCount);
+    }
   }, [initialCount]);
 
   useEffect(() => {
@@ -78,7 +86,7 @@ export function NotificationsBell({
     setItems((prev) =>
       prev?.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)) ?? null
     );
-    void markNotificationRead(n.id);
+    void markNotificationRead(n.id, slug);
   }
 
   return (
@@ -89,12 +97,12 @@ export function NotificationsBell({
           className="relative flex size-9 items-center justify-center rounded-[9px] text-text-2 outline-none transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:ring-2 focus-visible:ring-brand/40"
         >
           <Bell className="size-[18px] stroke-[1.5]" />
-          {count > 3 ? (
+          {/* Always the number. A bare dot for one to three unread hid the
+              counts people see most often. */}
+          {count > 0 ? (
             <span className="absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-danger px-1 text-micro font-semibold text-white tabular ring-2 ring-surface">
-              {count > 9 ? "9+" : count}
+              {count > 99 ? "99+" : count}
             </span>
-          ) : count > 0 ? (
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-danger ring-2 ring-surface" />
           ) : null}
         </button>
       </DropdownMenuTrigger>
@@ -106,7 +114,7 @@ export function NotificationsBell({
               onClick={async () => {
                 setCount(0);
                 setItems((prev) => prev?.map((n) => ({ ...n, is_read: true })) ?? null);
-                await markAllNotificationsRead(workspaceId);
+                await markAllNotificationsRead(workspaceId, slug);
               }}
               className="text-meta font-medium text-brand hover:underline"
             >
