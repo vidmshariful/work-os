@@ -20,8 +20,17 @@ const SEED_ACCOUNTS: DemoAccount[] = [
 ];
 
 export default function LoginPage() {
+  // The switcher signs you in as any of the seven real staff accounts with one
+  // click. That is a development convenience and a serious hole anywhere else,
+  // so a production build refuses to draw it however the environment is set.
+  // Copying .env.local onto a server is the normal way people deploy, and that
+  // must not be the thing that puts a "sign in as the CEO" button on the
+  // internet.
   const demoPassword = process.env.DEMO_PASSWORD;
-  const showDemo = process.env.DEMO_LOGINS === "1" && Boolean(demoPassword);
+  const showDemo =
+    process.env.NODE_ENV !== "production" &&
+    process.env.DEMO_LOGINS === "1" &&
+    Boolean(demoPassword);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
