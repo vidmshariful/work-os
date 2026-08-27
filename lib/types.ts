@@ -329,6 +329,9 @@ export interface ProjectField {
   // whose list sits in this folder. The database keeps department_id in step
   // with it, so a folder field always carries its space too.
   folder_id: string | null;
+  // Narrowest of the four. When set, the field only appears on projects in
+  // this list, and the database fills in the folder and space it belongs to.
+  list_id: string | null;
   name: string;
   kind: ProjectFieldKind;
   options: ProjectFieldOption[];

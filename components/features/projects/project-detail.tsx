@@ -376,7 +376,8 @@ export async function ProjectDetail({
   const fields = fieldsForSpace(
     (fieldRows ?? []) as ProjectField[],
     project.department_id,
-    projectFolderId
+    projectFolderId,
+    project.list_id
   ).map((f) => ({ field: f, value: valueByField.get(f.id) ?? null }));
   // One source for how this project's due date reads, shared with every row
   // and board card through the same helper.

@@ -18,7 +18,7 @@ export default async function AdminFieldsPage({
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
-  const [{ data: fieldRows }, { data: valueRows }, { data: spaceRows }, { data: folderRows }] =
+  const [{ data: fieldRows }, { data: valueRows }, { data: spaceRows }, { data: folderRows }, { data: listRows }] =
     await Promise.all([
       supabase
         .from("project_fields")
@@ -40,6 +40,14 @@ export default async function AdminFieldsPage({
         .from("project_folders")
         .select("id, name, department_id")
         .order("sort_order"),
+      // Lists, the narrowest rung. Archived ones are left out of the picker:
+      // scoping a field to a list nobody uses any more is not a choice worth
+      // offering.
+      supabase
+        .from("project_lists")
+        .select("id, name, department_id, folder_id")
+        .is("archived_at", null)
+        .order("sort_order"),
     ]);
 
   const counts = new Map<string, number>();
@@ -60,6 +68,14 @@ export default async function AdminFieldsPage({
       spaces={(spaceRows ?? []) as { id: string; name: string }[]}
       folders={
         (folderRows ?? []) as { id: string; name: string; department_id: string }[]
+      }
+      lists={
+        (listRows ?? []) as {
+          id: string;
+          name: string;
+          department_id: string;
+          folder_id: string | null;
+        }[]
       }
     />
   );

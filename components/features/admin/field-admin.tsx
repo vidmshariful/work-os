@@ -37,6 +37,23 @@ export interface Folder {
   department_id: string;
 }
 
+export interface ListRef {
+  id: string;
+  name: string;
+  department_id: string;
+  folder_id: string | null;
+}
+
+// Which lists a scope offers. Inside a folder that is the folder's lists;
+// with no folder chosen it is every list in the space, including the ones
+// sitting directly in it.
+function listsFor(lists: ListRef[], spaceId: string, folderId: string) {
+  if (!spaceId) return [];
+  return lists.filter(
+    (l) => l.department_id === spaceId && (folderId ? l.folder_id === folderId : true)
+  );
+}
+
 export interface FieldAdminRow extends ProjectField {
   // How many projects have a value, quoted in the delete confirmation so it
   // says what will really happen.
@@ -69,24 +86,26 @@ export function FieldAdmin({
   fields,
   spaces,
   folders,
+  lists,
 }: {
   ws: string;
   fields: FieldAdminRow[];
   spaces: { id: string; name: string }[];
   folders: Folder[];
+  lists: ListRef[];
 }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-meta text-text-2">
         Fields appear on every project page, in this order. A field scoped to
         one space only shows on projects in that space, so Production can
-        carry an editing stage that Sales never sees, and one scoped to a
-        folder inside a space narrows it further still. Keep names brand-blind:
+        carry an editing stage that Sales never sees. A field can be narrowed
+        further to a folder, or to a single list inside one. Keep names brand-blind:
         a field called Client would put brand identity somewhere the wall does
         not protect.
       </p>
 
-      <CreateField ws={ws} spaces={spaces} folders={folders} />
+      <CreateField ws={ws} spaces={spaces} folders={folders} lists={lists} />
 
       {fields.length === 0 ? (
         <Card>
@@ -102,6 +121,7 @@ export function FieldAdmin({
             field={f}
             spaces={spaces}
             folders={folders}
+            lists={lists}
             first={i === 0}
             last={i === fields.length - 1}
             onMove={(dir) => {
@@ -122,10 +142,12 @@ function CreateField({
   ws,
   spaces,
   folders,
+  lists,
 }: {
   ws: string;
   spaces: { id: string; name: string }[];
   folders: Folder[];
+  lists: ListRef[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -133,6 +155,7 @@ function CreateField({
   const [kind, setKind] = useState<ProjectFieldKind>("text");
   const [spaceId, setSpaceId] = useState("");
   const [folderId, setFolderId] = useState("");
+  const [listId, setListId] = useState("");
   const [choices, setChoices] = useState("");
   const [pending, start] = useTransition();
 
@@ -155,6 +178,7 @@ function CreateField({
         options,
         departmentId: spaceId || null,
         folderId: folderId || null,
+        listId: listId || null,
       });
       if (res.error) {
         toast.error(res.error);
@@ -213,9 +237,11 @@ function CreateField({
             value={spaceId}
             onChange={(e) => {
               setSpaceId(e.target.value);
-              // A folder only means something inside its own space, so
-              // changing the space clears it rather than leaving a stale one.
+              // A folder and a list only mean something inside their own
+              // space, so changing the space clears both rather than leaving
+              // a stale one behind.
               setFolderId("");
+              setListId("");
             }}
             aria-label="Field scope"
             className={cn(inputClass, "w-44")}
@@ -236,7 +262,10 @@ function CreateField({
             <span className="mb-1 block text-meta font-medium text-text-2">Folder</span>
             <select
               value={folderId}
-              onChange={(e) => setFolderId(e.target.value)}
+              onChange={(e) => {
+                setFolderId(e.target.value);
+                setListId("");
+              }}
               aria-label="Folder scope"
               className={cn(inputClass, "w-44")}
             >
@@ -248,6 +277,26 @@ function CreateField({
                     {f.name} only
                   </option>
                 ))}
+            </select>
+          </label>
+        ) : null}
+        {/* Narrower again. Offered as soon as the chosen scope holds lists,
+            whether that is a folder or the space itself. */}
+        {listsFor(lists, spaceId, folderId).length > 0 ? (
+          <label className="block">
+            <span className="mb-1 block text-meta font-medium text-text-2">List</span>
+            <select
+              value={listId}
+              onChange={(e) => setListId(e.target.value)}
+              aria-label="List scope"
+              className={cn(inputClass, "w-44")}
+            >
+              <option value="">Every list</option>
+              {listsFor(lists, spaceId, folderId).map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name} only
+                </option>
+              ))}
             </select>
           </label>
         ) : null}
@@ -285,6 +334,7 @@ function FieldRow({
   field,
   spaces,
   folders,
+  lists,
   first,
   last,
   onMove,
@@ -293,6 +343,7 @@ function FieldRow({
   field: FieldAdminRow;
   spaces: { id: string; name: string }[];
   folders: Folder[];
+  lists: ListRef[];
   first: boolean;
   last: boolean;
   onMove: (dir: "up" | "down") => string[] | undefined;
@@ -330,12 +381,16 @@ function FieldRow({
   const folder = field.folder_id
     ? folders.find((f) => f.id === field.folder_id) ?? null
     : null;
-  const scope = folder
-    ? folder.name
-    : field.department_id
-      ? spaces.find((s) => s.id === field.department_id)?.name ?? "one space"
-      : null;
+  const list = field.list_id ? lists.find((l) => l.id === field.list_id) ?? null : null;
+  const scope = list
+    ? list.name
+    : folder
+      ? folder.name
+      : field.department_id
+        ? spaces.find((s) => s.id === field.department_id)?.name ?? "one space"
+        : null;
   const spaceFolders = folders.filter((f) => f.department_id === field.department_id);
+  const scopeLists = listsFor(lists, field.department_id ?? "", field.folder_id ?? "");
 
   return (
     <Card className="p-4">
@@ -409,6 +464,7 @@ function FieldRow({
               updateProjectField(ws, field.id, {
                 departmentId: e.target.value || null,
                 folderId: null,
+                listId: null,
               })
             )
           }
@@ -440,6 +496,27 @@ function FieldRow({
             {spaceFolders.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name} only
+              </option>
+            ))}
+          </select>
+        ) : null}
+
+        {/* The narrowest rung, offered whenever the chosen scope contains
+            lists. Picking one pins the field to that list alone. */}
+        {field.department_id && scopeLists.length > 0 ? (
+          <select
+            value={field.list_id ?? ""}
+            disabled={pending}
+            aria-label={`Which list shows ${field.name}`}
+            onChange={(e) =>
+              run(() => updateProjectField(ws, field.id, { listId: e.target.value || null }))
+            }
+            className={cn(inputClass, "h-7 w-44 text-meta")}
+          >
+            <option value="">Every list</option>
+            {scopeLists.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name} only
               </option>
             ))}
           </select>

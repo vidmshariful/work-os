@@ -203,6 +203,8 @@ export interface FieldPatch {
   // Narrower than the space. The database derives department_id from it, so
   // a caller never has to keep the two in step.
   folderId?: string | null;
+  // Narrowest of the four. The database derives the folder and the space.
+  listId?: string | null;
 }
 
 function cleanOptions(
@@ -267,6 +269,21 @@ export async function createProjectField(
       return { error: "That folder is not in the space you picked." };
     }
   }
+  // Same for a list, against both rungs above it.
+  if (patch.listId) {
+    const { data: list } = await supabase
+      .from("project_lists")
+      .select("id, department_id, folder_id")
+      .eq("id", patch.listId)
+      .maybeSingle();
+    if (!list) return { error: "That list is not available." };
+    if (patch.departmentId && list.department_id !== patch.departmentId) {
+      return { error: "That list is not in the space you picked." };
+    }
+    if (patch.folderId && list.folder_id !== patch.folderId) {
+      return { error: "That list is not in the folder you picked." };
+    }
+  }
 
   const { count } = await supabase
     .from("project_fields")
@@ -280,6 +297,7 @@ export async function createProjectField(
     workspace_id: ctx.workspace.id,
     department_id: patch.departmentId ?? null,
     folder_id: patch.folderId ?? null,
+    list_id: patch.listId ?? null,
     name,
     kind,
     options,
@@ -326,7 +344,14 @@ export async function updateProjectField(
   // Clearing the space clears the folder with it: a folder field with no
   // space is a contradiction the trigger would have to invent an answer for.
   if (patch.folderId !== undefined) clean.folder_id = patch.folderId;
-  if (patch.departmentId === null) clean.folder_id = null;
+  if (patch.listId !== undefined) clean.list_id = patch.listId;
+  // Widening a rung drops everything below it, or the field would keep a
+  // scope inside a place it is no longer in.
+  if (patch.departmentId === null) {
+    clean.folder_id = null;
+    clean.list_id = null;
+  }
+  if (patch.folderId === null && patch.listId === undefined) clean.list_id = null;
   // The kind is deliberately not editable. Changing it would leave every
   // stored value in the old shape, and silently reinterpreting them is worse
   // than making someone create a new field.
