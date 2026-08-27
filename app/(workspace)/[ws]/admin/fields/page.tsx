@@ -18,7 +18,7 @@ export default async function AdminFieldsPage({
   const ctx = await getWorkspaceContext(ws);
   const supabase = await createClient();
 
-  const [{ data: fieldRows }, { data: valueRows }, { data: spaceRows }] =
+  const [{ data: fieldRows }, { data: valueRows }, { data: spaceRows }, { data: folderRows }] =
     await Promise.all([
       supabase
         .from("project_fields")
@@ -34,6 +34,11 @@ export default async function AdminFieldsPage({
         .from("departments")
         .select("id, name")
         .eq("workspace_id", ctx.workspace.id)
+        .order("sort_order"),
+      // Folders, so a field can be narrowed below the space it lives in.
+      supabase
+        .from("project_folders")
+        .select("id, name, department_id")
         .order("sort_order"),
     ]);
 
@@ -53,6 +58,9 @@ export default async function AdminFieldsPage({
       ws={ws}
       fields={fields}
       spaces={(spaceRows ?? []) as { id: string; name: string }[]}
+      folders={
+        (folderRows ?? []) as { id: string; name: string; department_id: string }[]
+      }
     />
   );
 }

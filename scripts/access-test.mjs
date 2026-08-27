@@ -107,11 +107,30 @@ for (const email of PEOPLE) {
   );
   check(`${who} keeps every feed row for a project they can open`, gotFeed === wantFeed, `${gotFeed} of ${wantFeed}`);
 
-  const gotFields = ((await client.from("project_fields").select("id")).data ?? []).length;
-  const wantFields = Number(
+  // Both halves, because comparing only against department_id = any(visible)
+  // excludes the workspace-wide fields the same way a broken policy would,
+  // and a test that agrees with the bug catches nothing. 0047 narrowed this
+  // policy to app_can_see_department(department_id), which answers false for
+  // null, and three fields went invisible to everybody for four commits
+  // without a single check going red.
+  const fieldRows = (await client.from("project_fields").select("id, department_id")).data ?? [];
+  const wantScoped = Number(
     (await db.query("select count(*)::int n from project_fields where department_id = any($1::uuid[])", [departments])).rows[0].n
   );
-  check(`${who} keeps every field for a department they can open`, gotFields === wantFields, `${gotFields} of ${wantFields}`);
+  const wantWide = Number(
+    (await db.query("select count(*)::int n from project_fields where department_id is null")).rows[0].n
+  );
+  const gotWide = fieldRows.filter((f) => !f.department_id).length;
+  check(
+    `${who} keeps every field for a department they can open`,
+    fieldRows.length - gotWide === wantScoped,
+    `${fieldRows.length - gotWide} of ${wantScoped}`
+  );
+  check(
+    `${who} still sees the fields scoped to no space`,
+    gotWide === wantWide,
+    `${gotWide} of ${wantWide}`
+  );
 }
 
 // ---- 3. a contributor cannot write what a manager can -----------------------

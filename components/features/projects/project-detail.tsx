@@ -347,6 +347,9 @@ export async function ProjectDetail({
         (f) => f.id === listRow.folder_id
       )
     : undefined;
+  // The same folder the breadcrumb names, reused to decide which custom
+  // fields this project shows.
+  const projectFolderId = listRow?.folder_id ?? null;
   const trail: { label: string; href?: string }[] = [
     { label: "Spaces", href: `/${ws}/departments` },
   ];
@@ -372,7 +375,8 @@ export async function ProjectDetail({
   );
   const fields = fieldsForSpace(
     (fieldRows ?? []) as ProjectField[],
-    project.department_id
+    project.department_id,
+    projectFolderId
   ).map((f) => ({ field: f, value: valueByField.get(f.id) ?? null }));
   // One source for how this project's due date reads, shared with every row
   // and board card through the same helper.

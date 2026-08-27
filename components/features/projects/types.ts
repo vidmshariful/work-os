@@ -87,11 +87,24 @@ export const PROJECT_STATUS_OPTIONS: { value: ProjectStatus; label: string }[] =
 // Which custom fields apply to a project: the workspace-wide ones plus any
 // scoped to its space, in sort order. A plain module so the server page and
 // the client editor cannot disagree about the answer.
+// Three scopes, a ladder, narrowest wins. A field naming a folder appears
+// only on projects filed in that folder; one naming a space appears on
+// everything in that space; one naming neither appears everywhere.
+//
+// folder_id is checked first and on its own. A folder field also carries its
+// department, because the database keeps the two in step, so testing the
+// department first would show it on every project in the space, which is the
+// opposite of what somebody scoping to a folder asked for.
 export function fieldsForSpace(
   fields: ProjectField[],
-  departmentId: string | null
+  departmentId: string | null,
+  folderId: string | null = null
 ): ProjectField[] {
   return fields
-    .filter((f) => f.department_id === null || f.department_id === departmentId)
+    .filter((f) =>
+      f.folder_id
+        ? f.folder_id === folderId
+        : f.department_id === null || f.department_id === departmentId
+    )
     .sort((a, b) => a.sort_order - b.sort_order);
 }

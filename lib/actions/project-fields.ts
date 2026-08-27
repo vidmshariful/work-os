@@ -200,6 +200,9 @@ export interface FieldPatch {
   kind?: ProjectFieldKind;
   options?: ProjectFieldOption[];
   departmentId?: string | null;
+  // Narrower than the space. The database derives department_id from it, so
+  // a caller never has to keep the two in step.
+  folderId?: string | null;
 }
 
 function cleanOptions(
@@ -251,6 +254,19 @@ export async function createProjectField(
       .maybeSingle();
     if (!dept) return { error: "That space is not available." };
   }
+  // A folder has to belong to the space it was picked under, or the field
+  // would appear somewhere nobody chose.
+  if (patch.folderId) {
+    const { data: folder } = await supabase
+      .from("project_folders")
+      .select("id, department_id")
+      .eq("id", patch.folderId)
+      .maybeSingle();
+    if (!folder) return { error: "That folder is not available." };
+    if (patch.departmentId && folder.department_id !== patch.departmentId) {
+      return { error: "That folder is not in the space you picked." };
+    }
+  }
 
   const { count } = await supabase
     .from("project_fields")
@@ -263,6 +279,7 @@ export async function createProjectField(
   const { error: insertError } = await supabase.from("project_fields").insert({
     workspace_id: ctx.workspace.id,
     department_id: patch.departmentId ?? null,
+    folder_id: patch.folderId ?? null,
     name,
     kind,
     options,
@@ -306,6 +323,10 @@ export async function updateProjectField(
     clean.options = options;
   }
   if (patch.departmentId !== undefined) clean.department_id = patch.departmentId;
+  // Clearing the space clears the folder with it: a folder field with no
+  // space is a contradiction the trigger would have to invent an answer for.
+  if (patch.folderId !== undefined) clean.folder_id = patch.folderId;
+  if (patch.departmentId === null) clean.folder_id = null;
   // The kind is deliberately not editable. Changing it would leave every
   // stored value in the old shape, and silently reinterpreting them is worse
   // than making someone create a new field.

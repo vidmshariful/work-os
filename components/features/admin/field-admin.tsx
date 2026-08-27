@@ -31,6 +31,12 @@ import {
 import { cn } from "@/lib/utils";
 import type { ProjectField, ProjectFieldKind, ProjectFieldOption } from "@/lib/types";
 
+export interface Folder {
+  id: string;
+  name: string;
+  department_id: string;
+}
+
 export interface FieldAdminRow extends ProjectField {
   // How many projects have a value, quoted in the delete confirmation so it
   // says what will really happen.
@@ -62,22 +68,25 @@ export function FieldAdmin({
   ws,
   fields,
   spaces,
+  folders,
 }: {
   ws: string;
   fields: FieldAdminRow[];
   spaces: { id: string; name: string }[];
+  folders: Folder[];
 }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-meta text-text-2">
         Fields appear on every project page, in this order. A field scoped to
         one space only shows on projects in that space, so Production can
-        carry an editing stage that Sales never sees. Keep names brand-blind:
+        carry an editing stage that Sales never sees, and one scoped to a
+        folder inside a space narrows it further still. Keep names brand-blind:
         a field called Client would put brand identity somewhere the wall does
         not protect.
       </p>
 
-      <CreateField ws={ws} spaces={spaces} />
+      <CreateField ws={ws} spaces={spaces} folders={folders} />
 
       {fields.length === 0 ? (
         <Card>
@@ -92,6 +101,7 @@ export function FieldAdmin({
             ws={ws}
             field={f}
             spaces={spaces}
+            folders={folders}
             first={i === 0}
             last={i === fields.length - 1}
             onMove={(dir) => {
@@ -111,15 +121,18 @@ export function FieldAdmin({
 function CreateField({
   ws,
   spaces,
+  folders,
 }: {
   ws: string;
   spaces: { id: string; name: string }[];
+  folders: Folder[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<ProjectFieldKind>("text");
   const [spaceId, setSpaceId] = useState("");
+  const [folderId, setFolderId] = useState("");
   const [choices, setChoices] = useState("");
   const [pending, start] = useTransition();
 
@@ -141,6 +154,7 @@ function CreateField({
         kind,
         options,
         departmentId: spaceId || null,
+        folderId: folderId || null,
       });
       if (res.error) {
         toast.error(res.error);
@@ -197,7 +211,12 @@ function CreateField({
           <span className="mb-1 block text-meta font-medium text-text-2">Shows in</span>
           <select
             value={spaceId}
-            onChange={(e) => setSpaceId(e.target.value)}
+            onChange={(e) => {
+              setSpaceId(e.target.value);
+              // A folder only means something inside its own space, so
+              // changing the space clears it rather than leaving a stale one.
+              setFolderId("");
+            }}
             aria-label="Field scope"
             className={cn(inputClass, "w-44")}
           >
@@ -209,6 +228,29 @@ function CreateField({
             ))}
           </select>
         </label>
+        {/* Only offered once a space is picked, and only when that space has
+            folders. Narrower than the space: the field then appears on
+            projects filed in this folder and nowhere else. */}
+        {spaceId && folders.some((f) => f.department_id === spaceId) ? (
+          <label className="block">
+            <span className="mb-1 block text-meta font-medium text-text-2">Folder</span>
+            <select
+              value={folderId}
+              onChange={(e) => setFolderId(e.target.value)}
+              aria-label="Folder scope"
+              className={cn(inputClass, "w-44")}
+            >
+              <option value="">The whole space</option>
+              {folders
+                .filter((f) => f.department_id === spaceId)
+                .map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name} only
+                  </option>
+                ))}
+            </select>
+          </label>
+        ) : null}
         {isChoice(kind) ? (
           <label className="block flex-1">
             <span className="mb-1 block text-meta font-medium text-text-2">
@@ -242,6 +284,7 @@ function FieldRow({
   ws,
   field,
   spaces,
+  folders,
   first,
   last,
   onMove,
@@ -249,6 +292,7 @@ function FieldRow({
   ws: string;
   field: FieldAdminRow;
   spaces: { id: string; name: string }[];
+  folders: Folder[];
   first: boolean;
   last: boolean;
   onMove: (dir: "up" | "down") => string[] | undefined;
@@ -283,9 +327,15 @@ function FieldRow({
   const setOptions = (options: ProjectFieldOption[]) =>
     run(() => updateProjectField(ws, field.id, { options }));
 
-  const scope = field.department_id
-    ? spaces.find((s) => s.id === field.department_id)?.name ?? "one space"
+  const folder = field.folder_id
+    ? folders.find((f) => f.id === field.folder_id) ?? null
     : null;
+  const scope = folder
+    ? folder.name
+    : field.department_id
+      ? spaces.find((s) => s.id === field.department_id)?.name ?? "one space"
+      : null;
+  const spaceFolders = folders.filter((f) => f.department_id === field.department_id);
 
   return (
     <Card className="p-4">
@@ -354,7 +404,12 @@ function FieldRow({
           aria-label={`Which spaces show ${field.name}`}
           onChange={(e) =>
             run(() =>
-              updateProjectField(ws, field.id, { departmentId: e.target.value || null })
+              // Changing the space drops the folder with it, because a folder
+              // in another space would put the field somewhere nobody chose.
+              updateProjectField(ws, field.id, {
+                departmentId: e.target.value || null,
+                folderId: null,
+              })
             )
           }
           className={cn(inputClass, "h-7 w-44 text-meta")}
@@ -366,6 +421,29 @@ function FieldRow({
             </option>
           ))}
         </select>
+
+        {/* Shown only when the field is in a space that has folders, because
+            outside one it has nothing to narrow to. */}
+        {field.department_id && spaceFolders.length > 0 ? (
+          <select
+            value={field.folder_id ?? ""}
+            disabled={pending}
+            aria-label={`Which folder shows ${field.name}`}
+            onChange={(e) =>
+              run(() =>
+                updateProjectField(ws, field.id, { folderId: e.target.value || null })
+              )
+            }
+            className={cn(inputClass, "h-7 w-44 text-meta")}
+          >
+            <option value="">The whole space</option>
+            {spaceFolders.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name} only
+              </option>
+            ))}
+          </select>
+        ) : null}
 
         <span className="ml-auto font-mono text-label text-text-3 tabular">
           {field.valueCount} set

@@ -325,6 +325,10 @@ export interface ProjectField {
   workspace_id: string;
   // Null means every space shows it.
   department_id: string | null;
+  // Narrower than department_id. When set, the field only appears on projects
+  // whose list sits in this folder. The database keeps department_id in step
+  // with it, so a folder field always carries its space too.
+  folder_id: string | null;
   name: string;
   kind: ProjectFieldKind;
   options: ProjectFieldOption[];
