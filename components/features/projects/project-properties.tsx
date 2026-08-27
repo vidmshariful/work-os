@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card } from "@/components/primitives/card";
 import { PersonAvatar } from "@/components/primitives/avatar";
+import { ProjectPeople, type PersonRef } from "@/components/features/projects/project-people";
 import { ProjectStatusChip, ConfidentialChip } from "@/components/primitives/tag";
 import { CodeLabel } from "@/components/primitives/misc";
 import { DueDate } from "@/components/features/projects/due-date";
@@ -68,16 +69,19 @@ export function ProjectProperties({
   project,
   client,
   members,
-  assignees,
+  assigned,
+  onTasks,
   canEdit,
 }: {
   ws: string;
   project: PropertyProject;
   client: ClientCell;
   members: MemberOption[];
-  // Everyone assigned to a task on this project. Read only here: the label
-  // says where they come from, so nobody expects to assign from this cell.
-  assignees: { id: string; full_name: string; avatar_url: string | null }[];
+  // Two different facts. assigned is the deliberate list and is editable
+  // here; onTasks is derived from the tasks and is shown beside it, because
+  // the place to change that is the task.
+  assigned: PersonRef[];
+  onTasks: PersonRef[];
   // projects_update is manager-or-owner, so this is per project.
   canEdit: boolean;
 }) {
@@ -327,24 +331,18 @@ export function ProjectProperties({
           </div>
         </PropertyRow>
 
-        {/* People on tasks. Names are spelled out, not just stacked: an
-            avatar stack caps at four and a "+5" chip names nobody. */}
-        <PropertyRow label="People on tasks" size="half">
-          {assignees.length === 0 ? (
-            <EmptyValue label="Nobody assigned yet" />
-          ) : (
-            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 px-2 py-0.5">
-              {assignees.map((a) => (
-                <span
-                  key={a.id}
-                  className="flex items-center gap-1.5 text-meta text-text-1"
-                >
-                  <PersonAvatar name={a.full_name} src={a.avatar_url} size={20} />
-                  {a.full_name}
-                </span>
-              ))}
-            </span>
-          )}
+        {/* Who is on this project. The deliberate list can be edited here;
+            people who merely hold a task are shown beside it and are changed
+            by changing the task. */}
+        <PropertyRow label="People" size="half">
+          <ProjectPeople
+            ws={ws}
+            projectId={project.id}
+            assigned={assigned}
+            onTasks={onTasks}
+            members={members}
+            canEdit={canEdit}
+          />
         </PropertyRow>
 
         {/* Client. Read only: nothing here changes it, and below the wall it

@@ -1043,3 +1043,42 @@ export async function addProjectComment(
   revalidatePath(`/${ws}/projects/${projectId}`);
   return { error: null };
 }
+
+// ---- who is on a project ----
+
+// project_assignees is a deliberate statement that somebody is on this piece
+// of work, separate from whoever happens to hold a task in it. RLS decides
+// both halves: the insert policy allows a manager or the project's owner and
+// requires the target to be an active member, and since 0050 a row here also
+// lets that person open the project.
+export async function setProjectAssignee(
+  ws: string,
+  projectId: string,
+  profileId: string,
+  on: boolean
+): Promise<{ error: string | null }> {
+  await getWorkspaceContext(ws);
+  const supabase = await createClient();
+
+  if (on) {
+    const { error } = await supabase
+      .from("project_assignees")
+      .upsert({ project_id: projectId, profile_id: profileId }, { onConflict: "project_id,profile_id" });
+    if (error) return { error: "Only a manager or the project owner can add people." };
+  } else {
+    const { data, error } = await supabase
+      .from("project_assignees")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("profile_id", profileId)
+      .select("project_id");
+    if (error || (data ?? []).length === 0) {
+      return { error: "Only a manager or the project owner can remove people." };
+    }
+  }
+
+  revalidatePath(`/${ws}/projects/${projectId}`);
+  revalidatePath(`/${ws}/projects`);
+  revalidatePath(`/${ws}/departments`, "layout");
+  return { error: null };
+}

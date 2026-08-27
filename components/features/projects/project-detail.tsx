@@ -178,6 +178,12 @@ export async function ProjectDetail({
       .order("created_at"),
     // Direct and rolled-up counts, computed in the database.
     supabase.from("v_project_progress").select("*").eq("project_id", id).maybeSingle(),
+    // People put on the project deliberately, which is a different fact from
+    // who happens to hold a task in it.
+    supabase
+      .from("project_assignees")
+      .select("profile:profiles!profile_id!inner(id, full_name, avatar_url)")
+      .eq("project_id", id),
   ]);
   // A missing project throws out of here before those reads are awaited, so
   // the group keeps a handler and cannot become an unhandled rejection.
@@ -252,6 +258,7 @@ export async function ProjectDetail({
       { data: fieldValueRows },
       { data: commentRows },
       progressRes,
+      { data: assigneeRows },
     ],
     [clientRes, { data: subProjectRows }, parentRes],
   ] = await Promise.all([independent, dependent]);
@@ -286,13 +293,22 @@ export async function ProjectDetail({
     confidential: client ? unmasked && isConfidential(client) : false,
   };
 
-  const assignees = Array.from(
+  // Two different facts, kept apart. onTasks is derived from the tasks and
+  // cannot be edited here; assigned is the deliberate list, and since 0050 it
+  // is also what lets somebody outside the department open this project.
+  const onTasks = Array.from(
     new Map(
       tasks
         .filter((t) => t.assignee)
         .map((t) => [t.assignee!.id, t.assignee!])
     ).values()
   );
+  const assigned = ((assigneeRows ?? []) as unknown as {
+    profile: { id: string; full_name: string; avatar_url: string | null };
+  }[])
+    .map((r) => r.profile)
+    .filter(Boolean)
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
   const canManage =
     ctx.capabilities.canCreateProjects || project.owner_id === ctx.userId;
   const members = ((memberRows ?? []) as unknown as {
@@ -445,7 +461,8 @@ export async function ProjectDetail({
             }}
             client={clientCell}
             members={members}
-            assignees={assignees}
+            assigned={assigned}
+            onTasks={onTasks}
             canEdit={canManage}
           />
 

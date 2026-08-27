@@ -93,20 +93,47 @@ check(
   `${(rakibAdd ?? []).length} rows`
 );
 
-// The row for a project he cannot see must not be readable either.
+// Since 0050 an assignment is a grant: being put on a project is what lets
+// you open it, whichever space you work in. This used to assert the opposite,
+// which was the rule at the time.
 await db.query("insert into project_assignees (project_id, profile_id) values ($1,$2)", [
   hidden.id,
   rakib.id,
 ]);
 const hiddenSeen = await rakib.client
+  .from("projects")
+  .select("code")
+  .eq("id", hidden.id);
+check(
+  "being assigned opens a project he could not otherwise see",
+  (hiddenSeen.data ?? []).length === 1,
+  `${(hiddenSeen.data ?? []).length} rows for ${hidden.code}`
+);
+
+// The grant reaches exactly one person. Somebody else being on a project is
+// not a reason for him to see it, which is the half that must not slip.
+await db.query("delete from project_assignees where project_id=$1 and profile_id=$2", [
+  hidden.id,
+  rakib.id,
+]);
+await db.query("insert into project_assignees (project_id, profile_id) values ($1,$2)", [
+  hidden.id,
+  nadia.id,
+]);
+const stillHidden = await rakib.client.from("projects").select("code").eq("id", hidden.id);
+const rowsHidden = await rakib.client
   .from("project_assignees")
   .select("project_id")
   .eq("project_id", hidden.id);
 check(
-  "assignees of a project below the wall stay hidden",
-  (hiddenSeen.data ?? []).length === 0,
-  `${(hiddenSeen.data ?? []).length} rows for ${hidden.code}`
+  "somebody else's assignment does not open it for him",
+  (stillHidden.data ?? []).length === 0 && (rowsHidden.data ?? []).length === 0,
+  `${(stillHidden.data ?? []).length} projects, ${(rowsHidden.data ?? []).length} assignee rows`
 );
+await db.query("insert into project_assignees (project_id, profile_id) values ($1,$2) on conflict do nothing", [
+  hidden.id,
+  rakib.id,
+]);
 
 // ---- attachment counts ---------------------------------------------------
 const { data: counts, error: countError } = await nadia.client.rpc("project_file_counts", {
